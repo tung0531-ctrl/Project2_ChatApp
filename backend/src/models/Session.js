@@ -1,37 +1,29 @@
-import { sequelize } from '../libs/db.js';
-import { DataTypes } from 'sequelize';
+import mongoose from "mongoose";
 
-const Session = sequelize.define('Session', {
-    sessionId: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true,
-        field: 'session_id',
-    },
+const sessionSchema = new mongoose.Schema(
+  {
     userId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        field: 'user_id',
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
     },
     refreshToken: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true,
-        field: 'refresh_token',
+      type: String,
+      required: true,
+      unique: true,
     },
     expiresAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        field: 'expires_at',
+      type: Date,
+      required: true,
     },
-    createdAt: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW,
-        field: 'created_at',
-    },
-}, {
-    tableName: 'sessions',
-    timestamps: false,
-});
+  },
+  {
+    timestamps: true,
+  }
+);
 
-export default Session;
+// tự động xoá khi hết hạn
+sessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+export default mongoose.model("Session", sessionSchema);

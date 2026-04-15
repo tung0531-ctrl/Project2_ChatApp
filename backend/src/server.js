@@ -1,52 +1,44 @@
 import express from "express";
 import dotenv from "dotenv";
-import cors from "cors";
-import { initDatabase } from "./libs/db.js";
+import { connectDB } from "./libs/db.js";
 import authRoute from "./routes/authRoute.js";
 import userRoute from "./routes/userRoute.js";
-import { protectedRoute } from "./middlewares/authMiddleware.js";
+import friendRoute from "./routes/friendRoute.js";
+import messageRoute from "./routes/messageRoute.js";
+import conversationRoute from "./routes/conversationRoute.js";
 import cookieParser from "cookie-parser";
+import { protectedRoute } from "./middlewares/authMiddleware.js";
+import cors from "cors";
+import swaggerUi from "swagger-ui-express";
+import fs from "fs";
 
-// Load environment variables
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 
-// Middleware
-// Configure CORS to allow requests from the frontend and allow credentials (cookies)
-const frontendOrigin = process.env.FRONTEND_ORIGIN|| 'http://localhost:5173';
-app.use(
-    cors({
-        origin: frontendOrigin,
-        credentials: true
-    })
-);
+// middlewares
 app.use(express.json());
 app.use(cookieParser());
-// Routes
-app.use('/api/auth', authRoute);
-// Private route
+app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+
+// swagger
+const swaggerDocument = JSON.parse(fs.readFileSync("./src/swagger.json", "utf8"));
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+// public routes
+app.use("/api/auth", authRoute);
+
+// private routes
 app.use(protectedRoute);
-app.use('/api/users', userRoute);
+app.use("/api/users", userRoute);
+app.use("/api/friends", friendRoute);
+app.use("/api/messages", messageRoute);
+app.use("/api/conversations", conversationRoute);
 
-// Basic error handling
-app.use((err, req, res, next) => {
-    console.error(err);
-    res.status(500).json({ message: 'Lỗi máy chủ nội bộ.' });
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`server bắt đầu trên cổng ${PORT}`);
+  });
 });
-
-// Start server
-const startServer = async () => {
-    try {
-        await initDatabase();
-        app.listen(PORT, () => {
-            console.log(`Server đang chạy trên cổng ${PORT}`);
-        });
-    } catch (error) {
-        console.error('Lỗi khởi động server:', error);
-        process.exit(1);
-    }
-};
-
-startServer();

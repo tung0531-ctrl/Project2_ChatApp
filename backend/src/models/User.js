@@ -1,59 +1,49 @@
-import { DataTypes } from "sequelize";
-import { sequelize } from "../libs/db.js";
+import mongoose from "mongoose";
 
-const User = sequelize.define("User", {
-    userId: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true,
-        field: "user_id",
-    },
+const userSchema = new mongoose.Schema(
+  {
     username: {
-        type: DataTypes.STRING(50),
-        allowNull: false,
-        unique: true,
-        set(value) {
-            this.setDataValue("username", value.trim().toLowerCase());
-        },
-        field: "username",
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+    },
+    hashedPassword: {
+      type: String,
+      required: true,
     },
     email: {
-        type: DataTypes.STRING(100),
-        allowNull: false,
-        unique: true,
-        set(value) {
-            this.setDataValue("email", value.trim().toLowerCase());
-        },
-        field: "email",
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
     },
-    fullName: {
-        type: DataTypes.STRING(100),
-        allowNull: false,
-        set(value) {
-            this.setDataValue("fullName", value.trim());
-        },
-        field: "full_name",
+    displayName: {
+      type: String,
+      required: true,
+      trim: true,
     },
-    passwordHash: {
-        type: DataTypes.STRING(255),
-        allowNull: false,
-        field: "password_hash",
+    avatarUrl: {
+      type: String, // link CDN để hiển thị hình
     },
-    role: {
-        type: DataTypes.ENUM("ADMIN", "RESIDENT"),
-        allowNull: false,
-        defaultValue: "RESIDENT",
-        field: "role",
+    avatarId: {
+      type: String, // Cloudinary public_id để xoá hình
     },
-    status: {
-        type: DataTypes.ENUM("ACTIVE", "LOCKED"),
-        defaultValue: "ACTIVE",
-        field: "status",
-    }
-}, {
-    tableName: "users",
+    bio: {
+      type: String,
+      maxlength: 500, // tuỳ
+    },
+    phone: {
+      type: String,
+      sparse: true, // cho phép null, nhưng không được trùng
+    },
+  },
+  {
     timestamps: true,
-    underscored: true
-});
+  }
+);
 
+const User = mongoose.model("User", userSchema);
 export default User;
