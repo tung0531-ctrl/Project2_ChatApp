@@ -97,6 +97,7 @@ const NewGroupChatModal = () => {
             </Label>
             <Input
               id="groupName"
+              placeholder="Gõ tên nhóm vào đây..."
               className="glass border-border/50 focus:border-primary/50 transition-smooth"
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
@@ -115,6 +116,7 @@ const NewGroupChatModal = () => {
 
             <Input
               id="invite"
+              placeholder="Tìm theo tên hiển thị..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="flex-1"

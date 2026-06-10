@@ -39,7 +39,7 @@ export function SigninForm({ className, ...props }: React.ComponentProps<"div">)
       {...props}
     >
       <Card className="overflow-hidden p-0 border-border">
-        <CardContent className="p-0">
+        <CardContent className="grid p-0 md:grid-cols-2">
           <form
             className="p-6 md:p-8"
             onSubmit={handleSubmit(onSubmit)}
@@ -74,6 +74,7 @@ export function SigninForm({ className, ...props }: React.ComponentProps<"div">)
                 <Input
                   type="text"
                   id="username"
+                  placeholder="."
                   {...register("username")}
                 />
                 {errors.username && (
@@ -123,6 +124,13 @@ export function SigninForm({ className, ...props }: React.ComponentProps<"div">)
               </div>
             </div>
           </form>
+          <div className="bg-muted relative hidden md:block">
+            <img
+              src="/placeholder.png"
+              alt="Image"
+              className="absolute top-1/2 -translate-y-1/2 object-cover"
+            />
+          </div>
         </CardContent>
       </Card>
       <div className=" text-xs text-balance px-6 text-center *:[a]:hover:text-primary text-muted-foreground *:[a]:underline *:[a]:underline-offetset-4">
