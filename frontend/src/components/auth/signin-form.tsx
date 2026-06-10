@@ -59,7 +59,7 @@ export function SigninForm({ className, ...props }: React.ComponentProps<"div">)
 
                 <h1 className="text-2xl font-bold">Chào mừng quay lại</h1>
                 <p className="text-muted-foreground text-balance">
-                  Đăng nhập vào tài khoản của bạn
+                  Đăng nhập vào tài khoản Moji của bạn
                 </p>
               </div>
 
