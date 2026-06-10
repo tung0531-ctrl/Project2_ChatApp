@@ -43,7 +43,6 @@ const SearchForm = ({
 
         <Input
           id="username"
-          placeholder="Gõ tên username vào đây..."
           className="glass border-border/50 focus:border-primary/50 transition-smooth"
           {...register("username", {
             required: "Username không được bỏ trống",

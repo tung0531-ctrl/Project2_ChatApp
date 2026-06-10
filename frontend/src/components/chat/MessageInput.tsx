@@ -56,7 +56,6 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
           onKeyPress={handleKeyPress}
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder="Soạn tin nhắn..."
           className="pr-20 h-9 bg-white border-border/50 focus:border-primary/50 transition-smooth resize-none"
         ></Input>
         <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">

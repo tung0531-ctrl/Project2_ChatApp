@@ -1,8 +1,8 @@
-# Moji Project Guide
+# ChatApp Project Guide
 
 ## 1. Muc dich tai lieu
 
-Tai lieu nay la base ky thuat cho du an Moji. Muc tieu la giup moi thay doi trong tuong lai:
+Tai lieu nay la base ky thuat cho du an ChatApp. Muc tieu la giup moi thay doi trong tuong lai:
 
 - hieu dung kien truc tong the cua du an
 - them tinh nang moi ma van giu duoc phong cach code nhat quan
@@ -13,7 +13,7 @@ Tai lieu duoc tong hop tu code hien tai trong repo, khong phai tu README mac din
 
 ## 2. Tong quan du an
 
-Moji la ung dung chat real-time gom 2 phan:
+ChatApp la ung dung chat real-time gom 2 phan:
 
 - `frontend`: React + TypeScript + Vite, quan ly UI, state, route, form, giao tiep API va Socket.IO client.
 - `backend`: Node.js + Express + MongoDB + Socket.IO, cung cap API, xac thuc, quan ly ban be, hoi thoai, tin nhan, upload avatar.
