@@ -15,14 +15,13 @@ import { useEffect, useState } from "react";
 import { useUserStore } from "@/stores/useUserStore";
 
 type EditableField = {
-  key: keyof Pick<User, "displayName" | "username" | "email" | "phone">;
+  key: keyof Pick<User, "displayName" | "email" | "phone">;
   label: string;
   type?: string;
 };
 
 const PERSONAL_FIELDS: EditableField[] = [
   { key: "displayName", label: "Tên hiển thị" },
-  { key: "username", label: "Tên người dùng" },
   { key: "email", label: "Email", type: "email" },
   { key: "phone", label: "Số điện thoại" },
 ];
@@ -36,7 +35,6 @@ const PersonalInfoForm = ({ userInfo }: Props) => {
 
   const [formData, setFormData] = useState<UpdateProfilePayload>({
     displayName: "",
-    username: "",
     email: "",
     phone: "",
     bio: "",
@@ -49,7 +47,6 @@ const PersonalInfoForm = ({ userInfo }: Props) => {
 
     setFormData({
       displayName: userInfo.displayName ?? "",
-      username: userInfo.username ?? "",
       email: userInfo.email ?? "",
       phone: userInfo.phone ?? "",
       bio: userInfo.bio ?? "",

@@ -1,3 +1,4 @@
+import bcrypt from "bcrypt";
 import { uploadImageFromBuffer } from "../middlewares/uploadMiddleware.js";
 import User from "../models/User.js";
 
@@ -36,31 +37,25 @@ export const searchUserByUsername = async (req, res) => {
 export const updateMyProfile = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { displayName, username, email, phone, bio } = req.body;
+    const { displayName, email, phone, bio } = req.body;
 
     const normalizedDisplayName = displayName?.trim();
-    const normalizedUsername = username?.trim().toLowerCase();
     const normalizedEmail = email?.trim().toLowerCase();
     const normalizedPhone = phone?.trim();
     const normalizedBio = bio?.trim();
 
-    if (!normalizedDisplayName || !normalizedUsername || !normalizedEmail) {
+    if (!normalizedDisplayName || !normalizedEmail) {
       return res.status(400).json({
-        message: "Tên hiển thị, tên người dùng và email là bắt buộc.",
+        message: "Tên hiển thị và email là bắt buộc.",
       });
     }
 
-    const [existingUsername, existingEmail, existingPhone] = await Promise.all([
-      User.findOne({ username: normalizedUsername, _id: { $ne: userId } }).select("_id"),
+    const [existingEmail, existingPhone] = await Promise.all([
       User.findOne({ email: normalizedEmail, _id: { $ne: userId } }).select("_id"),
       normalizedPhone
         ? User.findOne({ phone: normalizedPhone, _id: { $ne: userId } }).select("_id")
         : null,
     ]);
-
-    if (existingUsername) {
-      return res.status(409).json({ message: "Tên người dùng đã được sử dụng." });
-    }
 
     if (existingEmail) {
       return res.status(409).json({ message: "Email đã được sử dụng." });
@@ -72,7 +67,6 @@ export const updateMyProfile = async (req, res) => {
 
     const updateData = {
       displayName: normalizedDisplayName,
-      username: normalizedUsername,
       email: normalizedEmail,
     };
 
@@ -105,6 +99,90 @@ export const updateMyProfile = async (req, res) => {
     return res.status(200).json({ user: updatedUser });
   } catch (error) {
     console.error("Lỗi khi cập nhật thông tin cá nhân", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
+export const updateAccountSecurity = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { username, currentPassword, newPassword } = req.body;
+
+    const normalizedUsername = username?.trim().toLowerCase();
+    const normalizedCurrentPassword = currentPassword?.trim();
+    const normalizedNewPassword = newPassword?.trim();
+
+    if (!normalizedUsername) {
+      return res.status(400).json({ message: "Tên tài khoản là bắt buộc." });
+    }
+
+    if (
+      (normalizedCurrentPassword && !normalizedNewPassword) ||
+      (!normalizedCurrentPassword && normalizedNewPassword)
+    ) {
+      return res.status(400).json({
+        message: "Muốn đổi mật khẩu thì phải nhập đủ mật khẩu cũ và mật khẩu mới.",
+      });
+    }
+
+    if (normalizedNewPassword && normalizedNewPassword.length < 6) {
+      return res.status(400).json({
+        message: "Mật khẩu mới phải có ít nhất 6 ký tự.",
+      });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "Người dùng không tồn tại." });
+    }
+
+    const updateData = {};
+
+    if (normalizedUsername !== user.username) {
+      const existingUsername = await User.findOne({
+        username: normalizedUsername,
+        _id: { $ne: userId },
+      }).select("_id");
+
+      if (existingUsername) {
+        return res.status(409).json({ message: "Tên tài khoản đã được sử dụng." });
+      }
+
+      updateData.username = normalizedUsername;
+    }
+
+    if (normalizedNewPassword) {
+      const passwordCorrect = await bcrypt.compare(
+        normalizedCurrentPassword,
+        user.hashedPassword,
+      );
+
+      if (!passwordCorrect) {
+        return res.status(401).json({ message: "Mật khẩu cũ không chính xác." });
+      }
+
+      updateData.hashedPassword = await bcrypt.hash(normalizedNewPassword, 10);
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ message: "Không có thay đổi nào để lưu." });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        $set: updateData,
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    ).select("-hashedPassword");
+
+    return res.status(200).json({ user: updatedUser });
+  } catch (error) {
+    console.error("Lỗi khi cập nhật thông tin bảo mật", error);
     return res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };

@@ -12,10 +12,15 @@ export interface User {
 
 export interface UpdateProfilePayload {
   displayName: string;
-  username: string;
   email: string;
   phone?: string;
   bio?: string;
+}
+
+export interface UpdateAccountSecurityPayload {
+  username: string;
+  currentPassword?: string;
+  newPassword?: string;
 }
 
 export interface Friend {

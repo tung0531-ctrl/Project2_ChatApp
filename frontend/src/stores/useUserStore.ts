@@ -44,4 +44,21 @@ export const useUserStore = create<UserState>((set) => ({
       set({ loading: false });
     }
   },
+  updateAccountSecurity: async (payload) => {
+    try {
+      set({ loading: true });
+      const { setUser } = useAuthStore.getState();
+      const updatedUser = await userService.updateAccountSecurity(payload);
+
+      setUser(updatedUser);
+      toast.success("Cập nhật tài khoản thành công!");
+      return true;
+    } catch (error) {
+      console.error("Lỗi khi updateAccountSecurity", error);
+      toast.error("Cập nhật tài khoản không thành công!");
+      return false;
+    } finally {
+      set({ loading: false });
+    }
+  },
 }));
