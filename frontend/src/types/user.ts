@@ -48,3 +48,24 @@ export interface FriendRequest {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface NotificationActor {
+  _id?: string | null;
+  username?: string;
+  displayName?: string;
+  avatarUrl?: string | null;
+}
+
+export interface Notification {
+  _id: string;
+  type: "friend_request" | "group_joined" | "group_kicked";
+  title: string;
+  message: string;
+  actor?: NotificationActor | null;
+  groupName?: string;
+  friendRequestId?: string | null;
+  conversationId?: string | null;
+  read: boolean;
+  createdAt: string;
+  updatedAt: string;
+}

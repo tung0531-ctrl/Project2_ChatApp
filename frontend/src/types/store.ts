@@ -3,6 +3,7 @@ import type { Conversation, Message } from "./chat";
 import type {
   Friend,
   FriendRequest,
+  Notification,
   UpdateAccountSecurityPayload,
   UpdateProfilePayload,
   User,
@@ -104,6 +105,17 @@ export interface FriendState {
   acceptRequest: (requestId: string) => Promise<void>;
   declineRequest: (requestId: string) => Promise<void>;
   getFriends: () => Promise<void>;
+}
+
+export interface NotificationState {
+  notifications: Notification[];
+  unreadCount: number;
+  loading: boolean;
+  reset: () => void;
+  fetchNotifications: () => Promise<void>;
+  markAllAsRead: () => Promise<void>;
+  addNotification: (notification: Notification) => void;
+  removeNotificationByFriendRequestId: (friendRequestId: string) => void;
 }
 
 export interface UserState {

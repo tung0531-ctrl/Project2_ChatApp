@@ -1,6 +1,7 @@
 import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
 import { io } from "../socket/index.js";
+import { createNotification } from "../utils/notificationHelper.js";
 
 const formatParticipants = (participants = []) =>
   participants.map((p) => ({
@@ -120,6 +121,25 @@ export const createConversation = async (req, res) => {
       memberIds.forEach((userId) => {
         io.to(userId).emit("new-group", formatted);
       });
+
+      await Promise.all(
+        memberIds.map((memberId) =>
+          createNotification({
+            recipient: memberId,
+            type: "group_joined",
+            title: "Bạn đã được thêm vào nhóm chat",
+            message: `Bạn đã được thêm vào nhóm chat ${formatted.group?.name ?? "mới"}.`,
+            actor: {
+              _id: req.user._id,
+              username: req.user.username,
+              displayName: req.user.displayName,
+              avatarUrl: req.user.avatarUrl ?? null,
+            },
+            groupName: formatted.group?.name ?? "",
+            conversationId: conversation._id,
+          }),
+        ),
+      );
     }
 
     if (type === "direct") {
@@ -322,6 +342,21 @@ export const joinGroup = async (req, res) => {
     io.to(userId.toString()).emit("new-group", formatted);
     io.to(conversationId).emit("conversation-updated", formatted);
 
+    await createNotification({
+      recipient: userId,
+      type: "group_joined",
+      title: "Tham gia nhóm chat thành công",
+      message: `Bạn đã tham gia nhóm chat ${formatted.group?.name ?? ""}.`,
+      actor: {
+        _id: req.user._id,
+        username: req.user.username,
+        displayName: req.user.displayName,
+        avatarUrl: req.user.avatarUrl ?? null,
+      },
+      groupName: formatted.group?.name ?? "",
+      conversationId: conversation._id,
+    });
+
     return res.status(200).json({ conversation: formatted });
   } catch (error) {
     console.error("Lỗi khi tham gia nhóm chat", error);
@@ -454,6 +489,21 @@ export const kickGroupMember = async (req, res) => {
 
     io.to(conversationId).emit("conversation-updated", formatted);
     io.to(memberId).emit("conversation-updated", formatted);
+
+    await createNotification({
+      recipient: memberId,
+      type: "group_kicked",
+      title: "Bạn đã bị xóa khỏi nhóm chat",
+      message: `Bạn đã bị xóa khỏi nhóm chat ${formatted.group?.name ?? ""}.`,
+      actor: {
+        _id: req.user._id,
+        username: req.user.username,
+        displayName: req.user.displayName,
+        avatarUrl: req.user.avatarUrl ?? null,
+      },
+      groupName: formatted.group?.name ?? "",
+      conversationId: conversation._id,
+    });
 
     return res.status(200).json({ conversation: formatted });
   } catch (error) {

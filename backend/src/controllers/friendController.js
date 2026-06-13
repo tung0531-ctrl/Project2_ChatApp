@@ -1,6 +1,8 @@
 import Friend from "../models/Friend.js";
 import User from "../models/User.js";
 import FriendRequest from "../models/FriendRequest.js";
+import Notification from "../models/Notification.js";
+import { createNotification } from "../utils/notificationHelper.js";
 
 export const sendFriendRequest = async (req, res) => {
   try {
@@ -51,6 +53,20 @@ export const sendFriendRequest = async (req, res) => {
       message,
     });
 
+    await createNotification({
+      recipient: to,
+      type: "friend_request",
+      title: "Lời mời kết bạn mới",
+      message: `${req.user.displayName} đã gửi cho bạn một lời mời kết bạn.`,
+      actor: {
+        _id: req.user._id,
+        username: req.user.username,
+        displayName: req.user.displayName,
+        avatarUrl: req.user.avatarUrl ?? null,
+      },
+      friendRequestId: request._id,
+    });
+
     return res
       .status(201)
       .json({ message: "Gửi lời mời kết bạn thành công", request });
@@ -83,6 +99,7 @@ export const acceptFriendRequest = async (req, res) => {
     });
 
     await FriendRequest.findByIdAndDelete(requestId);
+    await Notification.deleteMany({ friendRequestId: request._id });
 
     const from = await User.findById(request.from)
       .select("_id displayName avatarUrl")
@@ -120,6 +137,7 @@ export const declineFriendRequest = async (req, res) => {
     }
 
     await FriendRequest.findByIdAndDelete(requestId);
+    await Notification.deleteMany({ friendRequestId: request._id });
 
     return res.sendStatus(204);
   } catch (error) {
