@@ -11,6 +11,11 @@ interface FetchMessageProps {
   cursor?: string;
 }
 
+interface UploadMessageMediaResponse {
+  mediaUrl: string;
+  mediaType: string;
+}
+
 const pageLimit = 50;
 
 export const chatService = {
@@ -31,12 +36,14 @@ export const chatService = {
     recipientId: string,
     content: string = "",
     imgUrl?: string,
+    mediaType?: string,
     conversationId?: string
   ) {
     const res = await api.post("/messages/direct", {
       recipientId,
       content,
       imgUrl,
+      mediaType,
       conversationId,
     });
 
@@ -46,14 +53,29 @@ export const chatService = {
   async sendGroupMessage(
     conversationId: string,
     content: string = "",
-    imgUrl?: string
+    imgUrl?: string,
+    mediaType?: string
   ) {
     const res = await api.post("/messages/group", {
       conversationId,
       content,
       imgUrl,
+      mediaType,
     });
     return res.data.message;
+  },
+
+  async uploadMessageMedia(file: File): Promise<UploadMessageMediaResponse> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await api.post("/messages/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return res.data;
   },
 
   async markAsSeen(conversationId: string) {

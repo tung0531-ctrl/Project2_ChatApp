@@ -20,6 +20,30 @@ import { MoreHorizontal, Trash2, UserRoundSearch } from "lucide-react";
 import { useFriendStore } from "@/stores/useFriendStore";
 import UserProfileDialog from "../profile/UserProfileDialog";
 
+const getLastMessagePreview = (convo?: Conversation) => {
+  if (!convo?.lastMessage) {
+    return "";
+  }
+
+  if (convo.lastMessage.content?.trim()) {
+    return convo.lastMessage.content;
+  }
+
+  if (convo.lastMessage.mediaType === "image/gif") {
+    return "Đã gửi GIF";
+  }
+
+  if (convo.lastMessage.mediaType?.startsWith("video/")) {
+    return "Đã gửi video";
+  }
+
+  if (convo.lastMessage.imgUrl) {
+    return "Đã gửi hình ảnh";
+  }
+
+  return "";
+};
+
 interface DirectMessageCardProps {
   convo?: Conversation;
   friend: Friend;
@@ -44,7 +68,7 @@ const DirectMessageCard = ({ convo, friend }: DirectMessageCardProps) => {
     convo?.participants.find((participant) => participant._id !== user._id) ?? friend;
 
   const unreadCount = convo?.unreadCounts[user._id] ?? 0;
-  const lastMessage = convo?.lastMessage?.content ?? "";
+  const lastMessage = getLastMessagePreview(convo);
   const cardId = convo?._id ?? `friend-${friend._id}`;
 
   const handleSelectConversation = async (id: string) => {

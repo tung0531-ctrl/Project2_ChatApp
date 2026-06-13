@@ -58,13 +58,16 @@ export interface ChatState {
   sendDirectMessage: (
     recipientId: string,
     content: string,
-    imgUrl?: string
+    imgUrl?: string,
+    mediaType?: string
   ) => Promise<void>;
   sendGroupMessage: (
     conversationId: string,
     content: string,
-    imgUrl?: string
+    imgUrl?: string,
+    mediaType?: string
   ) => Promise<void>;
+  uploadMessageMedia: (file: File) => Promise<{ mediaUrl: string; mediaType: string }>;
   // add message
   addMessage: (message: Message) => Promise<void>;
   // update convo

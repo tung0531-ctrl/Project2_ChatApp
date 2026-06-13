@@ -5,6 +5,31 @@ import { Card } from "../ui/card";
 import { Badge } from "../ui/badge";
 import SeenByAvatars from "./SeenByAvatars";
 
+const renderMessageMedia = (message: Message) => {
+  if (!message.imgUrl) {
+    return null;
+  }
+
+  if (message.mediaType?.startsWith("video/")) {
+    return (
+      <video
+        src={message.imgUrl}
+        controls
+        className="max-h-80 w-full rounded-md bg-black object-contain"
+      />
+    );
+  }
+
+  return (
+    <img
+      src={message.imgUrl}
+      alt="media message"
+      className="max-h-80 w-full rounded-md object-contain"
+      loading="lazy"
+    />
+  );
+};
+
 interface MessageItemProps {
   message: Message;
   index: number;
@@ -73,7 +98,12 @@ const MessageItem = ({
               message.isOwn ? "chat-bubble-sent border-0" : "chat-bubble-received"
             )}
           >
-            <p className="text-sm leading-relaxed break-words">{message.content}</p>
+            <div className="space-y-2">
+              {renderMessageMedia(message)}
+              {message.content ? (
+                <p className="text-sm leading-relaxed break-words">{message.content}</p>
+              ) : null}
+            </div>
           </Card>
 
           {/* seen/ delivered */}

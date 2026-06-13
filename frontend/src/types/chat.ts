@@ -21,8 +21,10 @@ export interface Group {
 
 export interface LastMessage {
   _id: string;
-  content: string;
+  content: string | null;
   createdAt: string;
+  imgUrl?: string | null;
+  mediaType?: string | null;
   sender: {
     _id: string;
     displayName: string;
@@ -58,6 +60,7 @@ export interface Message {
   senderId: string;
   content: string | null;
   imgUrl?: string | null;
+  mediaType?: string | null;
   updatedAt?: string | null;
   createdAt: string;
   isOwn?: boolean;

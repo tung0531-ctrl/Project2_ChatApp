@@ -11,6 +11,8 @@ export const updateConversationAfterCreateMessage = (
       content: message.content,
       senderId,
       createdAt: message.createdAt,
+      imgUrl: message.imgUrl ?? null,
+      mediaType: message.mediaType ?? null,
     },
   });
 

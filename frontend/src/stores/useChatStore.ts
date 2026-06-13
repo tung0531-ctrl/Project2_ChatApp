@@ -113,13 +113,17 @@ export const useChatStore = create<ChatState>()(
           set({ messageLoading: false });
         }
       },
-      sendDirectMessage: async (recipientId, content, imgUrl) => {
+      uploadMessageMedia: async (file) => {
+        return chatService.uploadMessageMedia(file);
+      },
+      sendDirectMessage: async (recipientId, content, imgUrl, mediaType) => {
         try {
           const { activeConversationId } = get();
           await chatService.sendDirectMessage(
             recipientId,
             content,
             imgUrl,
+            mediaType,
             activeConversationId || undefined
           );
           set((state) => ({
@@ -131,9 +135,14 @@ export const useChatStore = create<ChatState>()(
           console.error("Lỗi xảy ra khi gửi direct message", error);
         }
       },
-      sendGroupMessage: async (conversationId, content, imgUrl) => {
+      sendGroupMessage: async (conversationId, content, imgUrl, mediaType) => {
         try {
-          await chatService.sendGroupMessage(conversationId, content, imgUrl);
+          await chatService.sendGroupMessage(
+            conversationId,
+            content,
+            imgUrl,
+            mediaType
+          );
           set((state) => ({
             conversations: state.conversations.map((c) =>
               c._id === get().activeConversationId ? { ...c, seenBy: [] } : c

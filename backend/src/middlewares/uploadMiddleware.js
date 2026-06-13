@@ -8,6 +8,10 @@ export const upload = multer({
   },
 });
 
+export const uploadMedia = multer({
+  storage: multer.memoryStorage(),
+});
+
 export const uploadImageFromBuffer = (buffer, options) => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
@@ -15,6 +19,27 @@ export const uploadImageFromBuffer = (buffer, options) => {
         folder: "chatapp/avatars",
         resource_type: "image",
         transformation: [{ width: 200, height: 200, crop: "fill" }],
+        ...options,
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(result);
+        }
+      }
+    );
+
+    uploadStream.end(buffer);
+  });
+};
+
+export const uploadMediaFromBuffer = (buffer, options = {}) => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: "chatapp/messages",
+        resource_type: "auto",
         ...options,
       },
       (error, result) => {

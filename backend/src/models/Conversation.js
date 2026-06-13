@@ -53,6 +53,14 @@ const lastMessageSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    imgUrl: {
+      type: String,
+      default: null,
+    },
+    mediaType: {
+      type: String,
+      default: null,
+    },
   },
   {
     _id: false,
