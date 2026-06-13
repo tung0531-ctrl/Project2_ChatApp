@@ -158,7 +158,10 @@ export const refreshToken = async (req, res) => {
     );
 
     // return
-    return res.status(200).json({ accessToken });
+    return res.status(200).json({
+      accessToken,
+      userId: session.userId.toString(),
+    });
   } catch (error) {
     console.error("Lỗi khi gọi refreshToken", error);
     return res.status(500).json({ message: "Lỗi hệ thống" });

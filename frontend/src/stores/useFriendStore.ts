@@ -60,8 +60,13 @@ export const useFriendStore = create<FriendState>((set) => ({
       set((state) => ({
         receivedList: state.receivedList.filter((r) => r._id !== requestId),
       }));
+
+      const friends = await friendService.getFriendList();
+      set({ friends });
     } catch (error) {
       console.error("Lỗi xảy ra khi acceptRequest", error);
+    } finally {
+      set({ loading: false });
     }
   },
   declineRequest: async (requestId) => {

@@ -38,10 +38,12 @@ api.interceptors.response.use(
       originalRequest._retryCount += 1;
 
       try {
-        const res = await api.post("/auth/refresh", { withCredentials: true });
-        const newAccessToken = res.data.accessToken;
+        await useAuthStore.getState().refresh();
+        const newAccessToken = useAuthStore.getState().accessToken;
 
-        useAuthStore.getState().setAccessToken(newAccessToken);
+        if (!newAccessToken) {
+          return Promise.reject(error);
+        }
 
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return api(originalRequest);

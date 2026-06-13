@@ -4,7 +4,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
@@ -13,6 +12,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { Bell } from "lucide-react";
+import { Search } from "lucide-react";
 import CreateNewChat from "../chat/CreateNewChat";
 import NewGroupChatModal from "../chat/NewGroupChatModal";
 import JoinGroupChatModal from "../chat/JoinGroupChatModal";
@@ -25,12 +25,17 @@ import { useChatStore } from "@/stores/useChatStore";
 import FriendRequestDialog from "../friendRequest/FriendRequestDialog";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import { useEffect, useState } from "react";
+import { useFriendStore } from "@/stores/useFriendStore";
+import { Input } from "../ui/input";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuthStore();
   const { convoLoading } = useChatStore();
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [friendSearchOpen, setFriendSearchOpen] = useState(false);
+  const [friendKeyword, setFriendKeyword] = useState("");
   const { fetchNotifications, unreadCount } = useNotificationStore();
+  const { getFriends } = useFriendStore();
 
   useEffect(() => {
     if (!user?._id) {
@@ -38,7 +43,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
 
     fetchNotifications();
+    getFriends();
   }, [user?._id]);
+
+  useEffect(() => {
+    if (friendSearchOpen) {
+      return;
+    }
+
+    setFriendKeyword("");
+  }, [friendSearchOpen]);
 
   return (
     <>
@@ -100,16 +114,38 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
           {/* Dirrect Message */}
           <SidebarGroup>
-            <SidebarGroupLabel className="uppercase">bạn bè</SidebarGroupLabel>
-            <SidebarGroupAction
-              title="Kết Bạn"
-              className="cursor-pointer"
-            >
-              <AddFriendModal />
-            </SidebarGroupAction>
+            <div className="flex items-center justify-between">
+              <SidebarGroupLabel className="uppercase">bạn bè</SidebarGroupLabel>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFriendSearchOpen((prev) => !prev)}
+                  className="inline-flex size-5 cursor-pointer items-center justify-center rounded-full hover:bg-sidebar-accent"
+                  aria-label="Tìm kiếm bạn bè"
+                >
+                  <Search className="size-4" />
+                </button>
+                <AddFriendModal />
+              </div>
+            </div>
 
             <SidebarGroupContent>
-              {convoLoading ? <ConversationSkeleton /> : <DirectMessageList />}
+              {friendSearchOpen ? (
+                <div className="px-2 pb-2">
+                  <Input
+                    value={friendKeyword}
+                    onChange={(event) => setFriendKeyword(event.target.value)}
+                    placeholder="Tìm theo tên hoặc username..."
+                    className="glass border-border/50 focus:border-primary/50 transition-smooth"
+                  />
+                </div>
+              ) : null}
+
+              {convoLoading ? (
+                <ConversationSkeleton />
+              ) : (
+                <DirectMessageList keyword={friendKeyword} />
+              )}
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>

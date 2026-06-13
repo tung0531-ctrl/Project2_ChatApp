@@ -4,6 +4,7 @@ import { useAuthStore } from "./useAuthStore";
 import type { SocketState } from "@/types/store";
 import { useChatStore } from "./useChatStore";
 import { useNotificationStore } from "./useNotificationStore";
+import { useFriendStore } from "./useFriendStore";
 
 const baseURL = import.meta.env.VITE_SOCKET_URL;
 
@@ -80,6 +81,10 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
     socket.on("new-notification", (notification) => {
       useNotificationStore.getState().addNotification(notification);
+    });
+
+    socket.on("friends-updated", () => {
+      useFriendStore.getState().getFriends();
     });
 
     socket.on("conversation-removed", ({ conversationId }) => {

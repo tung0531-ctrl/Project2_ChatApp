@@ -96,7 +96,7 @@ export const acceptFriendRequest = async (req, res) => {
         .json({ message: "Bạn không có quyền chấp nhận lời mời này" });
     }
 
-    const friend = await Friend.create({
+    await Friend.create({
       userA: request.from,
       userB: request.to,
     });
@@ -107,6 +107,9 @@ export const acceptFriendRequest = async (req, res) => {
     const from = await User.findById(request.from)
       .select("_id displayName avatarUrl")
       .lean();
+
+    io.to(request.from.toString()).emit("friends-updated");
+    io.to(request.to.toString()).emit("friends-updated");
 
     return res.status(200).json({
       message: "Chấp nhận lời mời kết bạn thành công",
@@ -238,6 +241,9 @@ export const unfriend = async (req, res) => {
         conversationId: directConversation._id.toString(),
       });
     }
+
+    io.to(userId).emit("friends-updated");
+    io.to(friendId).emit("friends-updated");
 
     return res.status(200).json({
       message: "Đã hủy kết bạn thành công",

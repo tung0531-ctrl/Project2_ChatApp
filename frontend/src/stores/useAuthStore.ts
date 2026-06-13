@@ -2,9 +2,12 @@ import { create } from "zustand";
 import { toast } from "sonner";
 import { authService } from "@/services/authService";
 import type { AuthState } from "@/types/store";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import { useChatStore } from "./useChatStore";
 import { useNotificationStore } from "./useNotificationStore";
+
+const AUTH_STORAGE_KEY = "auth-storage";
+const CHAT_STORAGE_KEY = "chat-storage";
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -23,8 +26,8 @@ export const useAuthStore = create<AuthState>()(
         set({ accessToken: null, user: null, loading: false });
         useChatStore.getState().reset();
         useNotificationStore.getState().reset();
-        localStorage.clear();
-        sessionStorage.clear();
+        sessionStorage.removeItem(AUTH_STORAGE_KEY);
+        sessionStorage.removeItem(CHAT_STORAGE_KEY);
       },
       signUp: async (username, password, email, firstName, lastName) => {
         try {
@@ -90,7 +93,12 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ loading: true });
           const { user, fetchMe, setAccessToken } = get();
-          const accessToken = await authService.refresh();
+          const currentUserId = user?._id ?? null;
+          const { accessToken, userId } = await authService.refresh();
+
+          if (currentUserId && currentUserId !== userId) {
+            throw new Error("AUTH_USER_MISMATCH");
+          }
 
           setAccessToken(accessToken);
 
@@ -99,16 +107,27 @@ export const useAuthStore = create<AuthState>()(
           }
         } catch (error) {
           console.error(error);
-          toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!");
           get().clearState();
+
+          if (error instanceof Error && error.message === "AUTH_USER_MISMATCH") {
+            toast.error(
+              "Phát hiện phiên đăng nhập của tài khoản khác trong cùng trình duyệt. Hãy đăng nhập lại hoặc dùng trình duyệt/profile riêng cho mỗi tài khoản."
+            );
+          } else {
+            toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!");
+          }
         } finally {
           set({ loading: false });
         }
       },
     }),
     {
-      name: "auth-storage",
-      partialize: (state) => ({ user: state.user }), // chỉ persist user
+      name: AUTH_STORAGE_KEY,
+      storage: createJSONStorage(() => sessionStorage),
+      partialize: (state) => ({
+        accessToken: state.accessToken,
+        user: state.user,
+      }),
     }
   )
 );

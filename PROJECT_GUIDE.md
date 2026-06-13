@@ -24,18 +24,23 @@ Tinh nang chinh da co trong code:
 - lay thong tin user hien tai
 - cap nhat thong tin ca nhan user
 - doi tai khoan va doi mat khau co xac thuc mat khau cu
-- tim user theo username
+- tim user theo username voi co che query filter gan dung, khong can khop exact
 - gui, chap nhan, tu choi loi moi ket ban
 - lay danh sach ban be
+- huy ket ban, dong thoi xoa direct conversation va lich su chat lien quan
+- xem profile cua nguoi dung khac tu danh sach ban be/direct chat
 - tao direct conversation va group conversation
 - tim va tham gia vao group chat co san bang ten nhom
 - roi khoi group chat
 - xem thong tin group chat
 - sua mo ta group chat cho truong nhom
+- truong nhom co the kick thanh vien khoi group
 - gui tin nhan direct va group
 - lay danh sach conversation va lich su tin nhan
 - danh dau da xem tin nhan
 - hien thi avatar nhung nguoi da xem tin nhan cuoi
+- he thong thong bao cho loi moi ket ban, tham gia nhom, bi kick khoi nhom
+- badge thong bao chua doc o header sidebar
 - online presence bang Socket.IO
 - upload avatar len Cloudinary
 - giao dien sang/toi
@@ -86,13 +91,13 @@ backend/
   src/
     server.js                # diem vao backend
     swagger.json             # tai lieu API dang su dung
-    controllers/             # xu ly nghiep vu theo module
+    controllers/             # xu ly nghiep vu theo module, da co them notificationController
     libs/                    # ket noi DB
     middlewares/             # auth, upload, friend check, socket auth
-    models/                  # Mongoose schema/model
-    routes/                  # dinh nghia endpoint
+    models/                  # Mongoose schema/model, da co them Notification
+    routes/                  # dinh nghia endpoint, da co them notificationRoute
     socket/                  # khoi tao Socket.IO
-    utils/                   # helper nghiep vu
+    utils/                   # helper nghiep vu, da co them notificationHelper
 
 frontend/
   package.json
@@ -136,6 +141,12 @@ Kieu tach lop dang duoc dung:
 - `types/`: chua contract TypeScript dung chung
 - `lib/axios.ts`: diem tap trung auth, retry, refresh
 
+Frontend hien tai da mo rong them mot notification slice rieng:
+
+- `notificationService`: call API thong bao
+- `useNotificationStore`: giu danh sach thong bao + unread count
+- `FriendRequestDialog`: hien gio dong vai tro dialog thong bao tong hop, khong chi rieng friend request
+
 ### 5.2 Backend flow
 
 Luot chay chinh:
@@ -155,22 +166,24 @@ Kieu tach lop dang duoc dung:
 - `utils/`: helper logic dung lai
 - `socket/`: quan ly server socket va room
 
+Backend hien tai da co them notification domain rieng de phuc vu thong bao real-time va luu lich su thong bao.
+
 ## 6. Quy uoc to chuc module
 
 ### Frontend
 
 - Component UI theo feature duoc dat trong `src/components/<feature>/`.
 - Shared UI primitives dat trong `src/components/ui/`.
-- Moi domain co service rieng: `authService`, `chatService`, `friendService`, `userService`.
-- Moi domain lon co store rieng: `useAuthStore`, `useChatStore`, `useFriendStore`, `useSocketStore`.
+- Moi domain co service rieng: `authService`, `chatService`, `friendService`, `userService`, `notificationService`.
+- Moi domain lon co store rieng: `useAuthStore`, `useChatStore`, `useFriendStore`, `useSocketStore`, `useNotificationStore`, `useUserStore`.
 - Kieu du lieu tong hop dat trong `src/types/`.
 
 ### Backend
 
 - Moi domain nen duy tri day du 4 lop: `route -> middleware -> controller -> model` khi can.
-- Ten route file theo domain: `authRoute.js`, `conversationRoute.js`.
-- Ten controller theo domain: `authController.js`, `messageController.js`.
-- Ten model theo business entity: `User.js`, `Conversation.js`, `Message.js`.
+- Ten route file theo domain: `authRoute.js`, `conversationRoute.js`, `notificationRoute.js`.
+- Ten controller theo domain: `authController.js`, `messageController.js`, `notificationController.js`.
+- Ten model theo business entity: `User.js`, `Conversation.js`, `Message.js`, `Notification.js`.
 
 ## 7. Quy uoc cu phap va phong cach ham
 
@@ -352,9 +365,11 @@ Vi du dang dung:
 
 - `useAuthStore` dieu phoi login, logout, refresh, fetchMe
 - `useChatStore` quan ly conversation, message, markAsSeen
-- `useChatStore` cung quan ly them create group, join group, leave group, update group description
+- `useChatStore` cung quan ly them create group, join group, leave group, kick member, update group description
 - `useSocketStore` quan ly ket noi socket va event listeners
 - `useUserStore` quan ly upload avatar, update profile va update account security
+- `useFriendStore` quan ly search user, gui loi moi, lay requests, huy ket ban
+- `useNotificationStore` quan ly notifications va unread badge
 
 ### 9.3 Service layer
 
@@ -386,10 +401,14 @@ Mot so flow service/store quan trong da co hien tai:
 
 - `userService.updateProfile` + `useUserStore.updateProfile`
 - `userService.updateAccountSecurity` + `useUserStore.updateAccountSecurity`
+- `userService.fetchUserProfile` + dialog profile read-only cua nguoi dung khac
 - `chatService.leaveGroup` + `useChatStore.leaveGroup`
+- `chatService.kickGroupMember` + `useChatStore.kickGroupMember`
 - `chatService.updateGroupDescription` + `useChatStore.updateGroupDescription`
 - `chatService.searchJoinableGroups` + `useChatStore.searchJoinableGroups`
 - `chatService.joinGroup` + `useChatStore.joinGroup`
+- `friendService.unfriend` + `useFriendStore.unfriend`
+- `notificationService.fetchNotifications` + `useNotificationStore.fetchNotifications`
 
 ### 9.5 Form va validation
 
@@ -449,10 +468,15 @@ Mot so endpoint nghiep vu da co hien tai:
 
 - `PATCH /users/me`
 - `PATCH /users/security`
+- `GET /users/:userId/profile`
 - `PATCH /conversations/:conversationId/leave`
+- `PATCH /conversations/:conversationId/members/:memberId/kick`
 - `PATCH /conversations/:conversationId/description`
 - `GET /conversations/groups/search?name=...`
 - `PATCH /conversations/:conversationId/join`
+- `GET /notifications`
+- `PATCH /notifications/read-all`
+- `DELETE /friends/:friendId`
 
 Pattern controller:
 
@@ -484,6 +508,7 @@ Pattern hien tai:
 - `timestamps: true` o model can theo doi thoi gian
 - relation dung `ref`
 - aggregate business field nhu `unreadCounts`, `seenBy`, `lastMessage` dat ngay trong conversation
+- notification luu `recipient`, `type`, `title`, `message`, `actor`, `read`, `friendRequestId`, `conversationId`
 
 Quy tac mo rong:
 
@@ -501,7 +526,7 @@ Pattern hien tai:
 - user join room theo `user._id`
 - user cung join tat ca room conversation cua minh
 - client cung co the `join-conversation` va `leave-conversation`
-- event dang co: `online-users`, `new-message`, `read-message`, `new-group`, `conversation-updated`
+- event dang co: `online-users`, `new-message`, `read-message`, `new-group`, `conversation-updated`, `new-notification`, `conversation-removed`
 
 Quy tac mo rong:
 
@@ -518,6 +543,13 @@ Quy tac:
 - neu backend response thay doi, cap nhat type frontend cung luc
 - khong de component tu suy dien shape response ad-hoc
 - uu tien dinh nghia type tai `types/` thay vi lap lai inline nhieu noi
+
+Mot so contract moi can luu y:
+
+- user search API hien tra ve `{ users: User[] }`, khong con la `{ user }`
+- notification API tra ve `{ notifications, unreadCount }`
+- unfriend API tra ve `{ message, deletedConversationId }`
+- socket `conversation-removed` tra ve `{ conversationId }` de client xoa direct chat khoi state ngay lap tuc
 
 Hop dong quan trong da co:
 

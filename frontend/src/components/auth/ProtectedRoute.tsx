@@ -3,16 +3,19 @@ import { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router";
 
 const ProtectedRoute = () => {
-  const { accessToken, user, loading, refresh, fetchMe } = useAuthStore();
+  const { accessToken, loading, refresh, fetchMe } = useAuthStore();
   const [starting, setStarting] = useState(true);
 
   const init = async () => {
-    // có thể xảy ra khi refresh trang
-    if (!accessToken) {
+    const authState = useAuthStore.getState();
+
+    if (!authState.accessToken) {
       await refresh();
     }
 
-    if (accessToken && !user) {
+    const nextAuthState = useAuthStore.getState();
+
+    if (nextAuthState.accessToken && !nextAuthState.user) {
       await fetchMe();
     }
 

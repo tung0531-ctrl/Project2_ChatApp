@@ -1,4 +1,5 @@
 import type { Conversation } from "@/types/chat";
+import type { Friend } from "@/types/user";
 import ChatCard from "./ChatCard";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useChatStore } from "@/stores/useChatStore";
@@ -19,44 +20,60 @@ import { MoreHorizontal, Trash2, UserRoundSearch } from "lucide-react";
 import { useFriendStore } from "@/stores/useFriendStore";
 import UserProfileDialog from "../profile/UserProfileDialog";
 
-const DirectMessageCard = ({ convo }: { convo: Conversation }) => {
+interface DirectMessageCardProps {
+  convo?: Conversation;
+  friend: Friend;
+}
+
+const DirectMessageCard = ({ convo, friend }: DirectMessageCardProps) => {
   const { user } = useAuthStore();
-  const { activeConversationId, setActiveConversation, messages, fetchMessages } =
-    useChatStore();
+  const {
+    activeConversationId,
+    setActiveConversation,
+    messages,
+    fetchMessages,
+    createConversation,
+  } = useChatStore();
   const { onlineUsers } = useSocketStore();
   const { unfriend, loading } = useFriendStore();
   const [profileOpen, setProfileOpen] = useState(false);
 
   if (!user) return null;
 
-  const otherUser = convo.participants.find((p) => p._id !== user._id);
-  if (!otherUser) return null;
+  const otherUser =
+    convo?.participants.find((participant) => participant._id !== user._id) ?? friend;
 
-  const unreadCount = convo.unreadCounts[user._id];
-  const lastMessage = convo.lastMessage?.content ?? "";
+  const unreadCount = convo?.unreadCounts[user._id] ?? 0;
+  const lastMessage = convo?.lastMessage?.content ?? "";
+  const cardId = convo?._id ?? `friend-${friend._id}`;
 
   const handleSelectConversation = async (id: string) => {
+    if (!convo) {
+      await createConversation("direct", "", [friend._id]);
+      return;
+    }
+
     setActiveConversation(id);
     if (!messages[id]) {
-      await fetchMessages();
+      await fetchMessages(id);
     }
   };
 
   const handleUnfriend = async () => {
-    await unfriend(otherUser._id);
+    await unfriend(friend._id);
   };
 
   return (
     <>
       <ChatCard
-        convoId={convo._id}
+        convoId={cardId}
         name={otherUser.displayName ?? ""}
         timestamp={
-          convo.lastMessage?.createdAt
+          convo?.lastMessage?.createdAt
             ? new Date(convo.lastMessage.createdAt)
             : undefined
         }
-        isActive={activeConversationId === convo._id}
+        isActive={!!convo && activeConversationId === convo._id}
         onSelect={handleSelectConversation}
         unreadCount={unreadCount}
         leftSection={
@@ -81,7 +98,7 @@ const DirectMessageCard = ({ convo }: { convo: Conversation }) => {
               unreadCount > 0 ? "font-medium text-foreground" : "text-muted-foreground"
             )}
           >
-            {lastMessage}
+            {lastMessage || "Nhấn để bắt đầu trò chuyện"}
           </p>
         }
         rightSection={
@@ -122,7 +139,7 @@ const DirectMessageCard = ({ convo }: { convo: Conversation }) => {
       />
 
       <UserProfileDialog
-        userId={otherUser._id}
+        userId={friend._id}
         open={profileOpen}
         setOpen={setProfileOpen}
       />

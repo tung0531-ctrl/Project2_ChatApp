@@ -1,10 +1,12 @@
 import { chatService } from "@/services/chatService";
 import type { ChatState } from "@/types/store";
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 import { useAuthStore } from "./useAuthStore";
 import { useSocketStore } from "./useSocketStore";
 import { toast } from "sonner";
+
+const CHAT_STORAGE_KEY = "chat-storage";
 
 export const useChatStore = create<ChatState>()(
   persist(
@@ -332,7 +334,8 @@ export const useChatStore = create<ChatState>()(
       },
     }),
     {
-      name: "chat-storage",
+      name: CHAT_STORAGE_KEY,
+      storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({ conversations: state.conversations }),
     }
   )
