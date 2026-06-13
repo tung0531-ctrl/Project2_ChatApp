@@ -10,7 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import type { User } from "@/types/user";
+import type { UpdateProfilePayload, User } from "@/types/user";
+import { useEffect, useState } from "react";
+import { useUserStore } from "@/stores/useUserStore";
 
 type EditableField = {
   key: keyof Pick<User, "displayName" | "username" | "email" | "phone">;
@@ -30,7 +32,43 @@ type Props = {
 };
 
 const PersonalInfoForm = ({ userInfo }: Props) => {
+  const { updateProfile, loading } = useUserStore();
+
+  const [formData, setFormData] = useState<UpdateProfilePayload>({
+    displayName: "",
+    username: "",
+    email: "",
+    phone: "",
+    bio: "",
+  });
+
+  useEffect(() => {
+    if (!userInfo) {
+      return;
+    }
+
+    setFormData({
+      displayName: userInfo.displayName ?? "",
+      username: userInfo.username ?? "",
+      email: userInfo.email ?? "",
+      phone: userInfo.phone ?? "",
+      bio: userInfo.bio ?? "",
+    });
+  }, [userInfo]);
+
   if (!userInfo) return null;
+
+  const handleChange = (key: keyof UpdateProfilePayload, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    await updateProfile(formData);
+  };
 
   return (
     <Card className="glass-strong border-border/30">
@@ -45,6 +83,10 @@ const PersonalInfoForm = ({ userInfo }: Props) => {
       </CardHeader>
 
       <CardContent className="space-y-4">
+        <form
+          className="space-y-4"
+          onSubmit={handleSubmit}
+        >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {PERSONAL_FIELDS.map(({ key, label, type }) => (
             <div
@@ -55,8 +97,8 @@ const PersonalInfoForm = ({ userInfo }: Props) => {
               <Input
                 id={key}
                 type={type ?? "text"}
-                value={userInfo[key] ?? ""}
-                onChange={() => {}}
+                value={formData[key] ?? ""}
+                onChange={(e) => handleChange(key, e.target.value)}
                 className="glass-light border-border/30"
               />
             </div>
@@ -68,15 +110,20 @@ const PersonalInfoForm = ({ userInfo }: Props) => {
           <Textarea
             id="bio"
             rows={3}
-            value={userInfo.bio ?? ""}
-            onChange={() => {}}
+            value={formData.bio ?? ""}
+            onChange={(e) => handleChange("bio", e.target.value)}
             className="glass-light border-border/30 resize-none"
           />
         </div>
 
-        <Button className="w-full md:w-auto bg-gradient-primary hover:opacity-90 transition-opacity">
-          Lưu thay đổi
-        </Button>
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full md:w-auto bg-gradient-primary hover:opacity-90 transition-opacity"
+          >
+            {loading ? "Đang lưu..." : "Lưu thay đổi"}
+          </Button>
+        </form>
       </CardContent>
     </Card>
   );

@@ -10,6 +10,14 @@ export interface User {
   updatedAt?: string;
 }
 
+export interface UpdateProfilePayload {
+  displayName: string;
+  username: string;
+  email: string;
+  phone?: string;
+  bio?: string;
+}
+
 export interface Friend {
   _id: string;
   username: string;

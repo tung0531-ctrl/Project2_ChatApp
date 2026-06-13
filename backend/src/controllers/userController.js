@@ -33,6 +33,82 @@ export const searchUserByUsername = async (req, res) => {
   }
 };
 
+export const updateMyProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { displayName, username, email, phone, bio } = req.body;
+
+    const normalizedDisplayName = displayName?.trim();
+    const normalizedUsername = username?.trim().toLowerCase();
+    const normalizedEmail = email?.trim().toLowerCase();
+    const normalizedPhone = phone?.trim();
+    const normalizedBio = bio?.trim();
+
+    if (!normalizedDisplayName || !normalizedUsername || !normalizedEmail) {
+      return res.status(400).json({
+        message: "Tên hiển thị, tên người dùng và email là bắt buộc.",
+      });
+    }
+
+    const [existingUsername, existingEmail, existingPhone] = await Promise.all([
+      User.findOne({ username: normalizedUsername, _id: { $ne: userId } }).select("_id"),
+      User.findOne({ email: normalizedEmail, _id: { $ne: userId } }).select("_id"),
+      normalizedPhone
+        ? User.findOne({ phone: normalizedPhone, _id: { $ne: userId } }).select("_id")
+        : null,
+    ]);
+
+    if (existingUsername) {
+      return res.status(409).json({ message: "Tên người dùng đã được sử dụng." });
+    }
+
+    if (existingEmail) {
+      return res.status(409).json({ message: "Email đã được sử dụng." });
+    }
+
+    if (existingPhone) {
+      return res.status(409).json({ message: "Số điện thoại đã được sử dụng." });
+    }
+
+    const updateData = {
+      displayName: normalizedDisplayName,
+      username: normalizedUsername,
+      email: normalizedEmail,
+    };
+
+    const unsetData = {};
+
+    if (normalizedPhone) {
+      updateData.phone = normalizedPhone;
+    } else {
+      unsetData.phone = "";
+    }
+
+    if (normalizedBio) {
+      updateData.bio = normalizedBio;
+    } else {
+      unsetData.bio = "";
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        $set: updateData,
+        ...(Object.keys(unsetData).length > 0 ? { $unset: unsetData } : {}),
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).select("-hashedPassword");
+
+    return res.status(200).json({ user: updatedUser });
+  } catch (error) {
+    console.error("Lỗi khi cập nhật thông tin cá nhân", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
 export const uploadAvatar = async (req, res) => {
   try {
     const file = req.file;

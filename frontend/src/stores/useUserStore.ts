@@ -5,9 +5,11 @@ import { useAuthStore } from "./useAuthStore";
 import { toast } from "sonner";
 import { useChatStore } from "./useChatStore";
 
-export const useUserStore = create<UserState>((set, get) => ({
+export const useUserStore = create<UserState>((set) => ({
+  loading: false,
   updateAvatarUrl: async (formData) => {
     try {
+      set({ loading: true });
       const { user, setUser } = useAuthStore.getState();
       const data = await userService.uploadAvatar(formData);
 
@@ -22,6 +24,24 @@ export const useUserStore = create<UserState>((set, get) => ({
     } catch (error) {
       console.error("Lỗi khi updateAvatarUrl", error);
       toast.error("Upload avatar không thành công!");
+    } finally {
+      set({ loading: false });
+    }
+  },
+  updateProfile: async (payload) => {
+    try {
+      set({ loading: true });
+      const { setUser } = useAuthStore.getState();
+      const updatedUser = await userService.updateProfile(payload);
+
+      setUser(updatedUser);
+      await useChatStore.getState().fetchConversations();
+      toast.success("Cập nhật thông tin thành công!");
+    } catch (error) {
+      console.error("Lỗi khi updateProfile", error);
+      toast.error("Cập nhật thông tin không thành công!");
+    } finally {
+      set({ loading: false });
     }
   },
 }));
