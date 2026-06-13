@@ -12,6 +12,12 @@ const formatParticipants = (participants = []) =>
 
 const formatConversation = (conversation) => ({
   ...conversation.toObject(),
+  group: conversation.group
+    ? {
+        ...conversation.group.toObject?.(),
+        createdBy: conversation.group.createdBy?.toString?.() ?? conversation.group.createdBy,
+      }
+    : conversation.group,
   unreadCounts: conversation.unreadCounts || {},
   participants: formatParticipants(conversation.participants || []),
 });
@@ -245,6 +251,61 @@ export const leaveGroup = async (req, res) => {
     return res.status(200).json({ conversation: formatted });
   } catch (error) {
     console.error("Lỗi khi rời nhóm", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
+export const updateGroupDescription = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user._id.toString();
+    const description = req.body?.description?.trim() ?? "";
+
+    const conversation = await Conversation.findById(conversationId)
+      .populate({
+        path: "participants.userId",
+        select: "displayName avatarUrl",
+      })
+      .populate({
+        path: "lastMessage.senderId",
+        select: "displayName avatarUrl",
+      })
+      .populate({
+        path: "seenBy",
+        select: "displayName avatarUrl",
+      });
+
+    if (!conversation) {
+      return res.status(404).json({ message: "Conversation không tồn tại" });
+    }
+
+    if (conversation.type !== "group") {
+      return res.status(400).json({ message: "Chỉ nhóm chat mới có mô tả" });
+    }
+
+    const isParticipant = conversation.participants.some(
+      (participant) =>
+        participant.userId?._id?.toString() === userId ||
+        participant.userId?.toString?.() === userId,
+    );
+
+    if (!isParticipant) {
+      return res.status(403).json({ message: "Bạn không ở trong nhóm này" });
+    }
+
+    if (conversation.group?.createdBy?.toString() !== userId) {
+      return res.status(403).json({ message: "Chỉ trưởng nhóm mới được sửa mô tả" });
+    }
+
+    conversation.group.description = description;
+    await conversation.save();
+
+    const formatted = formatConversation(conversation);
+    io.to(conversationId).emit("conversation-updated", formatted);
+
+    return res.status(200).json({ conversation: formatted });
+  } catch (error) {
+    console.error("Lỗi khi cập nhật mô tả nhóm", error);
     return res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };

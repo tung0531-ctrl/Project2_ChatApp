@@ -69,4 +69,14 @@ export const chatService = {
     const res = await api.patch(`/conversations/${conversationId}/leave`);
     return res.data.conversation;
   },
+
+  async updateGroupDescription(
+    conversationId: string,
+    description: string
+  ): Promise<Conversation> {
+    const res = await api.patch(`/conversations/${conversationId}/description`, {
+      description,
+    });
+    return res.data.conversation;
+  },
 };

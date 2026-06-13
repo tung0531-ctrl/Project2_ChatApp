@@ -257,6 +257,25 @@ export const useChatStore = create<ChatState>()(
           set({ loading: false });
         }
       },
+      updateGroupDescription: async (conversationId, description) => {
+        try {
+          set({ loading: true });
+          const updatedConversation = await chatService.updateGroupDescription(
+            conversationId,
+            description
+          );
+
+          get().updateConversation(updatedConversation);
+          toast.success("Đã cập nhật mô tả nhóm.");
+          return true;
+        } catch (error) {
+          console.error("Lỗi khi cập nhật mô tả nhóm", error);
+          toast.error("Không thể cập nhật mô tả nhóm.");
+          return false;
+        } finally {
+          set({ loading: false });
+        }
+      },
     }),
     {
       name: "chat-storage",

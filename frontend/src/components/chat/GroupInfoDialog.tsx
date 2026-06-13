@@ -1,4 +1,7 @@
+import { useEffect, useState } from "react";
 import type { Conversation } from "@/types/chat";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useChatStore } from "@/stores/useChatStore";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +12,8 @@ import {
 import { Card } from "../ui/card";
 import UserAvatar from "./UserAvatar";
 import { Separator } from "../ui/separator";
+import { Textarea } from "../ui/textarea";
+import { Button } from "../ui/button";
 
 interface GroupInfoDialogProps {
   convo: Conversation;
@@ -21,11 +26,34 @@ const GroupInfoDialog = ({
   open,
   onOpenChange,
 }: GroupInfoDialogProps) => {
+  const { user } = useAuthStore();
+  const { loading, updateGroupDescription } = useChatStore();
+  const [description, setDescription] = useState("");
+  const ownerId = convo.group?.createdBy?.toString?.() ?? convo.group?.createdBy;
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    setDescription(convo.group?.description ?? "");
+  }, [convo.group?.description, open]);
+
   const owner =
-    convo.participants.find((participant) => participant._id === convo.group?.createdBy)
+    convo.participants.find((participant) => participant._id === ownerId)
       ?.displayName ?? "Không xác định";
 
   const groupDescription = convo.group?.description?.trim() || "Chưa có mô tả nhóm.";
+  const isOwner = user?._id === ownerId;
+  const createdAt = new Date(convo.createdAt).toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+
+  const handleSaveDescription = async () => {
+    await updateGroupDescription(convo._id, description);
+  };
 
   return (
     <Dialog
@@ -69,11 +97,45 @@ const GroupInfoDialog = ({
 
             <Card className="border-border/30 bg-background/60 p-4">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                Mô tả nhóm
+                Ngày tạo nhóm
               </p>
-              <p className="mt-1 text-sm leading-relaxed text-foreground">
-                {groupDescription}
-              </p>
+              <p className="mt-1 text-sm font-semibold text-foreground">{createdAt}</p>
+            </Card>
+
+            <Card className="border-border/30 bg-background/60 p-4 sm:col-span-2">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Mô tả nhóm
+                </p>
+                {!isOwner && (
+                  <p className="mt-1 text-sm leading-relaxed text-foreground">
+                    {groupDescription}
+                  </p>
+                )}
+              </div>
+
+              {isOwner ? (
+                <div className="mt-3 space-y-3">
+                  <Textarea
+                    rows={4}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="resize-none border-border/30 bg-background"
+                  />
+
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={loading}
+                      onClick={handleSaveDescription}
+                      className="bg-gradient-primary hover:opacity-90 transition-opacity"
+                    >
+                      {loading ? "Đang lưu..." : "Lưu thay đổi"}
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
             </Card>
           </div>
 
@@ -102,7 +164,7 @@ const GroupInfoDialog = ({
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{participant.displayName}</p>
                   <p className="text-xs text-muted-foreground">
-                    {participant._id === convo.group?.createdBy
+                    {participant._id === ownerId
                       ? "Trưởng nhóm"
                       : "Thành viên"}
                   </p>
