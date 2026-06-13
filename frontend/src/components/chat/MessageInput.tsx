@@ -2,7 +2,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import type { Conversation } from "@/types/chat";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
-import { ImagePlus, Send, X } from "lucide-react";
+import { Paperclip, Send, X } from "lucide-react";
 import { Input } from "../ui/input";
 import EmojiPicker from "./EmojiPicker";
 import { useChatStore } from "@/stores/useChatStore";
@@ -48,12 +48,6 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
       return;
     }
 
-    if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
-      toast.error("Chỉ hỗ trợ ảnh, GIF hoặc video.");
-      event.target.value = "";
-      return;
-    }
-
     setSelectedMedia(file);
   };
 
@@ -70,6 +64,8 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
         | {
             mediaUrl: string;
             mediaType: string;
+            fileName: string;
+            fileSize: number;
           }
         | undefined;
 
@@ -84,14 +80,18 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
           otherUser._id,
           currValue,
           uploadedMedia?.mediaUrl,
-          uploadedMedia?.mediaType
+          uploadedMedia?.mediaType,
+          uploadedMedia?.fileName,
+          uploadedMedia?.fileSize
         );
       } else {
         await sendGroupMessage(
           selectedConvo._id,
           currValue,
           uploadedMedia?.mediaUrl,
-          uploadedMedia?.mediaType
+          uploadedMedia?.mediaType,
+          uploadedMedia?.fileName,
+          uploadedMedia?.fileSize
         );
       }
 
@@ -123,12 +123,22 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
                 controls
                 className="max-h-48 w-full rounded-md border border-border/50 bg-black object-contain"
               />
-            ) : (
+            ) : selectedMedia.type.startsWith("image/") ? (
               <img
                 src={previewUrl}
                 alt={selectedMedia.name}
                 className="max-h-48 w-full rounded-md border border-border/50 object-contain"
               />
+            ) : (
+              <div className="flex items-center gap-3 rounded-md border border-border/50 bg-background px-3 py-4">
+                <Paperclip className="size-5 text-muted-foreground" />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{selectedMedia.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedMedia.type || "Tệp đính kèm"}
+                  </p>
+                </div>
+              </div>
             )}
             <p className="truncate text-sm text-muted-foreground">{selectedMedia.name}</p>
           </div>
@@ -148,7 +158,6 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*,video/*"
           className="hidden"
           onChange={handleSelectMedia}
         />
@@ -160,7 +169,7 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
           className="hover:bg-primary/10 transition-smooth"
           onClick={() => fileInputRef.current?.click()}
         >
-          <ImagePlus className="size-4" />
+          <Paperclip className="size-4" />
         </Button>
 
         <div className="flex-1 relative">

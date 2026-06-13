@@ -13,6 +13,8 @@ export const updateConversationAfterCreateMessage = (
       createdAt: message.createdAt,
       imgUrl: message.imgUrl ?? null,
       mediaType: message.mediaType ?? null,
+      fileName: message.fileName ?? null,
+      fileSize: message.fileSize ?? null,
     },
   });
 

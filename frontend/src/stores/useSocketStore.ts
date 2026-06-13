@@ -43,6 +43,8 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         createdAt: conversation.lastMessage.createdAt,
         imgUrl: conversation.lastMessage.imgUrl,
         mediaType: conversation.lastMessage.mediaType,
+        fileName: conversation.lastMessage.fileName,
+        fileSize: conversation.lastMessage.fileSize,
         sender: {
           _id: conversation.lastMessage.senderId,
           displayName: "",

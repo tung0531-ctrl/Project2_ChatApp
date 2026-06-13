@@ -25,6 +25,8 @@ export interface LastMessage {
   createdAt: string;
   imgUrl?: string | null;
   mediaType?: string | null;
+  fileName?: string | null;
+  fileSize?: number | null;
   sender: {
     _id: string;
     displayName: string;
@@ -61,6 +63,8 @@ export interface Message {
   content: string | null;
   imgUrl?: string | null;
   mediaType?: string | null;
+  fileName?: string | null;
+  fileSize?: number | null;
   updatedAt?: string | null;
   createdAt: string;
   isOwn?: boolean;

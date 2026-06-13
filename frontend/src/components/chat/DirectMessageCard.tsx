@@ -37,8 +37,30 @@ const getLastMessagePreview = (convo?: Conversation) => {
     return "Đã gửi video";
   }
 
+  if (convo.lastMessage.mediaType === "application/pdf") {
+    return "Đã gửi PDF";
+  }
+
+  if (
+    convo.lastMessage.mediaType === "application/msword" ||
+    convo.lastMessage.mediaType ===
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  ) {
+    return "Đã gửi file Word";
+  }
+
+  if (
+    convo.lastMessage.mediaType === "application/vnd.ms-excel" ||
+    convo.lastMessage.mediaType ===
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  ) {
+    return "Đã gửi file Excel";
+  }
+
   if (convo.lastMessage.imgUrl) {
-    return "Đã gửi hình ảnh";
+    return convo.lastMessage.mediaType?.startsWith("image/")
+      ? "Đã gửi hình ảnh"
+      : "Đã gửi tệp đính kèm";
   }
 
   return "";

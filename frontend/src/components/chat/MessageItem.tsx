@@ -4,6 +4,40 @@ import UserAvatar from "./UserAvatar";
 import { Card } from "../ui/card";
 import { Badge } from "../ui/badge";
 import SeenByAvatars from "./SeenByAvatars";
+import { FileText, FileSpreadsheet, Paperclip } from "lucide-react";
+
+const formatFileSize = (size?: number | null) => {
+  if (!size) {
+    return null;
+  }
+
+  const units = ["B", "KB", "MB", "GB"];
+  let value = size;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+
+  return `${value.toFixed(value >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+};
+
+const getAttachmentIcon = (mediaType?: string | null) => {
+  if (mediaType === "application/pdf") {
+    return FileText;
+  }
+
+  if (
+    mediaType === "application/vnd.ms-excel" ||
+    mediaType ===
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  ) {
+    return FileSpreadsheet;
+  }
+
+  return Paperclip;
+};
 
 const renderMessageMedia = (message: Message) => {
   if (!message.imgUrl) {
@@ -17,6 +51,29 @@ const renderMessageMedia = (message: Message) => {
         controls
         className="max-h-80 w-full rounded-md bg-black object-contain"
       />
+    );
+  }
+
+  if (!message.mediaType?.startsWith("image/")) {
+    const AttachmentIcon = getAttachmentIcon(message.mediaType);
+
+    return (
+      <a
+        href={message.imgUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="flex items-center gap-3 rounded-md border border-border/50 bg-background/70 px-3 py-3 transition-colors hover:bg-background"
+      >
+        <AttachmentIcon className="size-5 shrink-0 text-muted-foreground" />
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium">{message.fileName || "Tệp đính kèm"}</p>
+          <p className="text-xs text-muted-foreground">
+            {[message.mediaType || "Tệp", formatFileSize(message.fileSize)]
+              .filter(Boolean)
+              .join(" • ")}
+          </p>
+        </div>
+      </a>
     );
   }
 

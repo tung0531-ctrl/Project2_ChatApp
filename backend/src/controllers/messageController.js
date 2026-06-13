@@ -7,16 +7,15 @@ import {
 import { io } from "../socket/index.js";
 import { uploadMediaFromBuffer } from "../middlewares/uploadMiddleware.js";
 
-const isSupportedMediaType = (mimeType = "") =>
-  mimeType.startsWith("image/") || mimeType.startsWith("video/");
-
-const normalizeMessagePayload = ({ content, imgUrl, mediaType }) => {
+const normalizeMessagePayload = ({ content, imgUrl, mediaType, fileName, fileSize }) => {
   const normalizedContent = content?.trim() ?? "";
 
   return {
     content: normalizedContent || null,
     imgUrl: imgUrl ?? null,
     mediaType: mediaType ?? null,
+    fileName: fileName ?? null,
+    fileSize: fileSize ?? null,
     hasContent: Boolean(normalizedContent),
     hasMedia: Boolean(imgUrl),
   };
@@ -30,10 +29,6 @@ export const uploadChatMedia = async (req, res) => {
       return res.status(400).json({ message: "Bạn chưa chọn file." });
     }
 
-    if (!isSupportedMediaType(file.mimetype)) {
-      return res.status(400).json({ message: "Chỉ hỗ trợ ảnh, GIF hoặc video." });
-    }
-
     const uploadedMedia = await uploadMediaFromBuffer(file.buffer, {
       public_id: `${Date.now()}-${file.originalname.split(".")[0]}`,
     });
@@ -41,6 +36,8 @@ export const uploadChatMedia = async (req, res) => {
     return res.status(200).json({
       mediaUrl: uploadedMedia.secure_url,
       mediaType: file.mimetype,
+      fileName: file.originalname,
+      fileSize: file.size,
     });
   } catch (error) {
     console.error("Lỗi khi upload media tin nhắn", error);
@@ -50,9 +47,15 @@ export const uploadChatMedia = async (req, res) => {
 
 export const sendDirectMessage = async (req, res) => {
   try {
-    const { recipientId, content, imgUrl, mediaType, conversationId } = req.body;
+    const { recipientId, content, imgUrl, mediaType, fileName, fileSize, conversationId } = req.body;
     const senderId = req.user._id;
-    const normalizedMessage = normalizeMessagePayload({ content, imgUrl, mediaType });
+    const normalizedMessage = normalizeMessagePayload({
+      content,
+      imgUrl,
+      mediaType,
+      fileName,
+      fileSize,
+    });
 
     let conversation;
 
@@ -82,6 +85,8 @@ export const sendDirectMessage = async (req, res) => {
       content: normalizedMessage.content,
       imgUrl: normalizedMessage.imgUrl,
       mediaType: normalizedMessage.mediaType,
+      fileName: normalizedMessage.fileName,
+      fileSize: normalizedMessage.fileSize,
     });
 
     updateConversationAfterCreateMessage(conversation, message, senderId);
@@ -99,10 +104,16 @@ export const sendDirectMessage = async (req, res) => {
 
 export const sendGroupMessage = async (req, res) => {
   try {
-    const { conversationId, content, imgUrl, mediaType } = req.body;
+    const { conversationId, content, imgUrl, mediaType, fileName, fileSize } = req.body;
     const senderId = req.user._id;
     const conversation = req.conversation;
-    const normalizedMessage = normalizeMessagePayload({ content, imgUrl, mediaType });
+    const normalizedMessage = normalizeMessagePayload({
+      content,
+      imgUrl,
+      mediaType,
+      fileName,
+      fileSize,
+    });
 
     if (!normalizedMessage.hasContent && !normalizedMessage.hasMedia) {
       return res.status(400).json({ message: "Thiếu nội dung hoặc file media" });
@@ -114,6 +125,8 @@ export const sendGroupMessage = async (req, res) => {
       content: normalizedMessage.content,
       imgUrl: normalizedMessage.imgUrl,
       mediaType: normalizedMessage.mediaType,
+      fileName: normalizedMessage.fileName,
+      fileSize: normalizedMessage.fileSize,
     });
 
     updateConversationAfterCreateMessage(conversation, message, senderId);

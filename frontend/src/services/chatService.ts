@@ -14,6 +14,8 @@ interface FetchMessageProps {
 interface UploadMessageMediaResponse {
   mediaUrl: string;
   mediaType: string;
+  fileName: string;
+  fileSize: number;
 }
 
 const pageLimit = 50;
@@ -37,6 +39,8 @@ export const chatService = {
     content: string = "",
     imgUrl?: string,
     mediaType?: string,
+    fileName?: string,
+    fileSize?: number,
     conversationId?: string
   ) {
     const res = await api.post("/messages/direct", {
@@ -44,6 +48,8 @@ export const chatService = {
       content,
       imgUrl,
       mediaType,
+      fileName,
+      fileSize,
       conversationId,
     });
 
@@ -54,13 +60,17 @@ export const chatService = {
     conversationId: string,
     content: string = "",
     imgUrl?: string,
-    mediaType?: string
+    mediaType?: string,
+    fileName?: string,
+    fileSize?: number
   ) {
     const res = await api.post("/messages/group", {
       conversationId,
       content,
       imgUrl,
       mediaType,
+      fileName,
+      fileSize,
     });
     return res.data.message;
   },

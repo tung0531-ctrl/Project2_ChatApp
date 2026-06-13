@@ -28,6 +28,7 @@ Tinh nang chinh da co trong code:
 - gui, chap nhan, tu choi loi moi ket ban
 - lay danh sach ban be
 - huy ket ban, dong thoi xoa direct conversation va lich su chat lien quan
+- xoa mem thong bao da nhan va loi moi da gui ngay tren server, khong hard-delete du lieu
 - xem profile cua nguoi dung khac tu danh sach ban be/direct chat
 - tao direct conversation va group conversation
 - tim va tham gia vao group chat co san bang ten nhom
@@ -35,14 +36,15 @@ Tinh nang chinh da co trong code:
 - xem thong tin group chat
 - sua mo ta group chat cho truong nhom
 - truong nhom co the kick thanh vien khoi group
-- gui tin nhan direct va group
+- gui tin nhan direct va group voi text, anh, GIF, video va tep dinh kem thong dung
 - lay danh sach conversation va lich su tin nhan
 - danh dau da xem tin nhan
 - hien thi avatar nhung nguoi da xem tin nhan cuoi
 - he thong thong bao cho loi moi ket ban, tham gia nhom, bi kick khoi nhom
 - badge thong bao chua doc o header sidebar
 - online presence bang Socket.IO
-- upload avatar len Cloudinary
+- upload avatar va tep chat len Cloudinary
+- sidebar chat cho phep resize khung nhin giua danh sach nhom chat va danh sach ban be
 - giao dien sang/toi
 
 ## 3. Cong nghe va thu vien duoc su dung
@@ -147,6 +149,13 @@ Frontend hien tai da mo rong them mot notification slice rieng:
 - `useNotificationStore`: giu danh sach thong bao + unread count
 - `FriendRequestDialog`: hien gio dong vai tro dialog thong bao tong hop, khong chi rieng friend request
 
+Frontend hien tai cung da mo rong them mot attachment flow trong chat:
+
+- `MessageInput`: chon file tu may nguoi dung, preview nhanh truoc khi gui
+- `chatService.uploadMessageMedia`: upload media/attachment len backend
+- `MessageItem`: render inline cho anh/video, render attachment card cho file khac
+- `DirectMessageCard`: co fallback preview cho tin nhan cuoi neu chi co media/file
+
 ### 5.2 Backend flow
 
 Luot chay chinh:
@@ -167,6 +176,12 @@ Kieu tach lop dang duoc dung:
 - `socket/`: quan ly server socket va room
 
 Backend hien tai da co them notification domain rieng de phuc vu thong bao real-time va luu lich su thong bao.
+
+Backend hien tai cung da ho tro attachment messaging theo flow rieng:
+
+- `POST /messages/upload`: upload file len Cloudinary
+- `sendDirectMessage` va `sendGroupMessage`: chap nhan text-only, media-only, hoac text + media
+- `Message` va `Conversation.lastMessage`: luu them metadata file/media de phuc vu preview va render
 
 ## 6. Quy uoc to chuc module
 
@@ -366,10 +381,11 @@ Vi du dang dung:
 - `useAuthStore` dieu phoi login, logout, refresh, fetchMe
 - `useChatStore` quan ly conversation, message, markAsSeen
 - `useChatStore` cung quan ly them create group, join group, leave group, kick member, update group description
+- `useChatStore` cung quan ly upload attachment metadata va sap xep lai conversations theo hoat dong moi nhat
 - `useSocketStore` quan ly ket noi socket va event listeners
 - `useUserStore` quan ly upload avatar, update profile va update account security
 - `useFriendStore` quan ly search user, gui loi moi, lay requests, huy ket ban
-- `useNotificationStore` quan ly notifications va unread badge
+- `useNotificationStore` quan ly notifications, unread badge va xoa mem thong bao da nhan
 
 ### 9.3 Service layer
 
@@ -390,6 +406,7 @@ Quy tac:
 - neu bi `403`, thu refresh token toi da nhieu lan
 - refresh thanh cong thi cap nhat token va retry request
 - refresh that bai thi clear auth state
+- auth state va chat state duoc persist theo `sessionStorage` de giam xung dot giua nhieu tab/tai khoan
 
 Quy tac mo rong:
 
@@ -407,8 +424,11 @@ Mot so flow service/store quan trong da co hien tai:
 - `chatService.updateGroupDescription` + `useChatStore.updateGroupDescription`
 - `chatService.searchJoinableGroups` + `useChatStore.searchJoinableGroups`
 - `chatService.joinGroup` + `useChatStore.joinGroup`
+- `chatService.uploadMessageMedia` + `useChatStore.uploadMessageMedia`
 - `friendService.unfriend` + `useFriendStore.unfriend`
+- `friendService.hideSentRequest` + `useFriendStore.hideSentRequest`
 - `notificationService.fetchNotifications` + `useNotificationStore.fetchNotifications`
+- `notificationService.hideNotification` + `useNotificationStore.hideNotification`
 
 ### 9.5 Form va validation
 
@@ -476,6 +496,9 @@ Mot so endpoint nghiep vu da co hien tai:
 - `PATCH /conversations/:conversationId/join`
 - `GET /notifications`
 - `PATCH /notifications/read-all`
+- `PATCH /notifications/:notificationId/hide`
+- `PATCH /friends/requests/:requestId/hide`
+- `POST /messages/upload`
 - `DELETE /friends/:friendId`
 
 Pattern controller:
@@ -508,7 +531,9 @@ Pattern hien tai:
 - `timestamps: true` o model can theo doi thoi gian
 - relation dung `ref`
 - aggregate business field nhu `unreadCounts`, `seenBy`, `lastMessage` dat ngay trong conversation
-- notification luu `recipient`, `type`, `title`, `message`, `actor`, `read`, `friendRequestId`, `conversationId`
+- notification luu `recipient`, `type`, `title`, `message`, `actor`, `read`, `friendRequestId`, `conversationId`, `hiddenForRecipient`
+- friend request co them `hiddenBySender` de phuc vu xoa mem tab da gui
+- message co the luu `content`, `imgUrl`, `mediaType`, `fileName`, `fileSize`
 
 Quy tac mo rong:
 

@@ -61,6 +61,14 @@ const lastMessageSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    fileName: {
+      type: String,
+      default: null,
+    },
+    fileSize: {
+      type: Number,
+      default: null,
+    },
   },
   {
     _id: false,
