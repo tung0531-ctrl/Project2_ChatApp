@@ -89,7 +89,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarHeader>
 
         {/* Content */}
-        <SidebarContent className="beautiful-scrollbar">
+        <SidebarContent className="overflow-hidden">
           {/* New Chat */}
           <SidebarGroup>
             <SidebarGroupContent>
@@ -98,7 +98,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroup>
 
           {/* Group Chat */}
-          <SidebarGroup>
+          <SidebarGroup className="min-h-0 flex-1">
             <div className="flex items-center justify-between">
               <SidebarGroupLabel className="uppercase">nhóm chat</SidebarGroupLabel>
               <div className="flex items-center gap-2">
@@ -107,13 +107,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </div>
             </div>
 
-            <SidebarGroupContent>
+            <SidebarGroupContent className="min-h-0 flex-1">
               {convoLoading ? <ConversationSkeleton /> : <GroupChatList />}
             </SidebarGroupContent>
           </SidebarGroup>
 
           {/* Dirrect Message */}
-          <SidebarGroup>
+          <SidebarGroup className="min-h-0 flex-1">
             <div className="flex items-center justify-between">
               <SidebarGroupLabel className="uppercase">bạn bè</SidebarGroupLabel>
               <div className="flex items-center gap-2">
@@ -129,7 +129,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </div>
             </div>
 
-            <SidebarGroupContent>
+            <SidebarGroupContent className="min-h-0 flex-1">
               {friendSearchOpen ? (
                 <div className="px-2 pb-2">
                   <Input

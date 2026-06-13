@@ -8,7 +8,7 @@ const GroupChatList = () => {
 
   const groupchats = conversations.filter((convo) => convo.type === "group");
   return (
-    <div className="flex-1 overflow-y-auto p-2 space-y-2">
+    <div className="beautiful-scrollbar h-full min-h-0 overflow-y-auto p-2 space-y-2">
       {groupchats.map((convo) => (
         <GroupChatCard
           convo={convo}
