@@ -3,6 +3,9 @@ import User from "../models/User.js";
 import FriendRequest from "../models/FriendRequest.js";
 import Notification from "../models/Notification.js";
 import { createNotification } from "../utils/notificationHelper.js";
+import Conversation from "../models/Conversation.js";
+import Message from "../models/Message.js";
+import { io } from "../socket/index.js";
 
 export const sendFriendRequest = async (req, res) => {
   try {
@@ -193,6 +196,55 @@ export const getFriendRequests = async (req, res) => {
     res.status(200).json({ sent, received });
   } catch (error) {
     console.error("Lỗi khi lấy danh sách yêu cầu kết bạn", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
+export const unfriend = async (req, res) => {
+  try {
+    const userId = req.user._id.toString();
+    const friendId = req.params.friendId;
+
+    if (!friendId || friendId === userId) {
+      return res.status(400).json({ message: "Không thể hủy kết bạn với người dùng này" });
+    }
+
+    let userA = userId;
+    let userB = friendId;
+
+    if (userA > userB) {
+      [userA, userB] = [userB, userA];
+    }
+
+    const friendship = await Friend.findOneAndDelete({ userA, userB });
+
+    if (!friendship) {
+      return res.status(404).json({ message: "Hai người hiện không còn là bạn bè" });
+    }
+
+    const directConversation = await Conversation.findOne({
+      type: "direct",
+      "participants.userId": { $all: [userId, friendId] },
+    }).select("_id");
+
+    if (directConversation) {
+      await Message.deleteMany({ conversationId: directConversation._id });
+      await Conversation.deleteOne({ _id: directConversation._id });
+
+      io.to(userId).emit("conversation-removed", {
+        conversationId: directConversation._id.toString(),
+      });
+      io.to(friendId).emit("conversation-removed", {
+        conversationId: directConversation._id.toString(),
+      });
+    }
+
+    return res.status(200).json({
+      message: "Đã hủy kết bạn thành công",
+      deletedConversationId: directConversation?._id?.toString?.() ?? null,
+    });
+  } catch (error) {
+    console.error("Lỗi khi hủy kết bạn", error);
     return res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };

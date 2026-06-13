@@ -1,6 +1,7 @@
 import express from "express";
 import {
   authMe,
+  getUserProfile,
   searchUserByUsername,
   updateAccountSecurity,
   updateMyProfile,
@@ -14,6 +15,7 @@ router.get("/me", authMe);
 router.patch("/me", updateMyProfile);
 router.patch("/security", updateAccountSecurity);
 router.get("/search", searchUserByUsername);
+router.get("/:userId/profile", getUserProfile);
 router.post("/uploadAvatar", upload.single("file"), uploadAvatar);
 
 export default router;

@@ -99,12 +99,13 @@ export interface FriendState {
   loading: boolean;
   receivedList: FriendRequest[];
   sentList: FriendRequest[];
-  searchByUsername: (username: string) => Promise<User | null>;
+  searchByUsername: (username: string) => Promise<User[]>;
   addFriend: (to: string, message?: string) => Promise<string>;
   getAllFriendRequests: () => Promise<void>;
   acceptRequest: (requestId: string) => Promise<void>;
   declineRequest: (requestId: string) => Promise<void>;
   getFriends: () => Promise<void>;
+  unfriend: (friendId: string) => Promise<boolean>;
 }
 
 export interface NotificationState {
@@ -123,4 +124,5 @@ export interface UserState {
   updateAvatarUrl: (formData: FormData) => Promise<void>;
   updateProfile: (payload: UpdateProfilePayload) => Promise<void>;
   updateAccountSecurity: (payload: UpdateAccountSecurityPayload) => Promise<boolean>;
+  fetchUserProfile: (userId: string) => Promise<User | null>;
 }

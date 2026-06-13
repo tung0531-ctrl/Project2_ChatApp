@@ -82,6 +82,11 @@ export const useSocketStore = create<SocketState>((set, get) => ({
       useNotificationStore.getState().addNotification(notification);
     });
 
+    socket.on("conversation-removed", ({ conversationId }) => {
+      useChatStore.getState().removeConversation(conversationId);
+      socket.emit("leave-conversation", conversationId);
+    });
+
     socket.on("conversation-updated", (conversation) => {
       const currentUserId = useAuthStore.getState().user?._id;
       const isParticipant = conversation.participants?.some(

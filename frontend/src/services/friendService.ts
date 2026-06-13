@@ -2,8 +2,8 @@ import api from "@/lib/axios";
 
 export const friendService = {
   async searchByUsername(username: string) {
-    const res = await api.get(`/users/search?username=${username}`);
-    return res.data.user;
+    const res = await api.get(`/users/search?username=${encodeURIComponent(username)}`);
+    return res.data.users as import("@/types/user").User[];
   },
 
   async sendFriendRequest(to: string, message?: string) {
@@ -41,5 +41,10 @@ export const friendService = {
   async getFriendList() {
     const res = await api.get("/friends");
     return res.data.friends;
+  },
+
+  async unfriend(friendId: string) {
+    const res = await api.delete(`/friends/${friendId}`);
+    return res.data as { message: string; deletedConversationId: string | null };
   },
 };

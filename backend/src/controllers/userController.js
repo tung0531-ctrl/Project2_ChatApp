@@ -18,18 +18,48 @@ export const authMe = async (req, res) => {
 export const searchUserByUsername = async (req, res) => {
   try {
     const { username } = req.query;
+    const currentUserId = req.user._id;
 
     if (!username || username.trim() === "") {
-      return res.status(400).json({ message: "Cần cung cấp username trong query." });
+      return res.status(200).json({ users: [] });
     }
 
-    const user = await User.findOne({ username }).select(
-      "_id displayName username avatarUrl"
+    const keyword = username.trim();
+
+    const users = await User.find({
+      username: { $regex: keyword, $options: "i" },
+      _id: { $ne: currentUserId },
+    })
+      .select("_id displayName username avatarUrl")
+      .limit(10)
+      .lean();
+
+    return res.status(200).json({ users });
+  } catch (error) {
+    console.error("Lỗi xảy ra khi searchUserByUsername", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
+export const getUserProfile = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ message: "Thiếu userId" });
+    }
+
+    const user = await User.findById(userId).select(
+      "_id username email displayName avatarUrl bio phone createdAt updatedAt"
     );
+
+    if (!user) {
+      return res.status(404).json({ message: "Người dùng không tồn tại" });
+    }
 
     return res.status(200).json({ user });
   } catch (error) {
-    console.error("Lỗi xảy ra khi searchUserByUsername", error);
+    console.error("Lỗi khi lấy profile người dùng", error);
     return res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };

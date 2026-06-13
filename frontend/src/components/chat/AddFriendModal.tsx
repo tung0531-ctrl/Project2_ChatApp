@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -9,76 +11,63 @@ import {
 import { UserPlus } from "lucide-react";
 import type { User } from "@/types/user";
 import { useFriendStore } from "@/stores/useFriendStore";
-import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import SearchForm from "@/components/AddFriendModal/SearchForm";
-import SendFriendRequestForm from "@/components/AddFriendModal/SendFriendRequestForm";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
+import { Card } from "../ui/card";
+import { Label } from "../ui/label";
+import { Textarea } from "../ui/textarea";
+import UserAvatar from "./UserAvatar";
 
+// IFormValues kept for backward compat with sub-components still imported elsewhere
 export interface IFormValues {
   username: string;
   message: string;
 }
 
 const AddFriendModal = () => {
-  const [isFound, setIsFound] = useState<boolean | null>(null);
-  const [searchUser, setSearchUser] = useState<User>();
-  const [searchedUsername, setSearchedUsername] = useState("");
+  const [open, setOpen] = useState(false);
+  const [keyword, setKeyword] = useState("");
+  const [results, setResults] = useState<User[]>([]);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [message, setMessage] = useState("");
   const { loading, searchByUsername, addFriend } = useFriendStore();
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    reset,
-    formState: { errors },
-  } = useForm<IFormValues>({
-    defaultValues: { username: "", message: "" },
-  });
-
-  const usernameValue = watch("username");
-
-  const handleSearch = handleSubmit(async (data) => {
-    const username = data.username.trim();
-    if (!username) return;
-
-    setIsFound(null);
-    setSearchedUsername(username);
-
-    try {
-      const foundUser = await searchByUsername(username);
-      if (foundUser) {
-        setIsFound(true);
-        setSearchUser(foundUser);
-      } else {
-        setIsFound(false);
-      }
-    } catch (error) {
-      console.error(error);
-      setIsFound(false);
+  // Debounce search
+  useEffect(() => {
+    if (!open) {
+      setKeyword("");
+      setResults([]);
+      setSelectedUser(null);
+      setMessage("");
+      return;
     }
-  });
 
-  const handleSend = handleSubmit(async (data) => {
-    if (!searchUser) return;
+    const trimmed = keyword.trim();
 
-    try {
-      const message = await addFriend(searchUser._id, data.message.trim());
-      toast.success(message);
-
-      handleCancel();
-    } catch (error) {
-      console.error("Lỗi xảy ra khi gửi request từ form", error);
+    if (!trimmed) {
+      setResults([]);
+      return;
     }
-  });
 
-  const handleCancel = () => {
-    reset();
-    setSearchedUsername("");
-    setIsFound(null);
+    const timeoutId = window.setTimeout(async () => {
+      const found = await searchByUsername(trimmed);
+      setResults(found);
+    }, 200);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [keyword, open]);
+
+  const handleSend = async () => {
+    if (!selectedUser) return;
+
+    const resultMessage = await addFriend(selectedUser._id, message.trim());
+    toast.success(resultMessage);
+    setOpen(false);
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <div className="flex justify-center items-center size-5 rounded-full hover:bg-sidebar-accent cursor-pointer z-10">
           <UserPlus className="size-4" />
@@ -89,33 +78,99 @@ const AddFriendModal = () => {
       <DialogContent className="sm:max-w-[425px] border-none">
         <DialogHeader>
           <DialogTitle>Kết Bạn</DialogTitle>
+          <DialogDescription>
+            Gõ username để tìm người dùng bạn muốn kết bạn.
+          </DialogDescription>
         </DialogHeader>
 
-        {!isFound && (
-          <>
-            <SearchForm
-              register={register}
-              errors={errors}
-              usernameValue={usernameValue}
-              loading={loading}
-              isFound={isFound}
-              searchedUsername={searchedUsername}
-              onSubmit={handleSearch}
-              onCancel={handleCancel}
+        {!selectedUser ? (
+          <div className="space-y-4">
+            <Input
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              placeholder="Gõ username vào đây..."
+              className="glass border-border/50 focus:border-primary/50 transition-smooth"
             />
-          </>
-        )}
 
-        {isFound && (
-          <>
-            <SendFriendRequestForm
-              register={register}
-              loading={loading}
-              searchedUsername={searchedUsername}
-              onSubmit={handleSend}
-              onBack={() => setIsFound(null)}
-            />
-          </>
+            <div className="space-y-2">
+              {results.map((u) => (
+                <Card
+                  key={u._id}
+                  onClick={() => setSelectedUser(u)}
+                  className="cursor-pointer border-border/30 p-3 transition-smooth hover:bg-muted/30"
+                >
+                  <div className="flex items-center gap-3">
+                    <UserAvatar
+                      type="chat"
+                      name={u.displayName}
+                      avatarUrl={u.avatarUrl ?? undefined}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">{u.displayName}</p>
+                      <p className="text-xs text-muted-foreground">@{u.username}</p>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+
+              {keyword.trim() && results.length === 0 && !loading && (
+                <p className="text-sm text-muted-foreground">
+                  Không tìm thấy người dùng phù hợp.
+                </p>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <Card className="flex items-center gap-3 border-border/30 bg-background/60 p-3">
+              <UserAvatar
+                type="chat"
+                name={selectedUser.displayName}
+                avatarUrl={selectedUser.avatarUrl ?? undefined}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold">{selectedUser.displayName}</p>
+                <p className="text-xs text-muted-foreground">@{selectedUser.username}</p>
+              </div>
+            </Card>
+
+            <div className="space-y-2">
+              <Label htmlFor="friend-message" className="text-sm font-semibold">
+                Giới thiệu
+              </Label>
+              <Textarea
+                id="friend-message"
+                rows={3}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Chào bạn ~ Có thể kết bạn được không?..."
+                className="glass resize-none border-border/50 focus:border-primary/50 transition-smooth"
+              />
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 glass hover:text-destructive"
+                onClick={() => setSelectedUser(null)}
+              >
+                Quay lại
+              </Button>
+              <Button
+                type="button"
+                disabled={loading}
+                onClick={handleSend}
+                className="flex-1 bg-gradient-chat text-white hover:opacity-90 transition-smooth"
+              >
+                {loading ? "Đang gửi..." : (
+                  <>
+                    <UserPlus className="size-4 mr-2" /> Kết Bạn
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </div>
         )}
       </DialogContent>
     </Dialog>

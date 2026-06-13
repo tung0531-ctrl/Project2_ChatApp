@@ -2,6 +2,7 @@ import api from "@/lib/axios";
 import type {
   UpdateAccountSecurityPayload,
   UpdateProfilePayload,
+  User,
 } from "@/types/user";
 
 export const userService = {
@@ -24,6 +25,11 @@ export const userService = {
 
   updateAccountSecurity: async (payload: UpdateAccountSecurityPayload) => {
     const res = await api.patch("/users/security", payload);
+    return res.data.user;
+  },
+
+  fetchUserProfile: async (userId: string): Promise<User> => {
+    const res = await api.get(`/users/${userId}/profile`);
     return res.data.user;
   },
 };

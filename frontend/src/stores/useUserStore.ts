@@ -7,6 +7,19 @@ import { useChatStore } from "./useChatStore";
 
 export const useUserStore = create<UserState>((set) => ({
   loading: false,
+  fetchUserProfile: async (userId) => {
+    try {
+      set({ loading: true });
+      const user = await userService.fetchUserProfile(userId);
+      return user;
+    } catch (error) {
+      console.error("Lỗi khi lấy profile người dùng", error);
+      toast.error("Không thể tải profile người dùng.");
+      return null;
+    } finally {
+      set({ loading: false });
+    }
+  },
   updateAvatarUrl: async (formData) => {
     try {
       set({ loading: true });

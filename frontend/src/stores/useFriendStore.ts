@@ -1,6 +1,8 @@
 import { friendService } from "@/services/friendService";
 import type { FriendState } from "@/types/store";
 import { create } from "zustand";
+import { useChatStore } from "./useChatStore";
+import { toast } from "sonner";
 
 export const useFriendStore = create<FriendState>((set) => ({
   friends: [],
@@ -11,12 +13,12 @@ export const useFriendStore = create<FriendState>((set) => ({
     try {
       set({ loading: true });
 
-      const user = await friendService.searchByUsername(username);
+      const users = await friendService.searchByUsername(username);
 
-      return user;
+      return users;
     } catch (error) {
       console.error("Lỗi xảy ra khi tìm user bằng username", error);
-      return null;
+      return [];
     } finally {
       set({ loading: false });
     }
@@ -84,6 +86,29 @@ export const useFriendStore = create<FriendState>((set) => ({
     } catch (error) {
       console.error("Lỗi xảy ra khi load friends", error);
       set({ friends: [] });
+    } finally {
+      set({ loading: false });
+    }
+  },
+  unfriend: async (friendId) => {
+    try {
+      set({ loading: true });
+      const result = await friendService.unfriend(friendId);
+
+      set((state) => ({
+        friends: state.friends.filter((friend) => friend._id !== friendId),
+      }));
+
+      if (result.deletedConversationId) {
+        useChatStore.getState().removeConversation(result.deletedConversationId);
+      }
+
+      toast.success("Đã hủy kết bạn.");
+      return true;
+    } catch (error) {
+      console.error("Lỗi khi hủy kết bạn", error);
+      toast.error("Không thể hủy kết bạn lúc này.");
+      return false;
     } finally {
       set({ loading: false });
     }

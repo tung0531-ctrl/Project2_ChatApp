@@ -7,12 +7,25 @@ import UserAvatar from "./UserAvatar";
 import StatusBadge from "./StatusBadge";
 import UnreadCountBadge from "./UnreadCountBadge";
 import { useSocketStore } from "@/stores/useSocketStore";
+import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { Button } from "../ui/button";
+import { MoreHorizontal, Trash2, UserRoundSearch } from "lucide-react";
+import { useFriendStore } from "@/stores/useFriendStore";
+import UserProfileDialog from "../profile/UserProfileDialog";
 
 const DirectMessageCard = ({ convo }: { convo: Conversation }) => {
   const { user } = useAuthStore();
   const { activeConversationId, setActiveConversation, messages, fetchMessages } =
     useChatStore();
   const { onlineUsers } = useSocketStore();
+  const { unfriend, loading } = useFriendStore();
+  const [profileOpen, setProfileOpen] = useState(false);
 
   if (!user) return null;
 
@@ -29,44 +42,91 @@ const DirectMessageCard = ({ convo }: { convo: Conversation }) => {
     }
   };
 
+  const handleUnfriend = async () => {
+    await unfriend(otherUser._id);
+  };
+
   return (
-    <ChatCard
-      convoId={convo._id}
-      name={otherUser.displayName ?? ""}
-      timestamp={
-        convo.lastMessage?.createdAt
-          ? new Date(convo.lastMessage.createdAt)
-          : undefined
-      }
-      isActive={activeConversationId === convo._id}
-      onSelect={handleSelectConversation}
-      unreadCount={unreadCount}
-      leftSection={
-        <>
-          <UserAvatar
-            type="sidebar"
-            name={otherUser.displayName ?? ""}
-            avatarUrl={otherUser.avatarUrl ?? undefined}
-          />
-          <StatusBadge
-            status={
-              onlineUsers.includes(otherUser?._id ?? "") ? "online" : "offline"
-            }
-          />
-          {unreadCount > 0 && <UnreadCountBadge unreadCount={unreadCount} />}
-        </>
-      }
-      subtitle={
-        <p
-          className={cn(
-            "text-sm truncate",
-            unreadCount > 0 ? "font-medium text-foreground" : "text-muted-foreground"
-          )}
-        >
-          {lastMessage}
-        </p>
-      }
-    />
+    <>
+      <ChatCard
+        convoId={convo._id}
+        name={otherUser.displayName ?? ""}
+        timestamp={
+          convo.lastMessage?.createdAt
+            ? new Date(convo.lastMessage.createdAt)
+            : undefined
+        }
+        isActive={activeConversationId === convo._id}
+        onSelect={handleSelectConversation}
+        unreadCount={unreadCount}
+        leftSection={
+          <>
+            <UserAvatar
+              type="sidebar"
+              name={otherUser.displayName ?? ""}
+              avatarUrl={otherUser.avatarUrl ?? undefined}
+            />
+            <StatusBadge
+              status={
+                onlineUsers.includes(otherUser?._id ?? "") ? "online" : "offline"
+              }
+            />
+            {unreadCount > 0 && <UnreadCountBadge unreadCount={unreadCount} />}
+          </>
+        }
+        subtitle={
+          <p
+            className={cn(
+              "text-sm truncate",
+              unreadCount > 0 ? "font-medium text-foreground" : "text-muted-foreground"
+            )}
+          >
+            {lastMessage}
+          </p>
+        }
+        rightSection={
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="size-8 text-muted-foreground hover:bg-muted/50"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <MoreHorizontal className="size-4" />
+                <span className="sr-only">Tùy chọn bạn bè</span>
+              </Button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent
+              align="end"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <DropdownMenuItem onClick={() => setProfileOpen(true)}>
+                <UserRoundSearch className="size-4" />
+                Xem profile
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                variant="destructive"
+                disabled={loading}
+                onClick={handleUnfriend}
+              >
+                <Trash2 className="size-4" />
+                Hủy kết bạn
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        }
+      />
+
+      <UserProfileDialog
+        userId={otherUser._id}
+        open={profileOpen}
+        setOpen={setProfileOpen}
+      />
+    </>
   );
 };
 
