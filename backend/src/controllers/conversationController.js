@@ -187,6 +187,121 @@ export const getUserConversationsForSocketIO = async (userId) => {
   }
 };
 
+export const searchJoinableGroups = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const keyword = req.query?.name?.trim() ?? "";
+
+    if (!keyword) {
+      return res.status(200).json({ groups: [] });
+    }
+
+    const groups = await Conversation.find({
+      type: "group",
+      "group.name": { $regex: keyword, $options: "i" },
+      participants: {
+        $not: {
+          $elemMatch: {
+            userId,
+          },
+        },
+      },
+    })
+      .sort({ updatedAt: -1 })
+      .limit(10)
+      .populate({
+        path: "participants.userId",
+        select: "displayName avatarUrl",
+      })
+      .populate({
+        path: "lastMessage.senderId",
+        select: "displayName avatarUrl",
+      })
+      .populate({
+        path: "seenBy",
+        select: "displayName avatarUrl",
+      });
+
+    return res.status(200).json({
+      groups: groups.map((group) => formatConversation(group)),
+    });
+  } catch (error) {
+    console.error("Lỗi khi tìm nhóm chat", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
+export const joinGroup = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user._id;
+
+    const conversation = await Conversation.findById(conversationId)
+      .populate({
+        path: "participants.userId",
+        select: "displayName avatarUrl",
+      })
+      .populate({
+        path: "lastMessage.senderId",
+        select: "displayName avatarUrl",
+      })
+      .populate({
+        path: "seenBy",
+        select: "displayName avatarUrl",
+      });
+
+    if (!conversation) {
+      return res.status(404).json({ message: "Không tìm thấy nhóm chat" });
+    }
+
+    if (conversation.type !== "group") {
+      return res.status(400).json({ message: "Chỉ có thể tham gia nhóm chat" });
+    }
+
+    const alreadyJoined = conversation.participants.some(
+      (participant) =>
+        participant.userId?._id?.toString() === userId.toString() ||
+        participant.userId?.toString?.() === userId.toString(),
+    );
+
+    if (alreadyJoined) {
+      return res.status(409).json({ message: "Bạn đã ở trong nhóm chat này rồi" });
+    }
+
+    conversation.participants.push({
+      userId,
+      joinedAt: new Date(),
+    });
+    conversation.unreadCounts.set(userId.toString(), 0);
+
+    await conversation.save();
+    await conversation.populate([
+      {
+        path: "participants.userId",
+        select: "displayName avatarUrl",
+      },
+      {
+        path: "lastMessage.senderId",
+        select: "displayName avatarUrl",
+      },
+      {
+        path: "seenBy",
+        select: "displayName avatarUrl",
+      },
+    ]);
+
+    const formatted = formatConversation(conversation);
+
+    io.to(userId.toString()).emit("new-group", formatted);
+    io.to(conversationId).emit("conversation-updated", formatted);
+
+    return res.status(200).json({ conversation: formatted });
+  } catch (error) {
+    console.error("Lỗi khi tham gia nhóm chat", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
 export const leaveGroup = async (req, res) => {
   try {
     const { conversationId } = req.params;

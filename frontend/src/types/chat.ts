@@ -48,6 +48,10 @@ export interface ConversationResponse {
   conversations: Conversation[];
 }
 
+export interface GroupSearchResponse {
+  groups: Conversation[];
+}
+
 export interface Message {
   _id: string;
   conversationId: string;

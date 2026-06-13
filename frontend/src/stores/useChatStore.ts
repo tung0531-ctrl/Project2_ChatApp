@@ -230,6 +230,38 @@ export const useChatStore = create<ChatState>()(
           set({ loading: false });
         }
       },
+      searchJoinableGroups: async (keyword) => {
+        try {
+          const normalizedKeyword = keyword.trim();
+
+          if (!normalizedKeyword) {
+            return [];
+          }
+
+          const { groups } = await chatService.searchJoinableGroups(normalizedKeyword);
+          return groups;
+        } catch (error) {
+          console.error("Lỗi khi tìm nhóm chat có thể tham gia", error);
+          return [];
+        }
+      },
+      joinGroup: async (conversationId) => {
+        try {
+          set({ loading: true });
+          const conversation = await chatService.joinGroup(conversationId);
+
+          get().addConvo(conversation);
+          useSocketStore.getState().socket?.emit("join-conversation", conversation._id);
+          toast.success("Tham gia nhóm chat thành công.");
+          return true;
+        } catch (error) {
+          console.error("Lỗi khi tham gia nhóm chat", error);
+          toast.error("Không thể tham gia nhóm chat lúc này.");
+          return false;
+        } finally {
+          set({ loading: false });
+        }
+      },
       leaveGroup: async (conversationId) => {
         try {
           set({ loading: true });

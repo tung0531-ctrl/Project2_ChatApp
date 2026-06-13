@@ -16,6 +16,7 @@ import { Moon, Sun } from "lucide-react";
 import { Switch } from "../ui/switch";
 import CreateNewChat from "../chat/CreateNewChat";
 import NewGroupChatModal from "../chat/NewGroupChatModal";
+import JoinGroupChatModal from "../chat/JoinGroupChatModal";
 import GroupChatList from "../chat/GroupChatList";
 import AddFriendModal from "../chat/AddFriendModal";
 import DirectMessageList from "../chat/DirectMessageList";
@@ -75,7 +76,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarGroup>
           <div className="flex items-center justify-between">
             <SidebarGroupLabel className="uppercase">nhóm chat</SidebarGroupLabel>
-            <NewGroupChatModal />
+            <div className="flex items-center gap-2">
+              <JoinGroupChatModal />
+              <NewGroupChatModal />
+            </div>
           </div>
 
           <SidebarGroupContent>

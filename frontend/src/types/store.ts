@@ -75,6 +75,8 @@ export interface ChatState {
     name: string,
     memberIds: string[]
   ) => Promise<void>;
+  searchJoinableGroups: (keyword: string) => Promise<Conversation[]>;
+  joinGroup: (conversationId: string) => Promise<boolean>;
   leaveGroup: (conversationId: string) => Promise<boolean>;
   updateGroupDescription: (
     conversationId: string,

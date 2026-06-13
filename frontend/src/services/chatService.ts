@@ -1,5 +1,10 @@
 import api from "@/lib/axios";
-import type { Conversation, ConversationResponse, Message } from "@/types/chat";
+import type {
+  Conversation,
+  ConversationResponse,
+  GroupSearchResponse,
+  Message,
+} from "@/types/chat";
 
 interface FetchMessageProps {
   messages: Message[];
@@ -62,6 +67,16 @@ export const chatService = {
     memberIds: string[]
   ) {
     const res = await api.post("/conversations", { type, name, memberIds });
+    return res.data.conversation;
+  },
+
+  async searchJoinableGroups(keyword: string): Promise<GroupSearchResponse> {
+    const res = await api.get(`/conversations/groups/search?name=${encodeURIComponent(keyword)}`);
+    return res.data;
+  },
+
+  async joinGroup(conversationId: string): Promise<Conversation> {
+    const res = await api.patch(`/conversations/${conversationId}/join`);
     return res.data.conversation;
   },
 
