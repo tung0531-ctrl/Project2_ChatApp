@@ -24,9 +24,14 @@ import ConversationSkeleton from "../skeleton/ConversationSkeleton";
 import { useChatStore } from "@/stores/useChatStore";
 import FriendRequestDialog from "../friendRequest/FriendRequestDialog";
 import { useNotificationStore } from "@/stores/useNotificationStore";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFriendStore } from "@/stores/useFriendStore";
 import { Input } from "../ui/input";
+
+const SIDEBAR_SPLIT_STORAGE_KEY = "chat-sidebar-split";
+const MIN_SECTION_PERCENT = 0;
+const MAX_SECTION_PERCENT = 97;
+const DEFAULT_GROUP_SECTION_PERCENT = 50;
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuthStore();
@@ -34,8 +39,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [friendSearchOpen, setFriendSearchOpen] = useState(false);
   const [friendKeyword, setFriendKeyword] = useState("");
+  const [groupSectionPercent, setGroupSectionPercent] = useState(() => {
+    if (typeof window === "undefined") {
+      return DEFAULT_GROUP_SECTION_PERCENT;
+    }
+
+    const savedValue = window.localStorage.getItem(SIDEBAR_SPLIT_STORAGE_KEY);
+    const parsedValue = savedValue ? Number(savedValue) : Number.NaN;
+
+    if (Number.isNaN(parsedValue)) {
+      return DEFAULT_GROUP_SECTION_PERCENT;
+    }
+
+    return Math.min(MAX_SECTION_PERCENT, Math.max(MIN_SECTION_PERCENT, parsedValue));
+  });
   const { fetchNotifications, unreadCount } = useNotificationStore();
   const { getFriends } = useFriendStore();
+  const resizeAreaRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!user?._id) {
@@ -53,6 +73,38 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     setFriendKeyword("");
   }, [friendSearchOpen]);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      SIDEBAR_SPLIT_STORAGE_KEY,
+      groupSectionPercent.toString()
+    );
+  }, [groupSectionPercent]);
+
+  const handleResizeStart = () => {
+    const resizeArea = resizeAreaRef.current;
+
+    if (!resizeArea) {
+      return;
+    }
+
+    const onMouseMove = (event: MouseEvent) => {
+      const bounds = resizeArea.getBoundingClientRect();
+      const nextPercent = ((event.clientY - bounds.top) / bounds.height) * 100;
+
+      setGroupSectionPercent(
+        Math.min(MAX_SECTION_PERCENT, Math.max(MIN_SECTION_PERCENT, nextPercent))
+      );
+    };
+
+    const stopResize = () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", stopResize);
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", stopResize);
+  };
 
   return (
     <>
@@ -97,57 +149,79 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          {/* Group Chat */}
-          <SidebarGroup className="min-h-0 flex-1">
-            <div className="flex items-center justify-between">
-              <SidebarGroupLabel className="uppercase">nhóm chat</SidebarGroupLabel>
-              <div className="flex items-center gap-2">
-                <JoinGroupChatModal />
-                <NewGroupChatModal />
-              </div>
-            </div>
-
-            <SidebarGroupContent className="min-h-0 flex-1">
-              {convoLoading ? <ConversationSkeleton /> : <GroupChatList />}
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          {/* Dirrect Message */}
-          <SidebarGroup className="min-h-0 flex-1">
-            <div className="flex items-center justify-between">
-              <SidebarGroupLabel className="uppercase">bạn bè</SidebarGroupLabel>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setFriendSearchOpen((prev) => !prev)}
-                  className="inline-flex size-5 cursor-pointer items-center justify-center rounded-full hover:bg-sidebar-accent"
-                  aria-label="Tìm kiếm bạn bè"
-                >
-                  <Search className="size-4" />
-                </button>
-                <AddFriendModal />
-              </div>
-            </div>
-
-            <SidebarGroupContent className="min-h-0 flex-1">
-              {friendSearchOpen ? (
-                <div className="px-2 pb-2">
-                  <Input
-                    value={friendKeyword}
-                    onChange={(event) => setFriendKeyword(event.target.value)}
-                    placeholder="Tìm theo tên hoặc username..."
-                    className="glass border-border/50 focus:border-primary/50 transition-smooth"
-                  />
+          <div
+            ref={resizeAreaRef}
+            className="flex min-h-0 flex-1 flex-col"
+          >
+            {/* Group Chat */}
+            <SidebarGroup
+              className="min-h-0 overflow-hidden"
+              style={{ flex: `0 0 calc(${groupSectionPercent}% - 8px)` }}
+            >
+              <div className="flex items-center justify-between">
+                <SidebarGroupLabel className="uppercase">nhóm chat</SidebarGroupLabel>
+                <div className="flex items-center gap-2">
+                  <JoinGroupChatModal />
+                  <NewGroupChatModal />
                 </div>
-              ) : null}
+              </div>
 
-              {convoLoading ? (
-                <ConversationSkeleton />
-              ) : (
-                <DirectMessageList keyword={friendKeyword} />
-              )}
-            </SidebarGroupContent>
-          </SidebarGroup>
+              <SidebarGroupContent className="min-h-0 flex-1">
+                {convoLoading ? <ConversationSkeleton /> : <GroupChatList />}
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            <div className="px-3 py-1">
+              <button
+                type="button"
+                onMouseDown={handleResizeStart}
+                className="group flex h-3 w-full cursor-row-resize items-center justify-center rounded-md"
+                aria-label="Điều chỉnh chiều cao danh sách nhóm chat và bạn bè"
+              >
+                <div className="h-1 w-full rounded-full bg-sidebar-border/80 transition-colors group-hover:bg-sidebar-accent-foreground/40" />
+              </button>
+            </div>
+
+            {/* Dirrect Message */}
+            <SidebarGroup
+              className="min-h-0 overflow-hidden"
+              style={{ flex: `0 0 calc(${100 - groupSectionPercent}% - 8px)` }}
+            >
+              <div className="flex items-center justify-between">
+                <SidebarGroupLabel className="uppercase">bạn bè</SidebarGroupLabel>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFriendSearchOpen((prev) => !prev)}
+                    className="inline-flex size-5 cursor-pointer items-center justify-center rounded-full hover:bg-sidebar-accent"
+                    aria-label="Tìm kiếm bạn bè"
+                  >
+                    <Search className="size-4" />
+                  </button>
+                  <AddFriendModal />
+                </div>
+              </div>
+
+              <SidebarGroupContent className="min-h-0 flex-1">
+                {friendSearchOpen ? (
+                  <div className="px-2 pb-2">
+                    <Input
+                      value={friendKeyword}
+                      onChange={(event) => setFriendKeyword(event.target.value)}
+                      placeholder="Tìm theo tên hoặc username..."
+                      className="glass border-border/50 focus:border-primary/50 transition-smooth"
+                    />
+                  </div>
+                ) : null}
+
+                {convoLoading ? (
+                  <ConversationSkeleton />
+                ) : (
+                  <DirectMessageList keyword={friendKeyword} />
+                )}
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </div>
         </SidebarContent>
 
         {/* Footer */}
