@@ -60,11 +60,11 @@ export const checkGroupMembership = async (req, res, next) => {
       return res.status(404).json({ message: "Không tìm thấy cuộc trò chuyện" });
     }
 
-    const isMember = conversation.participants.some(
+    const participant = conversation.participants.find(
       (p) => p.userId.toString() === userId.toString()
     );
 
-    if (!isMember) {
+    if (!participant) {
       return res.status(403).json({ message: "Bạn không ở trong group này." });
     }
 

@@ -15,6 +15,7 @@ export type SeenUserRef = SeenUser | string;
 
 export interface Group {
   name: string;
+  description?: string;
   createdBy: string;
 }
 
@@ -41,6 +42,7 @@ export interface Conversation {
   createdAt: string;
   updatedAt: string;
 }
+
 
 export interface ConversationResponse {
   conversations: Conversation[];

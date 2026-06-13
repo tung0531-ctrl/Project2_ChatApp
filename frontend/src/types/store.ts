@@ -75,6 +75,7 @@ export interface ChatState {
     name: string,
     memberIds: string[]
   ) => Promise<void>;
+  leaveGroup: (conversationId: string) => Promise<boolean>;
 }
 
 export interface SocketState {

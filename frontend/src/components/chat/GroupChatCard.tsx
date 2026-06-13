@@ -4,6 +4,7 @@ import type { Conversation } from "@/types/chat";
 import ChatCard from "./ChatCard";
 import UnreadCountBadge from "./UnreadCountBadge";
 import GroupChatAvatar from "./GroupChatAvatar";
+import GroupChatActions from "./GroupChatActions";
 
 const GroupChatCard = ({ convo }: { convo: Conversation }) => {
   const { user } = useAuthStore();
@@ -47,6 +48,7 @@ const GroupChatCard = ({ convo }: { convo: Conversation }) => {
           {convo.participants.length} thành viên
         </p>
       }
+      rightSection={<GroupChatActions convo={convo} />}
     />
   );
 };

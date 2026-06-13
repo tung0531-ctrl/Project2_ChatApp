@@ -2,6 +2,20 @@ import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
 import { io } from "../socket/index.js";
 
+const formatParticipants = (participants = []) =>
+  participants.map((p) => ({
+    _id: p.userId?._id ?? p.userId,
+    displayName: p.userId?.displayName,
+    avatarUrl: p.userId?.avatarUrl ?? null,
+    joinedAt: p.joinedAt,
+  }));
+
+const formatConversation = (conversation) => ({
+  ...conversation.toObject(),
+  unreadCounts: conversation.unreadCounts || {},
+  participants: formatParticipants(conversation.participants || []),
+});
+
 export const createConversation = async (req, res) => {
   try {
     const { type, name, memberIds } = req.body;
@@ -67,14 +81,7 @@ export const createConversation = async (req, res) => {
       { path: "lastMessage.senderId", select: "displayName avatarUrl" },
     ]);
 
-    const participants = (conversation.participants || []).map((p) => ({
-      _id: p.userId?._id,
-      displayName: p.userId?.displayName,
-      avatarUrl: p.userId?.avatarUrl ?? null,
-      joinedAt: p.joinedAt,
-    }));
-
-    const formatted = { ...conversation.toObject(), participants };
+    const formatted = formatConversation(conversation);
 
     if (type === "group") {
       memberIds.forEach((userId) => {
@@ -115,18 +122,7 @@ export const getConversations = async (req, res) => {
       });
 
     const formatted = conversations.map((convo) => {
-      const participants = (convo.participants || []).map((p) => ({
-        _id: p.userId?._id,
-        displayName: p.userId?.displayName,
-        avatarUrl: p.userId?.avatarUrl ?? null,
-        joinedAt: p.joinedAt,
-      }));
-
-      return {
-        ...convo.toObject(),
-        unreadCounts: convo.unreadCounts || {},
-        participants,
-      };
+      return formatConversation(convo);
     });
 
     return res.status(200).json({ conversations: formatted });
@@ -182,6 +178,74 @@ export const getUserConversationsForSocketIO = async (userId) => {
   } catch (error) {
     console.error("Lỗi khi fetch conversations: ", error);
     return [];
+  }
+};
+
+export const leaveGroup = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user._id.toString();
+
+    const conversation = await Conversation.findById(conversationId)
+      .populate({
+        path: "participants.userId",
+        select: "displayName avatarUrl",
+      })
+      .populate({
+        path: "lastMessage.senderId",
+        select: "displayName avatarUrl",
+      })
+      .populate({
+        path: "seenBy",
+        select: "displayName avatarUrl",
+      });
+
+    if (!conversation) {
+      return res.status(404).json({ message: "Conversation không tồn tại" });
+    }
+
+    if (conversation.type !== "group") {
+      return res.status(400).json({ message: "Chỉ có thể rời khỏi nhóm chat" });
+    }
+
+    const participantIndex = conversation.participants.findIndex(
+      (p) => p.userId?._id?.toString() === userId || p.userId?.toString?.() === userId,
+    );
+
+    if (participantIndex === -1) {
+      return res.status(403).json({ message: "Bạn không ở trong nhóm này" });
+    }
+
+    conversation.participants.splice(participantIndex, 1);
+    conversation.unreadCounts.delete(userId);
+    conversation.seenBy = conversation.seenBy.filter(
+      (seenUser) => seenUser._id?.toString() !== userId && seenUser.toString?.() !== userId,
+    );
+
+    await conversation.save();
+    await conversation.populate([
+      {
+        path: "participants.userId",
+        select: "displayName avatarUrl",
+      },
+      {
+        path: "lastMessage.senderId",
+        select: "displayName avatarUrl",
+      },
+      {
+        path: "seenBy",
+        select: "displayName avatarUrl",
+      },
+    ]);
+
+    const formatted = formatConversation(conversation);
+
+    io.to(conversationId).emit("conversation-updated", formatted);
+
+    return res.status(200).json({ conversation: formatted });
+  } catch (error) {
+    console.error("Lỗi khi rời nhóm", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };
 

@@ -3,6 +3,7 @@ import {
   createConversation,
   getConversations,
   getMessages,
+  leaveGroup,
   markAsSeen,
 } from "../controllers/conversationController.js";
 import { checkFriendship } from "../middlewares/friendMiddleware.js";
@@ -13,5 +14,6 @@ router.post("/", checkFriendship, createConversation);
 router.get("/", getConversations);
 router.get("/:conversationId/messages", getMessages);
 router.patch("/:conversationId/seen", markAsSeen);
+router.patch("/:conversationId/leave", leaveGroup);
 
 export default router;

@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useAuthStore } from "./useAuthStore";
 import { useSocketStore } from "./useSocketStore";
+import { toast } from "sonner";
 
 export const useChatStore = create<ChatState>()(
   persist(
@@ -225,6 +226,33 @@ export const useChatStore = create<ChatState>()(
             .socket?.emit("join-conversation", conversation._id);
         } catch (error) {
           console.error("Lỗi xảy ra khi gọi createConversation trong store", error);
+        } finally {
+          set({ loading: false });
+        }
+      },
+      leaveGroup: async (conversationId) => {
+        try {
+          set({ loading: true });
+          await chatService.leaveGroup(conversationId);
+
+          set((state) => ({
+            conversations: state.conversations.filter((c) => c._id !== conversationId),
+            messages: Object.fromEntries(
+              Object.entries(state.messages).filter(([key]) => key !== conversationId),
+            ),
+            activeConversationId:
+              state.activeConversationId === conversationId
+                ? null
+                : state.activeConversationId,
+          }));
+
+          useSocketStore.getState().socket?.emit("leave-conversation", conversationId);
+          toast.success("Bạn đã rời khỏi nhóm.");
+          return true;
+        } catch (error) {
+          console.error("Lỗi khi rời nhóm", error);
+          toast.error("Không thể rời nhóm lúc này.");
+          return false;
         } finally {
           set({ loading: false });
         }

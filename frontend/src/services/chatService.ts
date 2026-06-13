@@ -1,5 +1,5 @@
 import api from "@/lib/axios";
-import type { ConversationResponse, Message } from "@/types/chat";
+import type { Conversation, ConversationResponse, Message } from "@/types/chat";
 
 interface FetchMessageProps {
   messages: Message[];
@@ -62,6 +62,11 @@ export const chatService = {
     memberIds: string[]
   ) {
     const res = await api.post("/conversations", { type, name, memberIds });
+    return res.data.conversation;
+  },
+
+  async leaveGroup(conversationId: string): Promise<Conversation> {
+    const res = await api.patch(`/conversations/${conversationId}/leave`);
     return res.data.conversation;
   },
 };
