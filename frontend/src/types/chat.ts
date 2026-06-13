@@ -11,6 +11,8 @@ export interface SeenUser {
   avatarUrl?: string | null;
 }
 
+export type SeenUserRef = SeenUser | string;
+
 export interface Group {
   name: string;
   createdBy: string;
@@ -33,7 +35,7 @@ export interface Conversation {
   group: Group;
   participants: Participant[];
   lastMessageAt: string;
-  seenBy: SeenUser[];
+  seenBy: SeenUserRef[];
   lastMessage: LastMessage | null;
   unreadCounts: Record<string, number>; // key = userId, value = unread count
   createdAt: string;

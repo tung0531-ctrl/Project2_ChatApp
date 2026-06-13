@@ -3,13 +3,13 @@ import type { Conversation, Message, Participant } from "@/types/chat";
 import UserAvatar from "./UserAvatar";
 import { Card } from "../ui/card";
 import { Badge } from "../ui/badge";
+import SeenByAvatars from "./SeenByAvatars";
 
 interface MessageItemProps {
   message: Message;
   index: number;
   messages: Message[];
   selectedConvo: Conversation;
-  lastMessageStatus: "delivered" | "seen";
 }
 
 const MessageItem = ({
@@ -17,7 +17,6 @@ const MessageItem = ({
   index,
   messages,
   selectedConvo,
-  lastMessageStatus,
 }: MessageItemProps) => {
   const prev = index + 1 < messages.length ? messages[index + 1] : undefined;
 
@@ -79,17 +78,19 @@ const MessageItem = ({
 
           {/* seen/ delivered */}
           {message.isOwn && message._id === selectedConvo.lastMessage?._id && (
-            <Badge
-              variant="outline"
-              className={cn(
-                "text-xs px-1.5 py-0.5 h-4 border-0",
-                lastMessageStatus === "seen"
-                  ? "bg-primary/20 text-primary"
-                  : "bg-muted text-muted-foreground"
-              )}
-            >
-              {lastMessageStatus}
-            </Badge>
+            selectedConvo.seenBy.length > 0 ? (
+              <SeenByAvatars
+                seenBy={selectedConvo.seenBy}
+                participants={selectedConvo.participants}
+              />
+            ) : (
+              <Badge
+                variant="outline"
+                className="h-4 border-0 bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
+              >
+                delivered
+              </Badge>
+            )
           )}
         </div>
       </div>

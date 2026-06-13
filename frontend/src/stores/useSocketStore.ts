@@ -60,10 +60,9 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     });
 
     // read message
-    socket.on("read-message", ({ conversation, lastMessage }) => {
+    socket.on("read-message", ({ conversation }) => {
       const updated = {
         _id: conversation._id,
-        lastMessage,
         lastMessageAt: conversation.lastMessageAt,
         unreadCounts: conversation.unreadCounts,
         seenBy: conversation.seenBy,

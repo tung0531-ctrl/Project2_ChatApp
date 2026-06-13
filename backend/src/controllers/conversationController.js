@@ -217,21 +217,23 @@ export const markAsSeen = async (req, res) => {
       },
     );
 
+    await updated.populate({
+      path: "seenBy",
+      select: "displayName avatarUrl",
+    });
+
     io.to(conversationId).emit("read-message", {
-      conversation: updated,
-      lastMessage: {
-        _id: updated?.lastMessage._id,
-        content: updated?.lastMessage.content,
-        createdAt: updated?.lastMessage.createdAt,
-        sender: {
-          _id: updated?.lastMessage.senderId,
-        },
+      conversation: {
+        _id: updated?._id,
+        lastMessageAt: updated?.lastMessageAt,
+        unreadCounts: updated?.unreadCounts,
+        seenBy: updated?.seenBy ?? [],
       },
     });
 
     return res.status(200).json({
       message: "Marked as seen",
-      seenBy: updated?.sennBy || [],
+      seenBy: updated?.seenBy || [],
       myUnreadCount: updated?.unreadCounts[userId] || 0,
     });
   } catch (error) {
