@@ -192,13 +192,47 @@ export const getFriendRequests = async (req, res) => {
     const populateFields = "_id username displayName avatarUrl";
 
     const [sent, received] = await Promise.all([
-      FriendRequest.find({ from: userId }).populate("to", populateFields),
+      FriendRequest.find({ from: userId, hiddenBySender: false }).populate(
+        "to",
+        populateFields,
+      ),
       FriendRequest.find({ to: userId }).populate("from", populateFields),
     ]);
 
     res.status(200).json({ sent, received });
   } catch (error) {
     console.error("Lỗi khi lấy danh sách yêu cầu kết bạn", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
+export const hideSentFriendRequest = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { requestId } = req.params;
+
+    const request = await FriendRequest.findOneAndUpdate(
+      {
+        _id: requestId,
+        from: userId,
+      },
+      {
+        $set: {
+          hiddenBySender: true,
+        },
+      },
+      {
+        new: true,
+      },
+    );
+
+    if (!request) {
+      return res.status(404).json({ message: "Không tìm thấy lời mời kết bạn" });
+    }
+
+    return res.status(200).json({ message: "Đã xóa mềm lời mời đã gửi" });
+  } catch (error) {
+    console.error("Lỗi khi xóa mềm lời mời đã gửi", error);
     return res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };

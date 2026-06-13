@@ -118,4 +118,11 @@ export const useFriendStore = create<FriendState>((set) => ({
       set({ loading: false });
     }
   },
+  hideSentRequest: (requestId) => {
+    void friendService.hideSentRequest(requestId);
+
+    set((state) => ({
+      sentList: state.sentList.filter((request) => request._id !== requestId),
+    }));
+  },
 }));

@@ -38,6 +38,10 @@ export const friendService = {
     }
   },
 
+  async hideSentRequest(requestId: string) {
+    await api.patch(`/friends/requests/${requestId}/hide`);
+  },
+
   async getFriendList() {
     const res = await api.get("/friends");
     return res.data.friends;

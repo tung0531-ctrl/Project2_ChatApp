@@ -12,8 +12,12 @@ export const useNotificationStore = create<NotificationState>((set) => ({
   fetchNotifications: async () => {
     try {
       set({ loading: true });
-      const { notifications, unreadCount } =
-        await notificationService.fetchNotifications();
+      const { notifications } = await notificationService.fetchNotifications();
+
+      const unreadCount = notifications.reduce(
+        (count, notification) => count + (notification.read ? 0 : 1),
+        0
+      );
 
       set({ notifications, unreadCount });
     } catch (error) {
@@ -54,6 +58,22 @@ export const useNotificationStore = create<NotificationState>((set) => ({
         ),
         unreadCount:
           state.unreadCount - (removed && !removed.read ? 1 : 0),
+      };
+    });
+  },
+  hideNotification: (notificationId) => {
+    void notificationService.hideNotification(notificationId);
+
+    set((state) => {
+      const removed = state.notifications.find(
+        (notification) => notification._id === notificationId
+      );
+
+      return {
+        notifications: state.notifications.filter(
+          (notification) => notification._id !== notificationId
+        ),
+        unreadCount: Math.max(0, state.unreadCount - (removed && !removed.read ? 1 : 0)),
       };
     });
   },

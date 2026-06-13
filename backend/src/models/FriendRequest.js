@@ -16,6 +16,11 @@ const friendRequestSchema = new mongoose.Schema(
       type: String,
       maxlength: 300,
     },
+    hiddenBySender: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
   },
   {
     timestamps: true,

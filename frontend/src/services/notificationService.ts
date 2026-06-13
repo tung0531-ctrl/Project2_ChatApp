@@ -15,4 +15,8 @@ export const notificationService = {
   async markAllAsRead() {
     await api.patch("/notifications/read-all");
   },
+
+  async hideNotification(notificationId: string) {
+    await api.patch(`/notifications/${notificationId}/hide`);
+  },
 };

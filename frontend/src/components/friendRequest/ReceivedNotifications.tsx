@@ -3,9 +3,11 @@ import { Button } from "../ui/button";
 import NotificationItem from "./NotificationItem";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import { useFriendStore } from "@/stores/useFriendStore";
+import { Trash2 } from "lucide-react";
 
 const ReceivedNotifications = () => {
-  const { notifications, removeNotificationByFriendRequestId } = useNotificationStore();
+  const { notifications, removeNotificationByFriendRequestId, hideNotification } =
+    useNotificationStore();
   const { acceptRequest, declineRequest, loading } = useFriendStore();
 
   if (!notifications || notifications.length === 0) {
@@ -63,8 +65,25 @@ const ReceivedNotifications = () => {
                   >
                     Từ chối
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => hideNotification(notification._id)}
+                  >
+                    <Trash2 className="size-4" />
+                    Xóa
+                  </Button>
                 </>
-              ) : undefined
+              ) : (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => hideNotification(notification._id)}
+                >
+                  <Trash2 className="size-4" />
+                  Xóa
+                </Button>
+              )
             }
           />
         );

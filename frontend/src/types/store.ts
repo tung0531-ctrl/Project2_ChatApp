@@ -106,6 +106,7 @@ export interface FriendState {
   declineRequest: (requestId: string) => Promise<void>;
   getFriends: () => Promise<void>;
   unfriend: (friendId: string) => Promise<boolean>;
+  hideSentRequest: (requestId: string) => void;
 }
 
 export interface NotificationState {
@@ -117,6 +118,7 @@ export interface NotificationState {
   markAllAsRead: () => Promise<void>;
   addNotification: (notification: Notification) => void;
   removeNotificationByFriendRequestId: (friendRequestId: string) => void;
+  hideNotification: (notificationId: string) => void;
 }
 
 export interface UserState {

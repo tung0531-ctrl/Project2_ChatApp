@@ -1,8 +1,10 @@
 import { useFriendStore } from "@/stores/useFriendStore";
+import { Button } from "../ui/button";
 import FriendRequestItem from "./FriendRequestItem";
+import { Trash2 } from "lucide-react";
 
 const SentRequests = () => {
-  const { sentList } = useFriendStore();
+  const { sentList, hideSentRequest } = useFriendStore();
 
   if (!sentList || sentList.length === 0) {
     return (
@@ -21,7 +23,17 @@ const SentRequests = () => {
             requestInfo={req}
             type="sent"
             actions={
-              <p className="text-muted-foreground text-sm">Đang chờ trả lời...</p>
+              <div className="flex items-center gap-2">
+                <p className="text-muted-foreground text-sm">Đang chờ trả lời...</p>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => hideSentRequest(req._id)}
+                >
+                  <Trash2 className="size-4" />
+                  Xóa
+                </Button>
+              </div>
             }
           />
         ))}

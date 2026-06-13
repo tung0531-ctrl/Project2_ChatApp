@@ -18,7 +18,10 @@ export const getNotifications = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const notifications = await Notification.find({ recipient: userId })
+    const notifications = await Notification.find({
+      recipient: userId,
+      hiddenForRecipient: false,
+    })
       .sort({ createdAt: -1 })
       .limit(100)
       .lean();
@@ -45,6 +48,7 @@ export const markAllNotificationsAsRead = async (req, res) => {
     await Notification.updateMany(
       {
         recipient: userId,
+        hiddenForRecipient: false,
         read: false,
       },
       {
@@ -57,6 +61,37 @@ export const markAllNotificationsAsRead = async (req, res) => {
     return res.status(200).json({ message: "Đã đánh dấu tất cả thông báo là đã đọc" });
   } catch (error) {
     console.error("Lỗi khi đánh dấu thông báo đã đọc", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
+export const hideNotification = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { notificationId } = req.params;
+
+    const notification = await Notification.findOneAndUpdate(
+      {
+        _id: notificationId,
+        recipient: userId,
+      },
+      {
+        $set: {
+          hiddenForRecipient: true,
+        },
+      },
+      {
+        new: true,
+      },
+    );
+
+    if (!notification) {
+      return res.status(404).json({ message: "Không tìm thấy thông báo" });
+    }
+
+    return res.status(200).json({ message: "Đã xóa mềm thông báo" });
+  } catch (error) {
+    console.error("Lỗi khi xóa mềm thông báo", error);
     return res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };

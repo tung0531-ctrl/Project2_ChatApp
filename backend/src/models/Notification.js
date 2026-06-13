@@ -73,6 +73,11 @@ const notificationSchema = new mongoose.Schema(
       default: false,
       index: true,
     },
+    hiddenForRecipient: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
   },
   {
     timestamps: true,
