@@ -8,6 +8,29 @@ import { toast } from "sonner";
 
 const CHAT_STORAGE_KEY = "chat-storage";
 
+const getConversationActivityTime = (
+  conversation: Partial<ChatState["conversations"][number]>
+) => {
+  if (conversation.lastMessage?.createdAt) {
+    return new Date(conversation.lastMessage.createdAt).getTime();
+  }
+
+  if (conversation.lastMessageAt) {
+    return new Date(conversation.lastMessageAt).getTime();
+  }
+
+  if (conversation.updatedAt) {
+    return new Date(conversation.updatedAt).getTime();
+  }
+
+  return 0;
+};
+
+const sortConversationsByLatestActivity = (conversations: ChatState["conversations"]) =>
+  [...conversations].sort(
+    (left, right) => getConversationActivityTime(right) - getConversationActivityTime(left)
+  );
+
 export const useChatStore = create<ChatState>()(
   persist(
     (set, get) => ({
@@ -33,7 +56,10 @@ export const useChatStore = create<ChatState>()(
           set({ convoLoading: true });
           const { conversations } = await chatService.fetchConversations();
 
-          set({ conversations, convoLoading: false });
+          set({
+            conversations: sortConversationsByLatestActivity(conversations),
+            convoLoading: false,
+          });
         } catch (error) {
           console.error("Lỗi xảy ra khi fetchConversations:", error);
           set({ convoLoading: false });
@@ -155,8 +181,10 @@ export const useChatStore = create<ChatState>()(
       },
       updateConversation: (conversation) => {
         set((state) => ({
-          conversations: state.conversations.map((c) =>
-            c._id === conversation._id ? { ...c, ...conversation } : c
+          conversations: sortConversationsByLatestActivity(
+            state.conversations.map((c) =>
+              c._id === conversation._id ? { ...c, ...conversation } : c
+            )
           ),
         }));
       },
@@ -206,8 +234,8 @@ export const useChatStore = create<ChatState>()(
 
           return {
             conversations: exists
-              ? state.conversations
-              : [convo, ...state.conversations],
+              ? sortConversationsByLatestActivity(state.conversations)
+              : sortConversationsByLatestActivity([convo, ...state.conversations]),
             activeConversationId: convo._id,
           };
         });

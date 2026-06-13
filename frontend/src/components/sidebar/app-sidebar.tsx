@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/sidebar";
 import { Bell } from "lucide-react";
 import { Search } from "lucide-react";
-import CreateNewChat from "../chat/CreateNewChat";
 import NewGroupChatModal from "../chat/NewGroupChatModal";
 import JoinGroupChatModal from "../chat/JoinGroupChatModal";
 import GroupChatList from "../chat/GroupChatList";
@@ -142,13 +141,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
         {/* Content */}
         <SidebarContent className="overflow-hidden">
-          {/* New Chat */}
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <CreateNewChat />
-            </SidebarGroupContent>
-          </SidebarGroup>
-
           <div
             ref={resizeAreaRef}
             className="flex min-h-0 flex-1 flex-col"
