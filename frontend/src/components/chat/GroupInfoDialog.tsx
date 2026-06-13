@@ -14,6 +14,7 @@ import UserAvatar from "./UserAvatar";
 import { Separator } from "../ui/separator";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
+import { UserX } from "lucide-react";
 
 interface GroupInfoDialogProps {
   convo: Conversation;
@@ -27,7 +28,7 @@ const GroupInfoDialog = ({
   onOpenChange,
 }: GroupInfoDialogProps) => {
   const { user } = useAuthStore();
-  const { loading, updateGroupDescription } = useChatStore();
+  const { loading, kickGroupMember, updateGroupDescription } = useChatStore();
   const [description, setDescription] = useState("");
   const ownerId = convo.group?.createdBy?.toString?.() ?? convo.group?.createdBy;
 
@@ -50,9 +51,14 @@ const GroupInfoDialog = ({
     month: "2-digit",
     year: "numeric",
   });
+  const canKickMembers = isOwner && convo.participants.length > 1;
 
   const handleSaveDescription = async () => {
     await updateGroupDescription(convo._id, description);
+  };
+
+  const handleKickMember = async (memberId: string) => {
+    await kickGroupMember(convo._id, memberId);
   };
 
   return (
@@ -60,7 +66,7 @@ const GroupInfoDialog = ({
       open={open}
       onOpenChange={onOpenChange}
     >
-      <DialogContent className="sm:max-w-lg border-border/30 glass-strong">
+      <DialogContent className="max-h-[85vh] grid-rows-[auto_minmax(0,1fr)] overflow-hidden border-border/30 glass-strong sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{convo.group?.name}</DialogTitle>
           <DialogDescription>
@@ -68,7 +74,7 @@ const GroupInfoDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="min-h-0 space-y-4 overflow-y-auto pr-1">
           <div className="grid gap-3 sm:grid-cols-2">
             <Card className="border-border/30 bg-background/60 p-4">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -149,29 +155,49 @@ const GroupInfoDialog = ({
               </p>
             </div>
 
-          {convo.participants.map((participant) => (
-            <Card
-              key={participant._id}
-              className="flex items-center justify-between gap-3 border-border/30 bg-background/60 p-3"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <UserAvatar
-                  type="chat"
-                  name={participant.displayName}
-                  avatarUrl={participant.avatarUrl ?? undefined}
-                />
+            {convo.participants.map((participant) => {
+              const isOwnerParticipant = participant._id === ownerId;
+              const canKickParticipant =
+                canKickMembers && !isOwnerParticipant && participant._id !== user?._id;
 
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{participant.displayName}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {participant._id === ownerId
-                      ? "Trưởng nhóm"
-                      : "Thành viên"}
-                  </p>
-                </div>
-              </div>
-            </Card>
-          ))}
+              return (
+                <Card
+                  key={participant._id}
+                  className="flex flex-row items-center justify-between gap-3 border-border/30 bg-background/60 p-3"
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                    <UserAvatar
+                      type="chat"
+                      name={participant.displayName}
+                      avatarUrl={participant.avatarUrl ?? undefined}
+                    />
+
+                    <div className="min-w-0 flex-1 text-left">
+                      <p className="truncate text-left text-sm font-medium">
+                        {participant.displayName}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {isOwnerParticipant ? "Trưởng nhóm" : "Thành viên"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {canKickParticipant ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructiveOutline"
+                      disabled={loading}
+                      onClick={() => handleKickMember(participant._id)}
+                      className="ml-auto shrink-0"
+                    >
+                      <UserX className="size-4" />
+                      Kick
+                    </Button>
+                  ) : null}
+                </Card>
+              );
+            })}
           </div>
         </div>
       </DialogContent>

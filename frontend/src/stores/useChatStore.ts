@@ -210,6 +210,18 @@ export const useChatStore = create<ChatState>()(
           };
         });
       },
+      removeConversation: (conversationId) => {
+        set((state) => ({
+          conversations: state.conversations.filter((c) => c._id !== conversationId),
+          messages: Object.fromEntries(
+            Object.entries(state.messages).filter(([key]) => key !== conversationId)
+          ),
+          activeConversationId:
+            state.activeConversationId === conversationId
+              ? null
+              : state.activeConversationId,
+        }));
+      },
       createConversation: async (type, name, memberIds) => {
         try {
           set({ loading: true });
@@ -267,16 +279,7 @@ export const useChatStore = create<ChatState>()(
           set({ loading: true });
           await chatService.leaveGroup(conversationId);
 
-          set((state) => ({
-            conversations: state.conversations.filter((c) => c._id !== conversationId),
-            messages: Object.fromEntries(
-              Object.entries(state.messages).filter(([key]) => key !== conversationId),
-            ),
-            activeConversationId:
-              state.activeConversationId === conversationId
-                ? null
-                : state.activeConversationId,
-          }));
+          get().removeConversation(conversationId);
 
           useSocketStore.getState().socket?.emit("leave-conversation", conversationId);
           toast.success("Bạn đã rời khỏi nhóm.");
@@ -284,6 +287,25 @@ export const useChatStore = create<ChatState>()(
         } catch (error) {
           console.error("Lỗi khi rời nhóm", error);
           toast.error("Không thể rời nhóm lúc này.");
+          return false;
+        } finally {
+          set({ loading: false });
+        }
+      },
+      kickGroupMember: async (conversationId, memberId) => {
+        try {
+          set({ loading: true });
+          const updatedConversation = await chatService.kickGroupMember(
+            conversationId,
+            memberId
+          );
+
+          get().updateConversation(updatedConversation);
+          toast.success("Đã kick thành viên khỏi nhóm.");
+          return true;
+        } catch (error) {
+          console.error("Lỗi khi kick thành viên khỏi nhóm", error);
+          toast.error("Không thể kick thành viên lúc này.");
           return false;
         } finally {
           set({ loading: false });

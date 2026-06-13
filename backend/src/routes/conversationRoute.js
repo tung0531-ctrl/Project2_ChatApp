@@ -4,6 +4,7 @@ import {
   getConversations,
   getMessages,
   joinGroup,
+  kickGroupMember,
   leaveGroup,
   markAsSeen,
   searchJoinableGroups,
@@ -20,6 +21,7 @@ router.get("/:conversationId/messages", getMessages);
 router.patch("/:conversationId/join", joinGroup);
 router.patch("/:conversationId/seen", markAsSeen);
 router.patch("/:conversationId/leave", leaveGroup);
+router.patch("/:conversationId/members/:memberId/kick", kickGroupMember);
 router.patch("/:conversationId/description", updateGroupDescription);
 
 export default router;

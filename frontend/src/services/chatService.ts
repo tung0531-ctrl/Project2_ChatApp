@@ -85,6 +85,16 @@ export const chatService = {
     return res.data.conversation;
   },
 
+  async kickGroupMember(
+    conversationId: string,
+    memberId: string
+  ): Promise<Conversation> {
+    const res = await api.patch(
+      `/conversations/${conversationId}/members/${memberId}/kick`
+    );
+    return res.data.conversation;
+  },
+
   async updateGroupDescription(
     conversationId: string,
     description: string

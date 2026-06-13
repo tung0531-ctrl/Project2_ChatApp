@@ -78,6 +78,17 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     });
 
     socket.on("conversation-updated", (conversation) => {
+      const currentUserId = useAuthStore.getState().user?._id;
+      const isParticipant = conversation.participants?.some(
+        (participant: { _id: string }) => participant._id === currentUserId
+      );
+
+      if (currentUserId && isParticipant === false) {
+        useChatStore.getState().removeConversation(conversation._id);
+        socket.emit("leave-conversation", conversation._id);
+        return;
+      }
+
       useChatStore.getState().updateConversation(conversation);
     });
   },

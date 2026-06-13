@@ -22,6 +22,33 @@ const formatConversation = (conversation) => ({
   participants: formatParticipants(conversation.participants || []),
 });
 
+const isConversationParticipant = (conversation, userId) =>
+  conversation.participants.some(
+    (participant) =>
+      participant.userId?._id?.toString() === userId ||
+      participant.userId?.toString?.() === userId,
+  );
+
+const removeParticipantFromConversation = (conversation, userId) => {
+  const participantIndex = conversation.participants.findIndex(
+    (participant) =>
+      participant.userId?._id?.toString() === userId ||
+      participant.userId?.toString?.() === userId,
+  );
+
+  if (participantIndex === -1) {
+    return false;
+  }
+
+  conversation.participants.splice(participantIndex, 1);
+  conversation.unreadCounts.delete(userId);
+  conversation.seenBy = conversation.seenBy.filter(
+    (seenUser) => seenUser._id?.toString() !== userId && seenUser.toString?.() !== userId,
+  );
+
+  return true;
+};
+
 export const createConversation = async (req, res) => {
   try {
     const { type, name, memberIds } = req.body;
@@ -329,19 +356,11 @@ export const leaveGroup = async (req, res) => {
       return res.status(400).json({ message: "Chỉ có thể rời khỏi nhóm chat" });
     }
 
-    const participantIndex = conversation.participants.findIndex(
-      (p) => p.userId?._id?.toString() === userId || p.userId?.toString?.() === userId,
-    );
+    const removed = removeParticipantFromConversation(conversation, userId);
 
-    if (participantIndex === -1) {
+    if (!removed) {
       return res.status(403).json({ message: "Bạn không ở trong nhóm này" });
     }
-
-    conversation.participants.splice(participantIndex, 1);
-    conversation.unreadCounts.delete(userId);
-    conversation.seenBy = conversation.seenBy.filter(
-      (seenUser) => seenUser._id?.toString() !== userId && seenUser.toString?.() !== userId,
-    );
 
     await conversation.save();
     await conversation.populate([
@@ -366,6 +385,79 @@ export const leaveGroup = async (req, res) => {
     return res.status(200).json({ conversation: formatted });
   } catch (error) {
     console.error("Lỗi khi rời nhóm", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
+export const kickGroupMember = async (req, res) => {
+  try {
+    const { conversationId, memberId } = req.params;
+    const userId = req.user._id.toString();
+
+    const conversation = await Conversation.findById(conversationId)
+      .populate({
+        path: "participants.userId",
+        select: "displayName avatarUrl",
+      })
+      .populate({
+        path: "lastMessage.senderId",
+        select: "displayName avatarUrl",
+      })
+      .populate({
+        path: "seenBy",
+        select: "displayName avatarUrl",
+      });
+
+    if (!conversation) {
+      return res.status(404).json({ message: "Conversation không tồn tại" });
+    }
+
+    if (conversation.type !== "group") {
+      return res.status(400).json({ message: "Chỉ có thể kick thành viên khỏi nhóm chat" });
+    }
+
+    if (!isConversationParticipant(conversation, userId)) {
+      return res.status(403).json({ message: "Bạn không ở trong nhóm này" });
+    }
+
+    if (conversation.group?.createdBy?.toString() !== userId) {
+      return res.status(403).json({ message: "Chỉ trưởng nhóm mới được kick thành viên" });
+    }
+
+    if (conversation.group?.createdBy?.toString() === memberId) {
+      return res.status(400).json({ message: "Không thể kick trưởng nhóm" });
+    }
+
+    const removed = removeParticipantFromConversation(conversation, memberId);
+
+    if (!removed) {
+      return res.status(404).json({ message: "Thành viên không còn trong nhóm" });
+    }
+
+    await conversation.save();
+    await conversation.populate([
+      {
+        path: "participants.userId",
+        select: "displayName avatarUrl",
+      },
+      {
+        path: "lastMessage.senderId",
+        select: "displayName avatarUrl",
+      },
+      {
+        path: "seenBy",
+        select: "displayName avatarUrl",
+      },
+    ]);
+
+    const formatted = formatConversation(conversation);
+
+    io.to(conversationId).emit("conversation-updated", formatted);
+    io.to(memberId).emit("conversation-updated", formatted);
+
+    return res.status(200).json({ conversation: formatted });
+  } catch (error) {
+    console.error("Lỗi khi kick thành viên khỏi nhóm", error);
     return res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };
@@ -398,11 +490,7 @@ export const updateGroupDescription = async (req, res) => {
       return res.status(400).json({ message: "Chỉ nhóm chat mới có mô tả" });
     }
 
-    const isParticipant = conversation.participants.some(
-      (participant) =>
-        participant.userId?._id?.toString() === userId ||
-        participant.userId?.toString?.() === userId,
-    );
+    const isParticipant = isConversationParticipant(conversation, userId);
 
     if (!isParticipant) {
       return res.status(403).json({ message: "Bạn không ở trong nhóm này" });

@@ -70,6 +70,7 @@ export interface ChatState {
   updateConversation: (conversation: Partial<Conversation> & { _id: string }) => void;
   markAsSeen: () => Promise<void>;
   addConvo: (convo: Conversation) => void;
+  removeConversation: (conversationId: string) => void;
   createConversation: (
     type: "group" | "direct",
     name: string,
@@ -78,6 +79,7 @@ export interface ChatState {
   searchJoinableGroups: (keyword: string) => Promise<Conversation[]>;
   joinGroup: (conversationId: string) => Promise<boolean>;
   leaveGroup: (conversationId: string) => Promise<boolean>;
+  kickGroupMember: (conversationId: string, memberId: string) => Promise<boolean>;
   updateGroupDescription: (
     conversationId: string,
     description: string

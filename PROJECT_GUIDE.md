@@ -22,13 +22,20 @@ Tinh nang chinh da co trong code:
 
 - dang ky, dang nhap, dang xuat, refresh token
 - lay thong tin user hien tai
+- cap nhat thong tin ca nhan user
+- doi tai khoan va doi mat khau co xac thuc mat khau cu
 - tim user theo username
 - gui, chap nhan, tu choi loi moi ket ban
 - lay danh sach ban be
 - tao direct conversation va group conversation
+- tim va tham gia vao group chat co san bang ten nhom
+- roi khoi group chat
+- xem thong tin group chat
+- sua mo ta group chat cho truong nhom
 - gui tin nhan direct va group
 - lay danh sach conversation va lich su tin nhan
 - danh dau da xem tin nhan
+- hien thi avatar nhung nguoi da xem tin nhan cuoi
 - online presence bang Socket.IO
 - upload avatar len Cloudinary
 - giao dien sang/toi
@@ -345,7 +352,9 @@ Vi du dang dung:
 
 - `useAuthStore` dieu phoi login, logout, refresh, fetchMe
 - `useChatStore` quan ly conversation, message, markAsSeen
+- `useChatStore` cung quan ly them create group, join group, leave group, update group description
 - `useSocketStore` quan ly ket noi socket va event listeners
+- `useUserStore` quan ly upload avatar, update profile va update account security
 
 ### 9.3 Service layer
 
@@ -372,6 +381,15 @@ Quy tac mo rong:
 - khong tu tao axios instance khac neu khong co ly do rat ro rang
 - khong xu ly refresh token lan 2 o service hoac component
 - khong truyen token thu cong trong tung API call
+
+Mot so flow service/store quan trong da co hien tai:
+
+- `userService.updateProfile` + `useUserStore.updateProfile`
+- `userService.updateAccountSecurity` + `useUserStore.updateAccountSecurity`
+- `chatService.leaveGroup` + `useChatStore.leaveGroup`
+- `chatService.updateGroupDescription` + `useChatStore.updateGroupDescription`
+- `chatService.searchJoinableGroups` + `useChatStore.searchJoinableGroups`
+- `chatService.joinGroup` + `useChatStore.joinGroup`
 
 ### 9.5 Form va validation
 
@@ -427,6 +445,15 @@ router.get("/:id/messages", controller);
 router.patch("/:id/seen", controller);
 ```
 
+Mot so endpoint nghiep vu da co hien tai:
+
+- `PATCH /users/me`
+- `PATCH /users/security`
+- `PATCH /conversations/:conversationId/leave`
+- `PATCH /conversations/:conversationId/description`
+- `GET /conversations/groups/search?name=...`
+- `PATCH /conversations/:conversationId/join`
+
 Pattern controller:
 
 - validate input o dau ham
@@ -473,7 +500,8 @@ Pattern hien tai:
 - server socket khoi tao trong `backend/src/socket/index.js`
 - user join room theo `user._id`
 - user cung join tat ca room conversation cua minh
-- event dang co: `online-users`, `new-message`, `read-message`, `new-group`
+- client cung co the `join-conversation` va `leave-conversation`
+- event dang co: `online-users`, `new-message`, `read-message`, `new-group`, `conversation-updated`
 
 Quy tac mo rong:
 
@@ -495,6 +523,9 @@ Hop dong quan trong da co:
 
 - `Conversation`
 - `Message`
+- `Group`
+- `Participant`
+- `SeenUserRef`
 - `User`
 - `AuthState`
 - `ChatState`
@@ -590,7 +621,8 @@ Day la cac diem quan trong can biet de khong lam xau them su bat nhat:
 2. Swagger hien co mot so path mau chua ID cu the trong du lieu vi du, can cap nhat thanh path tong quat neu sau nay chinh ly docs.
 3. Mot so file backend co `// @ts-nocheck`. Khong nen sao chep motif nay sang file moi neu khong co ly do ro rang.
 4. Naming file frontend chua hoan toan thong nhat giua kebab-case va PascalCase. Khong nen doi le tung file dang on dinh vi de gay import churn.
-5. Event socket `new-group` dang duoc dung cho conversation moi. Neu muon doi ten event cho dung nghia hon, can doi dong bo ca backend va frontend trong cung mot lan refactor.
+5. Event socket `new-group` dang duoc dung cho conversation moi va group moi. Neu muon doi ten event cho dung nghia hon, can doi dong bo ca backend va frontend trong cung mot lan refactor.
+6. Repo hien co 2 tai lieu goc phuc vu phat trien: `PROJECT_GUIDE.md` mo ta codebase va `FEATURE_DEVELOPMENT_PLAYBOOK.md` mo ta quy trinh phat trien feature moi.
 
 ## 17. Nguyen tac them tinh nang moi ma khong gay xung dot
 
@@ -604,6 +636,7 @@ Bat buoc tuan thu khi phat trien:
 6. Neu backend response doi, cap nhat type frontend cung luc.
 7. Neu them style moi, uu tien token, utility class, primitive component co san.
 8. Neu them env moi, cap nhat tai lieu va setup instructions cung luc.
+9. Neu can tiep tuc mot feature lon o session moi, doc them `FEATURE_DEVELOPMENT_PLAYBOOK.md` truoc khi sua.
 
 ## 18. Checklist truoc khi merge mot feature moi
 
@@ -676,6 +709,16 @@ createExample: async (payload) => {
 },
 ```
 
+Mau feature flow dang duoc ap dung tot trong repo hien tai:
+
+1. component giu local state nhe va dialog open/close
+2. component goi action trong store
+3. store goi service
+4. service goi API qua `api`
+5. backend route/controller xu ly nghiep vu va quyen han
+6. neu can, backend emit socket event
+7. frontend listener merge lai state conversation/message
+
 ## 20. Tieu chuan nhat quan nen ap dung tu bay gio
 
 Neu tiep tuc phat trien du an nay, nen lay cac quy tac sau lam mac dinh:
@@ -686,6 +729,8 @@ Neu tiep tuc phat trien du an nay, nen lay cac quy tac sau lam mac dinh:
 - call API: di qua service + axios instance chung
 - auth: khong tu che co che token moi ngoai flow hien co
 - socket: moi event moi phai co ten va payload ro rang
+- feature group moi: phai xet dong bo giua participants, unreadCounts, socket room va menu hanh dong group
+- feature profile moi: phai xet dong bo giua `useAuthStore`, `useUserStore` va cac noi hien thong tin user
 - UI: giu design token, radius, shadow, gradient, utility class dong bo
 - naming: tang tinh nhat quan trong tung feature, khong sua tung manh le
 
