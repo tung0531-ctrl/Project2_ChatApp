@@ -7,6 +7,7 @@ import { getAvailableBotDefinitions } from "../ai/registry/index.js";
 const formatParticipants = (participants = []) =>
   participants.map((p) => ({
     _id: p.userId?._id ?? p.userId,
+    username: p.userId?.username,
     displayName: p.userId?.displayName,
     avatarUrl: p.userId?.avatarUrl ?? null,
     joinedAt: p.joinedAt,

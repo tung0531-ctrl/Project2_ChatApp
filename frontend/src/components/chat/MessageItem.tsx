@@ -1,4 +1,4 @@
-import { cn, formatMessageTime } from "@/lib/utils";
+import { cn, formatMessageTime, splitTextWithMentions } from "@/lib/utils";
 import type { Conversation, Message, Participant } from "@/types/chat";
 import UserAvatar from "./UserAvatar";
 import { Card } from "../ui/card";
@@ -120,6 +120,9 @@ const MessageItem = ({
   const senderAvatar = isBotMessage
     ? (message.botMeta?.avatarUrl ?? undefined)
     : (participant?.avatarUrl ?? undefined);
+  const contentSegments = message.content
+    ? splitTextWithMentions(message.content)
+    : [];
 
   return (
     <>
@@ -175,7 +178,16 @@ const MessageItem = ({
             <div className="space-y-2">
               {renderMessageMedia(message)}
               {message.content ? (
-                <p className="text-sm leading-relaxed break-words">{message.content}</p>
+                <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">
+                  {contentSegments.map((segment, segmentIndex) => (
+                    <span
+                      key={`${message._id}-segment-${segmentIndex}`}
+                      className={segment.isMention ? "font-semibold text-primary" : undefined}
+                    >
+                      {segment.text}
+                    </span>
+                  ))}
+                </p>
               ) : null}
             </div>
           </Card>

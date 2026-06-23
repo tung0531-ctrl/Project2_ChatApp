@@ -5,6 +5,48 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export const normalizeMentionSearch = (value: string) => {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLowerCase();
+};
+
+export const splitTextWithMentions = (text: string) => {
+  const mentionRegex = /(@[^\s]+)/g;
+  const segments: Array<{ text: string; isMention: boolean }> = [];
+  let lastIndex = 0;
+
+  for (const match of text.matchAll(mentionRegex)) {
+    const matchIndex = match.index ?? 0;
+
+    if (matchIndex > lastIndex) {
+      segments.push({
+        text: text.slice(lastIndex, matchIndex),
+        isMention: false,
+      });
+    }
+
+    segments.push({
+      text: match[0],
+      isMention: true,
+    });
+
+    lastIndex = matchIndex + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    segments.push({
+      text: text.slice(lastIndex),
+      isMention: false,
+    });
+  }
+
+  return segments.length > 0 ? segments : [{ text, isMention: false }];
+};
+
 export const formatOnlineTime = (date: Date) => {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
