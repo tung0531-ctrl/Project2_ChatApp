@@ -134,6 +134,34 @@ const getReferencePreviewText = (reference?: Message["replyTo"] | null) => {
   return "Tin nhắn";
 };
 
+const getReferenceSenderName = (
+  reference: Message["replyTo"] | null | undefined,
+  conversation: Conversation,
+  currentUserId?: string,
+) => {
+  if (!reference) {
+    return "tin nhắn";
+  }
+
+  if (reference.messageType === "bot") {
+    return reference.botMeta?.displayName ?? "bot";
+  }
+
+  if (reference.senderId?.toString() === currentUserId?.toString()) {
+    return "chính mình";
+  }
+
+  const matchedParticipant = conversation.participants.find(
+    (participant) => participant._id.toString() === reference.senderId?.toString()
+  );
+
+  return matchedParticipant?.displayName ?? "tin nhắn";
+};
+
+const getReplyCaption = (referencedSenderName: string) => {
+  return `Phản hồi ${referencedSenderName}`;
+};
+
 const canManagePinnedMessage = (
   conversation: Conversation,
   userId?: string | null,
@@ -205,6 +233,12 @@ const MessageItem = ({
   const canPinMessage = canManagePinnedMessage(selectedConvo, currentUserId);
   const isPinnedMessage =
     normalizeId(selectedConvo.pinnedMessage?.messageId) === normalizeId(message._id);
+  const referencedSenderName = getReferenceSenderName(
+    message.replyTo,
+    selectedConvo,
+    currentUserId
+  );
+  const replyCaption = getReplyCaption(referencedSenderName);
 
   const reactionUsers = selectedReaction
     ? selectedReaction.userIds.map((reactionUserId) => {
@@ -286,7 +320,7 @@ const MessageItem = ({
 
       <div
         className={cn(
-          "flex items-end gap-2 message-bounce mt-1",
+          "flex items-end gap-2 message-bounce mt-2",
           message.isOwn ? "justify-end" : "justify-start"
         )}
       >
@@ -332,6 +366,37 @@ const MessageItem = ({
                 )}
               >
                 <div className="flex flex-col">
+                  {message.replyTo ? (
+                    <div
+                      className={cn(
+                        "mb-1 flex flex-col gap-1 px-1",
+                        message.isOwn ? "items-end text-right" : "items-start text-left"
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "flex items-center gap-1 text-[11px] font-medium text-muted-foreground/90",
+                          message.isOwn ? "justify-end" : "justify-start"
+                        )}
+                      >
+                        <Reply className="size-3.5" />
+                        <span>{replyCaption}</span>
+                      </div>
+                      <div
+                        className={cn(
+                          "max-w-full rounded-2xl border px-3 py-2 text-xs shadow-sm",
+                          message.isOwn
+                            ? "border-white/15 bg-primary/20 text-white/80"
+                            : "border-primary/15 bg-primary/10 text-foreground/75"
+                        )}
+                      >
+                        <p className="line-clamp-2 break-words leading-relaxed">
+                          {getReferencePreviewText(message.replyTo)}
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
+
                   <Card
                     onPointerDown={(event) => {
                       if (event.pointerType === "mouse" && event.button !== 0) {
@@ -358,21 +423,6 @@ const MessageItem = ({
                         <div className="flex items-center gap-1.5 rounded-md border border-primary/20 bg-primary/10 px-2 py-1 text-xs text-primary">
                           <Pin className="size-3.5 shrink-0" />
                           <span className="truncate font-medium">Tin nhắn đang được ghim</span>
-                        </div>
-                      ) : null}
-
-                      {message.replyTo ? (
-                        <div
-                          className={cn(
-                            "rounded-2xl px-3 py-2 text-xs backdrop-blur-[1px]",
-                            message.isOwn
-                              ? "bg-white/14 text-white/70"
-                              : "bg-black/5 text-foreground/55"
-                          )}
-                        >
-                          <p className="line-clamp-2 break-words leading-relaxed">
-                            {getReferencePreviewText(message.replyTo)}
-                          </p>
                         </div>
                       ) : null}
 
