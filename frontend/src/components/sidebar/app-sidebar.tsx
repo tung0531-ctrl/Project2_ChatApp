@@ -26,6 +26,7 @@ import { useNotificationStore } from "@/stores/useNotificationStore";
 import { useEffect, useRef, useState } from "react";
 import { useFriendStore } from "@/stores/useFriendStore";
 import { Input } from "../ui/input";
+import { useNavigate } from "react-router";
 
 const SIDEBAR_SPLIT_STORAGE_KEY = "chat-sidebar-split";
 const MIN_SECTION_PERCENT = 0;
@@ -34,7 +35,8 @@ const DEFAULT_GROUP_SECTION_PERCENT = 50;
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuthStore();
-  const { convoLoading } = useChatStore();
+  const { convoLoading, setActiveConversation } = useChatStore();
+  const navigate = useNavigate();
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [friendSearchOpen, setFriendSearchOpen] = useState(false);
   const [friendKeyword, setFriendKeyword] = useState("");
@@ -105,6 +107,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     window.addEventListener("mouseup", stopResize);
   };
 
+  const handleGoToChatHome = () => {
+    setActiveConversation(null);
+    navigate("/chat");
+  };
+
   return (
     <>
       <Sidebar
@@ -118,13 +125,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <SidebarMenuButton
                 size="lg"
                 className="bg-gradient-primary"
+                onClick={handleGoToChatHome}
               >
                 <div className="flex w-full items-center justify-between px-2">
                   <h1 className="text-xl font-bold text-white">ChatApp</h1>
 
                   <button
                     type="button"
-                    onClick={() => setNotificationOpen(true)}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setNotificationOpen(true);
+                    }}
                     className="relative inline-flex size-9 items-center justify-center rounded-full text-white/90 transition-colors hover:bg-white/15 hover:text-white"
                     aria-label="Mở thông báo"
                   >
