@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import User from "../../models/User.js";
+import Message from "../../models/Message.js";
 import { getBotEngineById, getBotEngines } from "../registry/index.js";
 
 const botUserCache = new Map();
@@ -52,7 +53,63 @@ const resolveBotUser = async (bot) => {
   return user;
 };
 
-export const buildBotReplyForGroupMessage = async ({ conversation, content }) => {
+const buildContextualPrompt = async ({ conversationId, currentMessageId, currentContent }) => {
+  const recentMessages = await Message.find(
+    {
+      conversationId,
+      _id: { $ne: currentMessageId },
+      messageType: "user",
+      content: { $exists: true, $nin: [null, ""] },
+    },
+    { content: 1 },
+  )
+    .sort({ createdAt: -1 })
+    .limit(4)
+    .lean();
+
+  if (!recentMessages.length) {
+    return currentContent;
+  }
+
+  const orderedContext = [...recentMessages]
+    .reverse()
+    .map((message) => message.content?.trim())
+    .filter(Boolean);
+
+  return [...orderedContext, currentContent].join("\n");
+};
+
+const inferBotReplyContent = async ({ bot, conversation, content, currentMessageId }) => {
+  const primaryInference = bot.run(content);
+
+  if (!primaryInference.needsContext) {
+    return primaryInference;
+  }
+
+  const contextualPrompt = await buildContextualPrompt({
+    conversationId: conversation._id,
+    currentMessageId,
+    currentContent: content,
+  });
+
+  if (contextualPrompt === content) {
+    return primaryInference;
+  }
+
+  const contextualInference = bot.run(contextualPrompt);
+
+  if (!contextualInference.usedFallback || !contextualInference.needsContext) {
+    return contextualInference;
+  }
+
+  return primaryInference;
+};
+
+export const buildBotReplyForGroupMessage = async ({
+  conversation,
+  content,
+  currentMessageId,
+}) => {
   if (conversation.type !== "group") {
     return null;
   }
@@ -69,7 +126,12 @@ export const buildBotReplyForGroupMessage = async ({ conversation, content }) =>
     return null;
   }
 
-  const inference = bot.run(content);
+  const inference = await inferBotReplyContent({
+    bot,
+    conversation,
+    content,
+    currentMessageId,
+  });
 
   if (!inference.content) {
     return null;

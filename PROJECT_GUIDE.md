@@ -35,6 +35,7 @@ Tinh nang chinh da co trong code:
 - roi khoi group chat
 - xem thong tin group chat
 - sua mo ta group chat cho truong nhom
+- truong nhom co the bat/tat cac AI bot co san theo tung group
 - truong nhom co the kick thanh vien khoi group
 - gui tin nhan direct va group voi text, anh, GIF, video va tep dinh kem thong dung
 - lay danh sach conversation va lich su tin nhan
@@ -46,6 +47,8 @@ Tinh nang chinh da co trong code:
 - upload avatar va tep chat len Cloudinary
 - sidebar chat cho phep resize khung nhin giua danh sach nhom chat va danh sach ban be
 - giao dien sang/toi
+- goi y mention theo kieu Messenger cho user va bot trong o nhap tin nhan nhom
+- bot reply duoc luu va render nhu message that trong lich su chat
 
 ## 3. Cong nghe va thu vien duoc su dung
 
@@ -93,6 +96,7 @@ backend/
   src/
     server.js                # diem vao backend
     swagger.json             # tai lieu API dang su dung
+    ai/                      # engine AI bot dung chung + bot definitions theo domain
     controllers/             # xu ly nghiep vu theo module, da co them notificationController
     libs/                    # ket noi DB
     middlewares/             # auth, upload, friend check, socket auth
@@ -182,6 +186,43 @@ Backend hien tai cung da ho tro attachment messaging theo flow rieng:
 - `POST /messages/upload`: upload file len Cloudinary
 - `sendDirectMessage` va `sendGroupMessage`: chap nhan text-only, media-only, hoac text + media
 - `Message` va `Conversation.lastMessage`: luu them metadata file/media de phuc vu preview va render
+
+### 5.3 AI bot flow hien tai
+
+He thong AI bot hien tai da duoc noi vao chat group theo huong expert-system voi 1 engine chung va nhieu bot data packs.
+
+Backend da co:
+
+- `backend/src/ai/registry`: dang ky bot definitions co san
+- `backend/src/ai/loaders`: load JSON bot definitions
+- `backend/src/ai/engines`: classify intent, extract entity, match rules, build response
+- `backend/src/ai/services/botService.js`: detect trigger, check bot enablement, lay recent context, build bot reply payload
+- mo rong `Conversation`, `Message`, `User` de luu bot config, bot message metadata va system bot account
+
+Frontend da co:
+
+- `GroupInfoDialog` cho truong nhom bat/tat bot
+- `MessageInput` ho tro mention suggestions cho participant va bot dang bat
+- `MessageItem` render mention highlight va bot badge/message metadata
+- `useChatStore` + `chatService` da noi flow fetch bot definitions va update bot settings
+
+Runtime flow thuc te:
+
+1. user gui group message nhu binh thuong
+2. backend luu va emit user message
+3. backend detect mention trigger nhu `@botGame`
+4. backend check bot co duoc bat trong group hay khong
+5. engine chung vector hoa TF-IDF + classify intent bang Naive Bayes, sau do extract entity + chay forward chaining de chon rule/response
+6. neu co ket qua hop le, backend tao bot reply thanh message that
+7. socket emit `new-message` nhu message thuong de frontend render dong bo
+
+Luu y quan trong:
+
+- bot chi xu ly group chat
+- bot chi tra loi khi bi mention dung trigger
+- toi da 1 bot reply cho 1 user message
+- IF-THEN nghiep vu nam trong `backend/src/ai/bots/*.json`, con JavaScript engine chi dong vai tro thuc thi luat
+- classifier hien tai co them exact-example hit va TF-IDF similarity rerank de giam fallback sai khi kho intents/data pack mo rong
 
 ## 6. Quy uoc to chuc module
 

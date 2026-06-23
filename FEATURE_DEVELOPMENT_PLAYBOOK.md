@@ -329,7 +329,43 @@ Day la cac feature da can den:
 - state sync
 - mot so truong hop co socket update
 
-## 17. Ket luan
+## 17. Handoff rieng cho session AI bot tiep theo
+
+Neu session tiep theo tiep tuc feature AI bot, nen vao theo thu tu sau thay vi doc lai rong ca repo:
+
+1. `AI_BOT_EXPERT_SYSTEM_PLAN.md`
+2. `backend/src/ai/services/botService.js`
+3. `backend/src/ai/engines/expertBotEngine.js`
+4. `backend/src/controllers/messageController.js`
+5. `frontend/src/components/chat/MessageInput.tsx`
+6. `frontend/src/components/chat/GroupInfoDialog.tsx`
+
+Nhung diem da on dinh can giu nguyen:
+
+- 1 engine chung, nhieu bot definitions
+- bot chi tra loi khi bi mention dung trigger co dinh
+- toi da 1 bot cho 1 message
+- group owner la nguoi duy nhat duoc bat/tat bot
+- bot reply di qua dung message flow hien tai, khong lam luong rieng
+- mention UI dang dua tren textarea overlay + mention parser chung
+
+Nhung diem can nho khi mo rong:
+
+- neu them bot moi, uu tien them JSON bot pack truoc khi sua engine
+- neu them tri thuc moi cho botGame, sua `entities`, `examples`, `rules`, `responses` truoc
+- voi classifier hien tai, neu them intent moi thi nen them ca examples gan exact user phrasing va examples paraphrase de lop TF-IDF + Naive Bayes + similarity rerank co diem tua tot hon
+- neu thay doi payload message, phai cap nhat dong bo `Message`, `Conversation.lastMessage`, socket merge va TS types
+- neu sua mention UX, phai test ca light mode, dark mode, own bubble va received bubble
+
+Validation hep nen uu tien cho nhanh:
+
+1. `get_errors` tren cac file vua sua
+2. frontend build neu dong vao TypeScript/UI
+3. backend import check hoac route/controller check neu dong vao engine/message flow
+4. runtime test bang group message co mention trigger neu sua logic bot
+5. neu sua `botGame.json`, uu tien test mot lo paraphrase nho cho bot info, hero, esports va patch de bat som cac intent bi roi duoi threshold
+
+## 18. Ket luan
 
 Neu muon phat trien tinh nang moi trong ChatApp theo cach dong bo va ben vung, hay giu mot nguyen tac rat don gian:
 

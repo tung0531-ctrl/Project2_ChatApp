@@ -157,6 +157,7 @@ export const sendGroupMessage = async (req, res) => {
     const botReply = await buildBotReplyForGroupMessage({
       conversation,
       content: normalizedMessage.content ?? "",
+      currentMessageId: message._id,
     });
 
     if (botReply) {

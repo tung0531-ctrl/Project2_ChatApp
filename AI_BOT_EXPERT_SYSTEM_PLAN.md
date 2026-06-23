@@ -154,6 +154,12 @@ Dieu nay giup:
 - de debug hon
 - de them bot moi hon
 
+Trang thai implementation hien tai:
+
+- da co `normalizeText` + TF-IDF vectorizer + Naive Bayes classifier cho intent classification
+- classifier da duoc bo sung exact-example hit va TF-IDF similarity rerank de giam lech prior khi so intent tang cao
+- rules van la lop quyet dinh cuoi cung cho response, classifier chi giup xac dinh intent gan dung
+
 ## 8. Trien khai backend duoc khuyen nghi
 
 Nen them mot domain rieng cho AI, vi du:
@@ -227,7 +233,43 @@ De giam rui ro, MVP nen giu cac gioi han sau:
 
 Sau khi bot dau tien on dinh, moi them bot thu hai de kiem tra kha nang tai su dung engine.
 
-## 12. Session checklist cho cac lan phat trien sau
+## 12. Trang thai implementation hien tai
+
+Nhung gi da duoc code xong trong repo:
+
+### Backend
+
+- them `backend/src/ai/` gom `registry`, `loaders`, `engines`, `services`, `bots`
+- da co bot dau tien `botGame.json`
+- `messageController` da noi bot flow sau khi luu group message
+- `Conversation.group.bots` luu enablement theo group
+- `Message.messageType` va `Message.botMeta` luu bot reply nhu message that
+- `Conversation.lastMessage` da giu `messageType` va `botMeta` cho preview
+- `User.accountType` phan biet human va system bot
+- bot service da co retry theo recent conversation context khi can them ngu canh
+
+### Frontend
+
+- da co group settings de owner bat/tat bot
+- da co mention suggestion cho user va bot trong `MessageInput`
+- da co render mention highlight va bot badge trong `MessageItem`
+- `chatService`, `useChatStore`, `useSocketStore`, `types/chat.ts` da duoc noi them field bot lien quan
+
+### Nhung gi chua lam hoac chua day du
+
+- chua co bot thu hai de test muc do tai su dung cua engine
+- chua co CMS quan tri knowledge online
+- chua ho tro DM voi bot
+- chua co bo benchmark/rule regression test tu dong cho bot data packs lon
+- kho tri thuc da mo rong ro, nhung van co the tiep tuc them heroes/items/patches/esports entities neu muon day intent hon nua
+
+### IF-THEN dang nam o dau
+
+- IF nghiep vu duoc khai bao trong `backend/src/ai/bots/botGame.json`, muc `rules`
+- THEN duoc engine o `backend/src/ai/engines/expertBotEngine.js` thuc thi qua `runForwardChaining(...)`, bang cach chon `responseKey` hoac `knowledgeField`
+- cac cau lenh `if` trong JavaScript chu yeu la bo may kiem tra dieu kien va thuc thi luat, khong phai noi khai bao tri thuc domain
+
+## 13. Session checklist cho cac lan phat trien sau
 
 Moi khi lam tiep tinh nang nay, can giu dung cac diem sau:
 
@@ -241,8 +283,10 @@ Moi khi lam tiep tinh nang nay, can giu dung cac diem sau:
 8. Bot reply phai la message that trong lich su chat.
 9. Neu them bot moi, uu tien them data pack truoc, khong nhan ban logic engine.
 10. Validate luong end-to-end: group setting -> trigger -> bot reply -> socket -> UI render.
+11. Neu them tri thuc moi, cap nhat ca `examples`, `entities`, `rules` va `responses` de tranh lech classifier va rule base.
+12. Neu sua mention UX, test ca dark mode, own bubble va received bubble.
 
-## 13. Ket luan
+## 14. Ket luan
 
 Kien truc da chot cua tinh nang AI bot trong ChatApp la:
 

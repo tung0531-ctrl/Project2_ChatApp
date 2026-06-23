@@ -2,7 +2,15 @@
   "botId": "botGame",
   "displayName": "Bot Game",
   "trigger": "@botGame",
-  "description": "He chuyen gia tra loi kien thuc co ban ve tuong Lien Quan.",
+  "description": "He chuyen gia ve Lien Quan Mobile voi TF-IDF, Naive Bayes va suy dien IF-THEN theo huong mo rong tri thuc game, esports va thong tin ben le.",
+  "confidenceThreshold": 0.14,
+  "classifier": {
+    "alpha": 0.9,
+    "vectorizerOptions": {
+      "ngramRange": [1, 2],
+      "stopwords": ["botgame", "bot", "game"]
+    }
+  },
   "systemUser": {
     "username": "botgame_system",
     "email": "botgame.system@chatapp.local",
@@ -13,71 +21,618 @@
     { "text": "chao bot game", "intent": "greeting" },
     { "text": "hello bot game", "intent": "greeting" },
     { "text": "bot game oi", "intent": "greeting" },
+    { "text": "xin chao chatbot", "intent": "greeting" },
+
+    { "text": "ban la ai", "intent": "bot_identity" },
+    { "text": "bot game la gi", "intent": "bot_identity" },
+    { "text": "day la bot nao", "intent": "bot_identity" },
+
+    { "text": "bot nay dung de lam gi", "intent": "bot_capabilities" },
+    { "text": "bot co the tra loi nhung gi", "intent": "bot_capabilities" },
+    { "text": "pham vi ho tro cua bot la gi", "intent": "bot_capabilities" },
+
+    { "text": "chatbot nay hoat dong nhu the nao", "intent": "bot_how_it_works" },
+    { "text": "co che cua bot la gi", "intent": "bot_how_it_works" },
+    { "text": "bot xu ly tin nhan ra sao", "intent": "bot_how_it_works" },
+
+    { "text": "lien quan la game gi", "intent": "game_overview" },
+    { "text": "arena of valor la game nao", "intent": "game_overview" },
+    { "text": "tong quan ve aov", "intent": "game_overview" },
+    { "text": "game nay co nhung che do choi nao", "intent": "game_modes" },
+    { "text": "aov co mode nao", "intent": "game_modes" },
+    { "text": "game nay co role nao", "intent": "game_roles" },
+    { "text": "aov co nhung vai tro nao", "intent": "game_roles" },
+    { "text": "abyssal dragon la gi", "intent": "objective_info" },
+    { "text": "dark slayer de lam gi", "intent": "objective_info" },
+
     { "text": "violet di duong nao", "intent": "hero_role" },
     { "text": "nakroth la tuong gi", "intent": "hero_role" },
     { "text": "krixi choi vi tri nao", "intent": "hero_role" },
     { "text": "maloch hop vai tro gi", "intent": "hero_role" },
+    { "text": "allain di duong nao", "intent": "hero_role" },
+    { "text": "tulen la tuong gi", "intent": "hero_role" },
+
     { "text": "ky nang cua violet la gi", "intent": "hero_skill" },
     { "text": "nakroth co bo ky nang nao", "intent": "hero_skill" },
     { "text": "krixi co skill nao manh", "intent": "hero_skill" },
     { "text": "maloch co chieu gi manh", "intent": "hero_skill" },
+    { "text": "allain co bo ky nang nao", "intent": "hero_skill" },
+    { "text": "tulen co skill gi", "intent": "hero_skill" },
+
     { "text": "build violet nhu nao", "intent": "hero_build" },
     { "text": "len do cho nakroth", "intent": "hero_build" },
     { "text": "krixi nen len do gi", "intent": "hero_build" },
-    { "text": "maloch dung trang bi nao", "intent": "hero_build" }
+    { "text": "maloch dung trang bi nao", "intent": "hero_build" },
+    { "text": "build allain", "intent": "hero_build" },
+    { "text": "tulen len do nhu nao", "intent": "hero_build" },
+
+    { "text": "diem manh cua violet la gi", "intent": "hero_strength" },
+    { "text": "nakroth manh o dau", "intent": "hero_strength" },
+    { "text": "krixi co diem yeu gi", "intent": "hero_weakness" },
+    { "text": "maloch bi khac che boi gi", "intent": "hero_counter" },
+    { "text": "lore cua krixi la gi", "intent": "hero_lore" },
+
+    { "text": "claves sancti dung de lam gi", "intent": "item_info" },
+    { "text": "fenrir tooth co tac dung gi", "intent": "item_info" },
+    { "text": "hecate diadem hop voi ai", "intent": "item_info" },
+    { "text": "muramasa de lam gi", "intent": "item_info" },
+    { "text": "boomstick dung de lam gi", "intent": "item_info" },
+    { "text": "medallion of troy co tac dung gi", "intent": "item_info" },
+
+    { "text": "aic la giai gi", "intent": "tournament_info" },
+    { "text": "awc la giai gi", "intent": "tournament_info" },
+    { "text": "aog la giai nao", "intent": "tournament_info" },
+    { "text": "lich su aic nhu the nao", "intent": "tournament_history" },
+    { "text": "awc bat dau tu khi nao", "intent": "tournament_history" },
+
+    { "text": "team flash co gi dac biet", "intent": "team_info" },
+    { "text": "saigon phantom la doi nao", "intent": "team_info" },
+
+    { "text": "lai bang la ai", "intent": "player_info" },
+    { "text": "adc team flash la ai", "intent": "player_info" },
+    { "text": "xb la ai", "intent": "player_info" },
+
+    { "text": "ban cap nhat gan day co gi", "intent": "patch_info" },
+    { "text": "patch 4 june 2026 co gi", "intent": "patch_info" },
+    { "text": "ban cap nhat 22 may 2026 thay doi gi", "intent": "patch_info" },
+    { "text": "cho minh biet ve patch thang 6 2026", "intent": "patch_info" },
+    { "text": "patch thang 5 2026 co gi", "intent": "patch_info" },
+    { "text": "patch moi nhat cua game la ban nao", "intent": "patch_version_history" },
+    { "text": "lich su version game nhu the nao", "intent": "patch_version_history" },
+
+    { "text": "lich su arena of valor nhu the nao", "intent": "game_history" },
+    { "text": "lien quan ra mat khi nao", "intent": "game_history" },
+    { "text": "game nay co collab gi hay", "intent": "trivia_info" },
+    { "text": "thong tin ben le cua aov", "intent": "trivia_info" },
+    { "text": "aov co len sea games khong", "intent": "trivia_info" }
   ],
   "entities": {
     "heroes": [
       {
         "id": "violet",
-        "aliases": ["violet"],
+        "name": "Violet",
+        "aliases": ["violet", "vi", "violet ad"],
         "knowledge": {
-          "role": "Violet la xa thu, thuong di duong Rong hoac duoc bao ke de gay sat thuong cuoi tran.",
-          "skillSummary": "Violet manh nhat o kha nang cau ria tam xa bang Dam Xuyen Thau sau khi lan nguoi, ket hop Nem Luu Dan de cau mau va Don Cao Xa de ket lieu.",
-          "build": "Mot huong build co ban cho Violet la: Giay Du Muc, Thanh Kiem, Song Dao Bao Tap, Kiem Fafnir, Cung Ta Ma, Giap Ho Menh. Co the doi mon phong thu theo tran dau."
+          "role": "Violet la xa thu chu luc, thuong di duong Rong va dong vai tro carry sat thuong vat ly ve cuoi tran.",
+          "skillSummary": "Violet noi bat voi lan luot tang tam danh va sat thuong o Dam Xuyen Thau, Nem Luu Dan de cau ria, va Don Cao Xa de don sat thuong tam xa.",
+          "build": "Mot huong build an toan cho Violet la Giay Du Muc, Thanh Kiem, Song Dao Bao Tap, Kiem Fafnir, Muramasa va Giap Ho Menh. Co the thay doi mon cuoi theo the tran.",
+          "strength": "Violet manh o sat thuong tay tam xa, kha nang cau ria tot va kha nang ket lieu muc tieu mong nhanh o giai doan giua va cuoi tran.",
+          "weakness": "Violet phu thuoc vao vi tri va trang bi, rat de bi sat thu bat vao neu mat toc bien hoac thieu bao ke.",
+          "counter": "Tuong co kha nang ap sat nhanh, don khong che manh hoac mo giao tranh thang vao xa thu co the khac che Violet rat tot.",
+          "lore": "Violet thuong duoc nho den nhu mot xa thu phong cach quy toc, linh hoat va chuyen gay sat thuong tu xa trong giao tranh."
         }
       },
       {
         "id": "nakroth",
-        "aliases": ["nakroth", "nak"],
+        "name": "Nakroth",
+        "aliases": ["nakroth", "nak", "nakroth rung"],
         "knowledge": {
-          "role": "Nakroth la sat thu di rung, manh o kha nang co dong, bat le va day le tu giua tran den cuoi tran.",
-          "skillSummary": "Nakroth manh nhat o bo ky nang co nhieu lan luot va hat tung. Chieu Boi Tham Doan Menh giup ap sat, Ngu Quyet Don xu ly khong che, va Gươm Hanh Quyét de don sat thuong dien rong.",
-          "build": "Mot huong build co ban cho Nakroth la: Riu Leviathan hoac Riu Truy Hon, Giay Kien Cuong, Thuong Longinus, To Hop Kiem, Phuc Hop Kiem, Giap Ho Menh."
+          "role": "Nakroth la sat thu di rung, noi bat o kha nang co dong cao, day le nhanh va bat le muc tieu mong.",
+          "skillSummary": "Nakroth co bo ky nang nhieu lan luot, hat tung va lao vao nhanh. Chieu thuc cua tuong nay phu hop mo cac pha bat vao hang sau va rut ra som.",
+          "build": "Mot huong build pho bien cho Nakroth la trang bi rung sat thu, Giay Kien Cuong, Thuong Longinus, Phuc Hop Kiem, To Hop Kiem va Giap Ho Menh.",
+          "strength": "Nakroth manh o kha nang di chuyen, split push, kiem soat muc tieu va trung phat cac muc tieu it co ky nang tu ve.",
+          "weakness": "Nakroth mong, phu thuoc vao goc vao giao tranh va de bi vo giao an nguoc neu lao vao sai thoi diem.",
+          "counter": "Khong che cung, doi hinh day mat va tuong co kha nang giu chan lau la bai toan kho cho Nakroth.",
+          "lore": "Nakroth thuong duoc xem la mot sat thu bieu tuong cho loat pha outplay va kha nang split push."
         }
       },
       {
         "id": "krixi",
-        "aliases": ["krixi"],
+        "name": "Krixi",
+        "aliases": ["krixi", "krixi mid"],
         "knowledge": {
-          "role": "Krixi la phap su duong giua, manh o sat thuong dien rong va cau ria giao tranh.",
-          "skillSummary": "Krixi gay kho chiu nho Bom Tinh Quang cau ria, Buoc Chan Khong Che de giu chan muc tieu, va Mua Sao Bang sat thuong dien rong trong giao tranh tong.",
-          "build": "Mot huong build co ban cho Krixi la: Giay Phu Thuy, Ngoc Dai Phap Su, Vuong Mien Hecate, Truong Hon, Sach Thanh, Qua Cau Bang Suong hoac Giap Ho Menh phep."
+          "role": "Krixi la phap su duong giua, gioi cau ria, day linh nhanh va gay sat thuong dien rong.",
+          "skillSummary": "Krixi noi bat voi bo ky nang gay sat thuong phep tam xa, hat tung khoi tao va chieu cuoi Mua Sao Bang de dot sat thuong trong giao tranh tong.",
+          "build": "Mot huong build co ban cho Krixi la Orb of the Magi, Enchanted Kicks, Boomstick, Hecate's Diadem, Staff of Nuul va Holy of Holies.",
+          "strength": "Krixi manh o sat thuong phep dien rong, clear wave nhanh va kha nang roam sau khi day duong.",
+          "weakness": "Krixi khong qua cung cap va de gap nguy hiem khi sat thu lao vao hoac khi dung chieu hut vi tri.",
+          "counter": "Sat thu co kha nang ap sat nhanh va cac tuong co khong che mo rong thuong khac che Krixi.",
+          "lore": "Krixi thuong duoc gan voi hinh anh nang tien toc do cao, cau ria kho chiu va sat thuong phep on dinh."
         }
       },
       {
         "id": "maloch",
-        "aliases": ["maloch"],
+        "name": "Maloch",
+        "aliases": ["maloch", "maloch ta than"],
         "knowledge": {
-          "role": "Maloch la dau si do don, thuong di duong Ta Than Caesar va mo giao tranh rat tot.",
-          "skillSummary": "Maloch manh o sat thuong chuan tu Quet Kiem, lam cham va tao khong gian bang Doa Dia Nguc, cung voi Kiem Dia Nguc de mo giao tranh tam xa.",
-          "build": "Mot huong build co ban cho Maloch la: Giay Kien Cuong, Ao Choang Than Ra, Thuong Longinus, Huan Chuong Troy, Giap Thong Kho, Giap Ho Menh."
+          "role": "Maloch la warrior-tank thuong di duong Ta Than Caesar, gioi mo giao tranh va gay sat thuong chuan trong giao tranh keo dai.",
+          "skillSummary": "Maloch noi bat voi Cleave co the gay true damage khi vu khi duoc cuong hoa, Souleater tao giap va Shock de mo giao tranh tam xa.",
+          "build": "Mot huong build can bang cho Maloch la Mantle of Ra, Gilded Greaves, Frost Cape, Medallion of Troy, Mail of Pain va Fenrir's Tooth.",
+          "strength": "Maloch manh o mo giao tranh, dung front line lau va tao suc ep lon o cac pha combat tong.",
+          "weakness": "Maloch can danh trung ky nang chu luc de toi uu sat thuong va hoi phuc, neu truot nhieu se giam ap luc dang ke.",
+          "counter": "Nhung tuong co the cau mau tam xa, thieu cho Maloch vao dep va kite lien tuc se gay kho cho tuong nay.",
+          "lore": "Maloch la bieu tuong cua mau tank dau si mo giao tranh, duoc biet den nho sat thuong chuan va chieu cuoi nhay vao giao tranh."
+        }
+      },
+      {
+        "id": "allain",
+        "name": "Allain",
+        "aliases": ["allain", "allain top", "allain ta than"],
+        "knowledge": {
+          "role": "Allain la dau si co kha nang solo manh, thuong di duong Ta Than Caesar va co the lao vao giao tranh de bat muc tieu chu luc.",
+          "skillSummary": "Allain so huu bo ky nang danh lien tuc, hoi phuc va ap sat. Chieu cuoi cua tuong nay giup khoa muc tieu va lao vao giao tranh rat manh.",
+          "build": "Mot huong build pho bien cho Allain la Gilded Greaves, Rankbreaker, Omni Arms, Fenrir's Tooth, Medallion of Troy va Blade of Eternity.",
+          "strength": "Allain manh o doi dau tay doi tay, bat muc tieu mong va tao suc ep o giao tranh nho.",
+          "weakness": "Allain de gap kho khi bi tha dieu tam xa lien tuc va khi doi phuong co qua nhieu khong che cung.",
+          "counter": "Nhung keo co khong che, kite tot va cat hoi phuc thuong la cach khac che Allain hieu qua.",
+          "lore": "Allain duoc biet den nhu mot dau si co phong cach danh danh, linh hoat va kha nang truy sat muc tieu cao."
+        }
+      },
+      {
+        "id": "tulen",
+        "name": "Tulen",
+        "aliases": ["tulen", "tulen mid"],
+        "knowledge": {
+          "role": "Tulen la phap su sat thu duong giua, gioi roam, don sat thuong nhanh va truy duoi muc tieu thap mau.",
+          "skillSummary": "Tulen noi bat voi set dien tich dien, kha nang lao ngan va chieu cuoi gay sat thuong manh len muc tieu thap mau.",
+          "build": "Mot huong build pho bien cho Tulen la Orb of the Magi, Enchanted Kicks, Boomstick, Hecate's Diadem, Staff of Nuul va Holy of Holies.",
+          "strength": "Tulen manh o burst damage, roam nhanh va don ket muc tieu dang thap mau rat tot.",
+          "weakness": "Tulen can vao tam ky nang hop ly, de gap kho khi doi phuong co nhieu giap phep va khong che dien rong.",
+          "counter": "Doi hinh day chong phep, giu vi tri chat va cau mau tam xa la bai toan kho cho Tulen.",
+          "lore": "Tulen thuong duoc nhac den nhu mot phap su dien co kha nang tao snowball tu giai doan som."
+        }
+      }
+    ],
+    "items": [
+      {
+        "id": "claves_sancti",
+        "name": "Claves Sancti",
+        "aliases": ["claves sancti", "thanh kiem", "kiem crit"],
+        "knowledge": {
+          "info": "Claves Sancti la trang bi sat thuong vat ly nghieng ve chi mang, thuong dung cho xa thu va mot so sat thu can no dame tay.",
+          "usage": "Trang bi nay hop voi cac tuong can cuong hoa sat thuong chi mang nhu Violet hoac nhung xa thu danh tay ve giua cuoi tran.",
+          "type": "Day la trang bi cong vat ly huong crit, khong phai trang bi phong thu hay phep."
+        }
+      },
+      {
+        "id": "fenrirs_tooth",
+        "name": "Fenrir's Tooth",
+        "aliases": ["fenrir tooth", "fenrir's tooth", "nanh fenrir"],
+        "knowledge": {
+          "info": "Fenrir's Tooth la trang bi vat ly thien ve ket lieu, giup sat thuong len muc tieu thap mau nguy hiem hon.",
+          "usage": "Trang bi nay hop voi sat thu, dau si va xa thu muon tang kha nang don ket muc tieu o giai doan cuoi tran.",
+          "type": "Day la trang bi cong vat ly huong snowball va ket lieu."
+        }
+      },
+      {
+        "id": "hecates_diadem",
+        "name": "Hecate's Diadem",
+        "aliases": ["hecate diadem", "hecate's diadem", "vuong mien hecate"],
+        "knowledge": {
+          "info": "Hecate's Diadem la trang bi phep tang luong cong phep rat manh, thuong la mon core cho nhieu phap su.",
+          "usage": "Trang bi nay phu hop voi Krixi, Tulen va cac phap su burst can toi uu sat thuong phep theo nguong trang bi.",
+          "type": "Day la trang bi phep offensive, khong phai giap phep."
+        }
+      },
+      {
+        "id": "muramasa",
+        "name": "Muramasa",
+        "aliases": ["muramasa", "kiem xuyen giap", "muramasa xuyen giap"],
+        "knowledge": {
+          "info": "Muramasa la trang bi cong vat ly xuyen giap, rat hieu qua khi doi dau doi hinh co nhieu tanh, dau si hoac nhieu giap vat ly.",
+          "usage": "Trang bi nay hop voi xa thu va sat thu vat ly can gay sat thuong on dinh len tuong cung o cuoi tran.",
+          "type": "Day la trang bi xuyen giap vat ly theo huong danh tanh."
+        }
+      },
+      {
+        "id": "boomstick",
+        "name": "Boomstick",
+        "aliases": ["boomstick", "truc truong boomstick"],
+        "knowledge": {
+          "info": "Boomstick la trang bi phep pho bien giup tang burst damage va kha nang cau ria cho cac phap su.",
+          "usage": "Trang bi nay hop voi Krixi, Tulen va nhieu phap su can sat thuong phep bua no o giai doan giua tran.",
+          "type": "Day la trang bi cong phep theo huong burst."
+        }
+      },
+      {
+        "id": "medallion_of_troy",
+        "name": "Medallion of Troy",
+        "aliases": ["medallion of troy", "troy", "huan chuong troy"],
+        "knowledge": {
+          "info": "Medallion of Troy la trang bi phong thu phep pho bien, giup tang kha nang chong lai cac phap su burst.",
+          "usage": "Trang bi nay hop voi tank, warrior va nhung hero can song sot truoc sat thuong phep manh o giao tranh tong.",
+          "type": "Day la trang bi phong thu phep."
+        }
+      }
+    ],
+    "tournaments": [
+      {
+        "id": "aic",
+        "name": "Arena of Valor International Championship",
+        "aliases": ["aic", "arena of valor international championship"],
+        "knowledge": {
+          "info": "AIC la giai vo dich quoc te cua Arena of Valor quy tu cac doi tu nhieu khu vuc va to chuc duoi ten doi tuyen cua to chuc esports.",
+          "history": "Mua AIC dau tien duoc to chuc nam 2017 tai Han Quoc va tung dat hon 36 trieu luot xem truc tuyen theo thong tin tong hop tren Wikipedia.",
+          "importance": "AIC la mot trong hai san choi quoc te lon nhat cua he sinh thai Arena of Valor ben canh AWC."
+        }
+      },
+      {
+        "id": "awc",
+        "name": "Arena of Valor World Cup",
+        "aliases": ["awc", "arena of valor world cup"],
+        "knowledge": {
+          "info": "AWC la giai vo dich the gioi cua Arena of Valor theo mo hinh dai dien quoc gia hoac khu vuc duoi la co quoc ky.",
+          "history": "AWC dau tien duoc to chuc tai Los Angeles nam 2018 voi tong giai thuong 500000 USD. AWC 2020 bi huy do COVID-19 va APL 2020 dong vai tro thay the.",
+          "importance": "AWC thuong duoc xem la san khau the hien suc manh cua tung nen Lien Quan tren binh dien quoc te."
+        }
+      },
+      {
+        "id": "arena_of_glory",
+        "name": "Arena of Glory",
+        "aliases": ["arena of glory", "aog", "dau truong danh vong"],
+        "knowledge": {
+          "info": "Arena of Glory hay Dau Truong Danh Vong la giai dau cap cao noi bat cua Lien Quan tai Viet Nam.",
+          "history": "AOG la noi san sinh ra nhieu doi va ngoi sao lon cua Lien Quan Viet Nam, trong do co Team Flash va Saigon Phantom.",
+          "importance": "Voi nguoi theo doi Lien Quan Viet Nam, AOG la thuoc tinh trung tam de danh gia phong do va suc manh cac doi."
+        }
+      }
+    ],
+    "teams": [
+      {
+        "id": "team_flash",
+        "name": "Team Flash",
+        "aliases": ["team flash", "flash"],
+        "knowledge": {
+          "info": "Team Flash la to chuc esports co doi hinh Arena of Valor noi tieng tai Viet Nam.",
+          "history": "Theo thong tin tong hop tren Liquipedia, Team Flash tung hoan tat Grand Slam Arena of Valor nam 2019 khi vo dich ca giai trong nuoc lan quoc te.",
+          "importance": "Team Flash la mot trong nhung thuong hieu bieu tuong cua Lien Quan Viet Nam o giai doan dinh cao.",
+          "rosterStyle": "Team Flash thuong duoc nhac den boi loi choi ky luat, kha nang danh van hanh va dau an thanh tich quoc te."
+        }
+      },
+      {
+        "id": "saigon_phantom",
+        "name": "Saigon Phantom",
+        "aliases": ["saigon phantom", "sgp", "phantom"],
+        "knowledge": {
+          "info": "Saigon Phantom la doi tuyen Lien Quan rat noi bat tai Viet Nam, thuong xuyen canh tranh cho ngoi vo dich quoc noi.",
+          "history": "Saigon Phantom la doi gan lien voi nhieu ngoi sao cua Arena of Glory va duoc nhac den nhu mot bieu tuong suc manh cua Lien Quan Viet Nam.",
+          "importance": "Day la cai ten gan nhu luc nao cung o nhom ung cu vien vo dich tai giai quoc noi.",
+          "rosterStyle": "Doi hinh cua Saigon Phantom thuong duoc dan nhac boi kha nang snowball, skill ca nhan cao va ap luc combat tong manh."
+        }
+      }
+    ],
+    "players": [
+      {
+        "id": "lai_bang",
+        "name": "Lai Bang",
+        "aliases": ["lai bang", "bangg", "thong bangg", "thong lai bang"],
+        "knowledge": {
+          "info": "Lai Bang, thuong duoc biet den voi biet danh Bangg, la mot tuyen thu Lien Quan Viet Nam noi tieng va gan lien voi Saigon Phantom.",
+          "history": "Theo thong tin tong hop tren ket qua tim kiem va trang tieu su cong khai, Lai Bang sinh nam 2001, tung la doi truong doi tuyen the thao dien tu Viet Nam bo mon Lien Quan o SEA Games 2021.",
+          "importance": "Lai Bang duoc xem la mot trong nhung ngoi sao co suc anh huong lon cua Lien Quan Viet Nam.",
+          "style": "Nguoi ham mo thuong nhac toi Lai Bang boi ky nang ca nhan cao, kha nang tao highlight va tam anh huong trong cac tran dau lon."
+        }
+      },
+      {
+        "id": "adc_team_flash",
+        "name": "ADC",
+        "aliases": ["adc", "adc team flash", "adc flash"],
+        "knowledge": {
+          "info": "ADC la mot cai ten rat noi bat trong doi hinh Arena of Valor cua Team Flash tai Viet Nam.",
+          "history": "ADC thuong duoc nhac den khi noi ve giai doan huy hoang cua Team Flash va nhung danh hieu lon cua doi tuyen nay.",
+          "importance": "Trong ky uc fan Lien Quan, ADC la bieu tuong cho giai doan Team Flash thong tri va thanh cong tren nhieu dau truong.",
+          "style": "ADC thuong duoc danh gia cao o kinh nghiem thi dau, kha nang giu vi tri va dong gop vao loi choi van hanh cua doi."
+        }
+      },
+      {
+        "id": "xb",
+        "name": "XB",
+        "aliases": ["xb", "xb team flash"],
+        "knowledge": {
+          "info": "XB la cuu binh noi bat cua Lien Quan Viet Nam va duoc nhac den nhieu boi kha nang shotcall va kinh nghiem thi dau.",
+          "history": "Trong cac cuoc noi chuyen ve he sinh thai AoV Viet Nam, XB thuong duoc xem la mau tuyen thu lanh dao va giu nhip doi hinh rat tot.",
+          "importance": "XB la mot phan cua ky uc Team Flash va cua nhung giai doan thi dau dinh cao cua Lien Quan Viet Nam.",
+          "style": "XB thuong duoc nho den boi tu duy giao tranh, kha nang doc ban do va giu nhip doi hinh."
+        }
+      }
+    ],
+    "patches": [
+      {
+        "id": "patch_2026_06_04",
+        "name": "Patch Notes 4 June 2026",
+        "aliases": ["patch 4 june 2026", "ban cap nhat 4 june 2026", "patch 4 jun 2026", "patch 4 thang 6 2026", "patch thang 6 2026", "ban cap nhat thang 6 2026"],
+        "knowledge": {
+          "info": "Ban cap nhat 4 June 2026 cua Garena AOV tap trung vao hero balance adjustments va bug fixes de cai thien trai nghiem choi.",
+          "summary": "Day la mot ban cap nhat nghieng ve can bang tuong va sua loi, phan anh nhip update thuong xuyen cua game.",
+          "scope": "Pham vi thay doi duoc mo ta cong khai la can bang tuong va sua bug, khong phai mot dai tu tu bo co che lon."
+        }
+      },
+      {
+        "id": "patch_2026_05_22",
+        "name": "Patch Notes 22 May 2026",
+        "aliases": ["patch 22 may 2026", "ban cap nhat 22 may 2026", "patch 22 thang 5 2026", "patch thang 5 2026", "ban cap nhat thang 5 2026"],
+        "knowledge": {
+          "info": "Ban cap nhat 22 May 2026 cua Garena AOV cung nhan manh vao hero balance adjustments va bug fixes.",
+          "summary": "Doi voi nguoi choi, day la mot ban patch giup dieu chinh meta nhe va lam game on dinh hon.",
+          "scope": "Thong diep cong khai cua ban update cho thay nhom phat trien duy tri nhip patch deu de cham vao can bang va loi van hanh."
+        }
+      },
+      {
+        "id": "version_history_2026",
+        "name": "Arena of Valor version history 2025-2026",
+        "aliases": ["lich su version", "lich su ban cap nhat", "version history", "patch moi nhat", "version moi nhat"],
+        "knowledge": {
+          "info": "Theo Game Update Notifier, cac moc version gan day gom 1.57.1.2 ngay 8 Jan 2025, 1.58.1.2 ngay 18 Apr 2025, 1.59.1.5 ngay 6 Jul 2025, 1.60.1.2 ngay 15 Oct 2025 va 1.61.1.5 ngay 14 Jan 2026.",
+          "summary": "Nhip version cho thay Arena of Valor van duoc cap nhat dinh ky theo chu ky nhieu thang mot lan.",
+          "scope": "Thong tin version lich su huu ich khi hoi ban moi nhat, nhip update va so sanh cac giai doan update cua game."
+        }
+      }
+    ],
+    "topics": [
+      {
+        "id": "bot_identity_topic",
+        "name": "Bot identity",
+        "aliases": ["chatbot", "bot nay", "bot", "bot game"],
+        "knowledge": {
+          "answer": "Minh la Bot Game, mot chatbot he chuyen gia trong group chat. Minh duoc toi uu de tra loi theo kho tri thuc ve Lien Quan Mobile, tuong, trang bi, giai dau, tuyen thu, patch va thong tin ben le.",
+          "capabilities": "Minh co the giai thich thong tin tuong, ky nang, build, diem manh diem yeu, item, giai dau, doi tuyen, tuyen thu, lich su game va mot phan patch notes.",
+          "workflow": "Minh hoat dong theo luong tien xu ly cau hoi, phan loai intent, nhan dien thuc the va suy dien IF-THEN tu kho tri thuc de tra loi."
+        }
+      },
+      {
+        "id": "game_overview_topic",
+        "name": "Arena of Valor overview",
+        "aliases": ["arena of valor", "lien quan", "aov"],
+        "knowledge": {
+          "info": "Arena of Valor la game MOBA mobile 5v5 do TiMi Studio Group phat trien va Level Infinite phat hanh quoc te. Tran dau thuong xoay quanh pha huy tru, an muc tieu lon va giao tranh doi hinh.",
+          "history": "Phien ban quoc te cua game ra mat tu 2016 va tai Viet Nam duoc biet den rong rai voi ten Lien Quan Mobile.",
+          "modes": "Che do choi pho bien gom 5v5, 3v3, 1v1 va mot so che do arcade. Tran 5v5 xoay quanh muc tieu nhu tru, Abyssal Dragon va Dark Slayer.",
+          "roles": "Game chia hero thanh nhieu nhom vai tro lon nhu marksman, mage, assassin, tank, warrior va support."
+        }
+      },
+      {
+        "id": "trivia_topic",
+        "name": "Trivia",
+        "aliases": ["ben le", "fun fact", "ngoai le", "collab", "trivia", "sea games"],
+        "knowledge": {
+          "info": "Arena of Valor co nhieu diem ben le dang nho nhu collab voi DC, Sword Art Online, Ultraman, BLEACH, Demon Slayer, Sailor Moon va Hunter x Hunter theo thong tin tong hop cong khai.",
+          "history": "Game con duoc biet den la phien ban quoc te cua Honor of Kings va tung co phien ban Nintendo Switch rieng, khong cross-play voi mobile.",
+          "importance": "Nhung thong tin ben le giup bot tra loi cac cau hoi giao luu va mo rong vu tru noi chuyen cho group."
+        }
+      },
+      {
+        "id": "objectives_topic",
+        "name": "Objectives",
+        "aliases": ["rong", "dragon", "slayer", "muc tieu lon"],
+        "knowledge": {
+          "info": "Hai muc tieu lon pho bien trong tran 5v5 la Abyssal Dragon va Dark Slayer. Dragon giup doi hinh lay loi the tai nguyen som, con Slayer giup day map va ket thuc tran ve giua cuoi.",
+          "history": "Cach van hanh objective la phan quan trong cua macro trong Arena of Valor, nhat la khi tranh chap nhac do giao tranh tong."
         }
       }
     ]
   },
   "rules": [
-    { "intent": "greeting", "responseType": "static", "responseKey": "greeting" },
-    { "intent": "hero_role", "entityType": "hero", "knowledgeField": "role" },
-    { "intent": "hero_skill", "entityType": "hero", "knowledgeField": "skillSummary" },
-    { "intent": "hero_build", "entityType": "hero", "knowledgeField": "build" }
+    {
+      "id": "greeting-response",
+      "if": { "all": [{ "fact": "intent", "equals": "greeting" }] },
+      "then": { "respond": { "type": "static", "responseKey": "greeting" } }
+    },
+    {
+      "id": "bot-identity-topic",
+      "if": { "all": [{ "fact": "intent", "equals": "bot_identity" }] },
+      "then": {
+        "assert": [
+          { "fact": "entityType", "value": "topic" },
+          { "fact": "entityId", "value": "bot_identity_topic" },
+          { "fact": "knowledgeField", "value": "answer" }
+        ]
+      }
+    },
+    {
+      "id": "bot-capabilities-topic",
+      "if": { "all": [{ "fact": "intent", "equals": "bot_capabilities" }] },
+      "then": {
+        "assert": [
+          { "fact": "entityType", "value": "topic" },
+          { "fact": "entityId", "value": "bot_identity_topic" },
+          { "fact": "knowledgeField", "value": "capabilities" }
+        ]
+      }
+    },
+    {
+      "id": "bot-how-it-works-topic",
+      "if": { "all": [{ "fact": "intent", "equals": "bot_how_it_works" }] },
+      "then": {
+        "assert": [
+          { "fact": "entityType", "value": "topic" },
+          { "fact": "entityId", "value": "bot_identity_topic" },
+          { "fact": "knowledgeField", "value": "workflow" }
+        ]
+      }
+    },
+    {
+      "id": "game-overview-topic",
+      "if": { "all": [{ "fact": "intent", "equals": "game_overview" }] },
+      "then": {
+        "assert": [
+          { "fact": "entityType", "value": "topic" },
+          { "fact": "entityId", "value": "game_overview_topic" },
+          { "fact": "knowledgeField", "value": "info" }
+        ]
+      }
+    },
+    {
+      "id": "game-modes-topic",
+      "if": { "all": [{ "fact": "intent", "equals": "game_modes" }] },
+      "then": {
+        "assert": [
+          { "fact": "entityType", "value": "topic" },
+          { "fact": "entityId", "value": "game_overview_topic" },
+          { "fact": "knowledgeField", "value": "modes" }
+        ]
+      }
+    },
+    {
+      "id": "game-roles-topic",
+      "if": { "all": [{ "fact": "intent", "equals": "game_roles" }] },
+      "then": {
+        "assert": [
+          { "fact": "entityType", "value": "topic" },
+          { "fact": "entityId", "value": "game_overview_topic" },
+          { "fact": "knowledgeField", "value": "roles" }
+        ]
+      }
+    },
+    {
+      "id": "game-history-topic",
+      "if": { "all": [{ "fact": "intent", "equals": "game_history" }] },
+      "then": {
+        "assert": [
+          { "fact": "entityType", "value": "topic" },
+          { "fact": "entityId", "value": "game_overview_topic" },
+          { "fact": "knowledgeField", "value": "history" }
+        ]
+      }
+    },
+    {
+      "id": "objective-topic",
+      "if": { "all": [{ "fact": "intent", "equals": "objective_info" }] },
+      "then": {
+        "assert": [
+          { "fact": "entityType", "value": "topic" },
+          { "fact": "entityId", "value": "objectives_topic" },
+          { "fact": "knowledgeField", "value": "info" }
+        ]
+      }
+    },
+    {
+      "id": "trivia-topic",
+      "if": { "all": [{ "fact": "intent", "equals": "trivia_info" }] },
+      "then": {
+        "assert": [
+          { "fact": "entityType", "value": "topic" },
+          { "fact": "entityId", "value": "trivia_topic" },
+          { "fact": "knowledgeField", "value": "info" }
+        ]
+      }
+    },
+
+    {
+      "id": "hero-role-field",
+      "if": { "all": [{ "fact": "intent", "equals": "hero_role" }, { "fact": "entityType", "equals": "hero" }] },
+      "then": { "assert": [{ "fact": "knowledgeField", "value": "role" }] }
+    },
+    {
+      "id": "hero-skill-field",
+      "if": { "all": [{ "fact": "intent", "equals": "hero_skill" }, { "fact": "entityType", "equals": "hero" }] },
+      "then": { "assert": [{ "fact": "knowledgeField", "value": "skillSummary" }] }
+    },
+    {
+      "id": "hero-build-field",
+      "if": { "all": [{ "fact": "intent", "equals": "hero_build" }, { "fact": "entityType", "equals": "hero" }] },
+      "then": { "assert": [{ "fact": "knowledgeField", "value": "build" }] }
+    },
+    {
+      "id": "hero-strength-field",
+      "if": { "all": [{ "fact": "intent", "equals": "hero_strength" }, { "fact": "entityType", "equals": "hero" }] },
+      "then": { "assert": [{ "fact": "knowledgeField", "value": "strength" }] }
+    },
+    {
+      "id": "hero-weakness-field",
+      "if": { "all": [{ "fact": "intent", "equals": "hero_weakness" }, { "fact": "entityType", "equals": "hero" }] },
+      "then": { "assert": [{ "fact": "knowledgeField", "value": "weakness" }] }
+    },
+    {
+      "id": "hero-counter-field",
+      "if": { "all": [{ "fact": "intent", "equals": "hero_counter" }, { "fact": "entityType", "equals": "hero" }] },
+      "then": { "assert": [{ "fact": "knowledgeField", "value": "counter" }] }
+    },
+    {
+      "id": "hero-lore-field",
+      "if": { "all": [{ "fact": "intent", "equals": "hero_lore" }, { "fact": "entityType", "equals": "hero" }] },
+      "then": { "assert": [{ "fact": "knowledgeField", "value": "lore" }] }
+    },
+    {
+      "id": "item-info-field",
+      "if": { "all": [{ "fact": "intent", "equals": "item_info" }, { "fact": "entityType", "equals": "item" }] },
+      "then": { "assert": [{ "fact": "knowledgeField", "value": "info" }] }
+    },
+    {
+      "id": "tournament-info-field",
+      "if": { "all": [{ "fact": "intent", "equals": "tournament_info" }, { "fact": "entityType", "equals": "tournament" }] },
+      "then": { "assert": [{ "fact": "knowledgeField", "value": "info" }] }
+    },
+    {
+      "id": "tournament-history-field",
+      "if": { "all": [{ "fact": "intent", "equals": "tournament_history" }, { "fact": "entityType", "equals": "tournament" }] },
+      "then": { "assert": [{ "fact": "knowledgeField", "value": "history" }] }
+    },
+    {
+      "id": "team-info-field",
+      "if": { "all": [{ "fact": "intent", "equals": "team_info" }, { "fact": "entityType", "equals": "team" }] },
+      "then": { "assert": [{ "fact": "knowledgeField", "value": "info" }] }
+    },
+    {
+      "id": "player-info-field",
+      "if": { "all": [{ "fact": "intent", "equals": "player_info" }, { "fact": "entityType", "equals": "player" }] },
+      "then": { "assert": [{ "fact": "knowledgeField", "value": "info" }] }
+    },
+    {
+      "id": "patch-info-field",
+      "if": { "all": [{ "fact": "intent", "equals": "patch_info" }, { "fact": "entityType", "equals": "patch" }] },
+      "then": { "assert": [{ "fact": "knowledgeField", "value": "info" }] }
+    },
+    {
+      "id": "patch-version-history-field",
+      "if": { "all": [{ "fact": "intent", "equals": "patch_version_history" }, { "fact": "entityType", "equals": "patch" }] },
+      "then": { "assert": [{ "fact": "knowledgeField", "value": "info" }] }
+    },
+
+    {
+      "id": "topic-response",
+      "if": { "all": [{ "fact": "entityType", "equals": "topic" }, { "fact": "knowledgeField", "exists": true }] },
+      "then": { "respond": { "type": "entityKnowledge", "fieldFact": "knowledgeField" } }
+    },
+    {
+      "id": "entity-response",
+      "if": { "all": [{ "fact": "entityId", "exists": true }, { "fact": "knowledgeField", "exists": true }] },
+      "then": { "respond": { "type": "entityKnowledge", "fieldFact": "knowledgeField" } }
+    },
+
+    {
+      "id": "ask-hero-when-missing",
+      "if": { "all": [{ "fact": "intent", "oneOf": ["hero_role", "hero_skill", "hero_build", "hero_strength", "hero_weakness", "hero_counter", "hero_lore"] }, { "fact": "entityId", "exists": false }] },
+      "then": { "respond": { "type": "static", "responseKey": "askHero", "needsContext": true } }
+    },
+    {
+      "id": "ask-item-when-missing",
+      "if": { "all": [{ "fact": "intent", "equals": "item_info" }, { "fact": "entityId", "exists": false }] },
+      "then": { "respond": { "type": "static", "responseKey": "askItem", "needsContext": true } }
+    },
+    {
+      "id": "ask-esports-when-missing",
+      "if": { "all": [{ "fact": "intent", "oneOf": ["tournament_info", "tournament_history", "team_info", "player_info", "patch_info"] }, { "fact": "entityId", "exists": false }] },
+      "then": { "respond": { "type": "static", "responseKey": "askEsportsEntity", "needsContext": true } }
+    }
   ],
   "responses": {
     "greeting": [
-      "Chao ca nhom, minh la Bot Game. Hay mention @botGame va hoi ve tuong Lien Quan nhu vai tro, ky nang hoac build co ban.",
-      "Bot Game da san sang. Moi nguoi co the goi @botGame de hoi ve vai tro, ky nang va build cua mot so tuong Lien Quan."
+      "Chao ca nhom, minh la Bot Game. Hay mention @botGame de hoi ve tuong, trang bi, giai dau, tuyen thu, ban cap nhat hoac thong tin ben le cua Lien Quan.",
+      "Bot Game da san sang. Moi nguoi co the goi @botGame de hoi ve hero, build, item, tournament, player, patch va trivia cua Lien Quan Mobile."
     ],
     "askHero": "Minh chua xac dinh duoc tuong ban dang hoi. Hay mention @botGame kem ten tuong cu the, vi du: @botGame Violet co bo ky nang gi?",
-    "fallback": "Minh chua tim thay cau tra loi phu hop trong kho tri thuc game hien tai. Ban co the hoi ve vai tro, ky nang hoac build cua Violet, Nakroth, Krixi, hoac Maloch."
+    "askItem": "Minh chua nhan ra mon trang bi cu the. Ban co the hoi ro hon, vi du: @botGame Claves Sancti dung de lam gi?",
+    "askEsportsEntity": "Minh can them ten giai dau, doi tuyen, tuyen thu hoac ban patch cu the de tra loi chuan hon. Vi du: @botGame AIC la giai gi? hay @botGame Lai Bang la ai?",
+    "fallback": "Minh chua tim thay cau tra loi phu hop trong kho tri thuc hien tai. Ban co the hoi ve bot, tuong, ky nang, build, trang bi, giai dau, doi tuyen, tuyen thu, patch notes hoac thong tin ben le cua Lien Quan."
   }
 }
