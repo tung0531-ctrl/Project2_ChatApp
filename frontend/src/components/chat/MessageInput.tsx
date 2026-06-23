@@ -59,6 +59,8 @@ const getMentionKeyForParticipant = (participant: Conversation["participants"][n
   return participant.displayName.replace(/\s+/g, "");
 };
 
+const mentionHighlightClass = "font-semibold text-violet-600 dark:text-violet-300";
+
 const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
   const { user } = useAuthStore();
   const {
@@ -460,13 +462,13 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
             </div>
           ) : null}
 
-          <div className="relative min-h-9 rounded-md border border-border/50 bg-white transition-smooth focus-within:border-primary/50">
+          <div className="relative min-h-9 rounded-md border border-border/50 bg-background dark:bg-input/30 transition-smooth focus-within:border-primary/50">
             {value ? (
               <div className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words px-3 py-2 pr-20 text-sm leading-5 text-foreground">
                 {highlightedSegments.map((segment, index) => (
                   <span
                     key={`composer-segment-${index}`}
-                    className={segment.isMention ? "font-semibold text-primary" : undefined}
+                    className={segment.isMention ? mentionHighlightClass : undefined}
                   >
                     {segment.text}
                   </span>

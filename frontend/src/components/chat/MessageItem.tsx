@@ -87,6 +87,14 @@ const renderMessageMedia = (message: Message) => {
   );
 };
 
+const getMentionTextClass = (isOwn: boolean) => {
+  if (isOwn) {
+    return "font-semibold text-violet-200";
+  }
+
+  return "font-semibold text-violet-800 dark:text-violet-400";
+};
+
 interface MessageItemProps {
   message: Message;
   index: number;
@@ -123,6 +131,7 @@ const MessageItem = ({
   const contentSegments = message.content
     ? splitTextWithMentions(message.content)
     : [];
+  const mentionTextClass = getMentionTextClass(Boolean(message.isOwn));
 
   return (
     <>
@@ -182,7 +191,7 @@ const MessageItem = ({
                   {contentSegments.map((segment, segmentIndex) => (
                     <span
                       key={`${message._id}-segment-${segmentIndex}`}
-                      className={segment.isMention ? "font-semibold text-primary" : undefined}
+                      className={segment.isMention ? mentionTextClass : undefined}
                     >
                       {segment.text}
                     </span>
