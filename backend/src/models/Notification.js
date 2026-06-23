@@ -35,7 +35,7 @@ const notificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["friend_request", "group_joined", "group_kicked"],
+      enum: ["friend_request", "friend_request_accepted", "group_joined", "group_kicked"],
       required: true,
     },
     title: {

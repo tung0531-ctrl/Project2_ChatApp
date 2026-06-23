@@ -59,7 +59,7 @@ export interface NotificationActor {
 
 export interface Notification {
   _id: string;
-  type: "friend_request" | "group_joined" | "group_kicked";
+  type: "friend_request" | "friend_request_accepted" | "group_joined" | "group_kicked";
   title: string;
   message: string;
   actor?: NotificationActor | null;

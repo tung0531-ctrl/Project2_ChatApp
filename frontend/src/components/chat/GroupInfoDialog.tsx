@@ -16,6 +16,7 @@ import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
 import { UserX } from "lucide-react";
 import { Switch } from "../ui/switch";
+import UserProfileDialog from "../profile/UserProfileDialog";
 
 interface GroupInfoDialogProps {
   convo: Conversation;
@@ -39,6 +40,8 @@ const GroupInfoDialog = ({
   const [description, setDescription] = useState("");
   const [availableBots, setAvailableBots] = useState<BotDefinition[]>([]);
   const [selectedBotIds, setSelectedBotIds] = useState<string[]>([]);
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
   const ownerId = convo.group?.createdBy?.toString?.() ?? convo.group?.createdBy;
   const isOwner = user?._id === ownerId;
 
@@ -302,25 +305,44 @@ const GroupInfoDialog = ({
                     </div>
                   </div>
 
-                  {canKickParticipant ? (
+                  <div className="ml-auto flex shrink-0 items-center gap-2">
                     <Button
                       type="button"
                       size="sm"
-                      variant="destructiveOutline"
-                      disabled={loading}
-                      onClick={() => handleKickMember(participant._id)}
-                      className="ml-auto shrink-0"
+                      variant="outline"
+                      onClick={() => {
+                        setProfileUserId(participant._id);
+                        setProfileOpen(true);
+                      }}
                     >
-                      <UserX className="size-4" />
-                      Kick
+                      Xem profile
                     </Button>
-                  ) : null}
+
+                    {canKickParticipant ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructiveOutline"
+                        disabled={loading}
+                        onClick={() => handleKickMember(participant._id)}
+                      >
+                        <UserX className="size-4" />
+                        Kick
+                      </Button>
+                    ) : null}
+                  </div>
                 </Card>
               );
             })}
           </div>
         </div>
       </DialogContent>
+
+      <UserProfileDialog
+        userId={profileUserId}
+        open={profileOpen}
+        setOpen={setProfileOpen}
+      />
     </Dialog>
   );
 };

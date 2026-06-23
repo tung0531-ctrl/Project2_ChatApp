@@ -18,6 +18,7 @@ import { Card } from "../ui/card";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import UserAvatar from "./UserAvatar";
+import UserProfileDialog from "../profile/UserProfileDialog";
 
 // IFormValues kept for backward compat with sub-components still imported elsewhere
 export interface IFormValues {
@@ -30,6 +31,8 @@ const AddFriendModal = () => {
   const [keyword, setKeyword] = useState("");
   const [results, setResults] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [message, setMessage] = useState("");
   const { loading, searchByUsername, addFriend } = useFriendStore();
 
@@ -39,6 +42,8 @@ const AddFriendModal = () => {
       setKeyword("");
       setResults([]);
       setSelectedUser(null);
+      setProfileUserId(null);
+      setProfileOpen(false);
       setMessage("");
       return;
     }
@@ -109,6 +114,20 @@ const AddFriendModal = () => {
                       <p className="truncate text-sm font-semibold">{u.displayName}</p>
                       <p className="text-xs text-muted-foreground">@{u.username}</p>
                     </div>
+
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="shrink-0"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setProfileUserId(u._id);
+                        setProfileOpen(true);
+                      }}
+                    >
+                      Xem profile
+                    </Button>
                   </div>
                 </Card>
               ))}
@@ -173,6 +192,12 @@ const AddFriendModal = () => {
           </div>
         )}
       </DialogContent>
+
+      <UserProfileDialog
+        userId={profileUserId}
+        open={profileOpen}
+        setOpen={setProfileOpen}
+      />
     </Dialog>
   );
 };

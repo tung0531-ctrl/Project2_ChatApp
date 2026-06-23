@@ -10,6 +10,7 @@ import { io } from "../socket/index.js";
 export const sendFriendRequest = async (req, res) => {
   try {
     const { to, message } = req.body;
+    const greetingMessage = message?.trim();
 
     const from = req.user._id;
 
@@ -60,7 +61,9 @@ export const sendFriendRequest = async (req, res) => {
       recipient: to,
       type: "friend_request",
       title: "Lời mời kết bạn mới",
-      message: `${req.user.displayName} đã gửi cho bạn một lời mời kết bạn.`,
+      message: greetingMessage
+        ? `${req.user.displayName} đã gửi cho bạn một lời mời kết bạn: "${greetingMessage}"`
+        : `${req.user.displayName} đã gửi cho bạn một lời mời kết bạn.`,
       actor: {
         _id: req.user._id,
         username: req.user.username,
@@ -105,8 +108,21 @@ export const acceptFriendRequest = async (req, res) => {
     await Notification.deleteMany({ friendRequestId: request._id });
 
     const from = await User.findById(request.from)
-      .select("_id displayName avatarUrl")
+      .select("_id username displayName avatarUrl")
       .lean();
+
+    await createNotification({
+      recipient: request.from,
+      type: "friend_request_accepted",
+      title: "Lời mời kết bạn đã được chấp nhận",
+      message: `${req.user.displayName} đã chấp nhận lời mời kết bạn của bạn.`,
+      actor: {
+        _id: req.user._id,
+        username: req.user.username,
+        displayName: req.user.displayName,
+        avatarUrl: req.user.avatarUrl ?? null,
+      },
+    });
 
     io.to(request.from.toString()).emit("friends-updated");
     io.to(request.to.toString()).emit("friends-updated");
