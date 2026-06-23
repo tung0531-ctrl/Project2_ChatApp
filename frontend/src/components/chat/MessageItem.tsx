@@ -7,7 +7,13 @@ import { Card } from "../ui/card";
 import { Badge } from "../ui/badge";
 import SeenByAvatars from "./SeenByAvatars";
 import { Popover, PopoverAnchor, PopoverContent } from "../ui/popover";
-import { FileText, FileSpreadsheet, Paperclip } from "lucide-react";
+import {
+  FileText,
+  FileSpreadsheet,
+  Paperclip,
+  Pin,
+  Reply,
+} from "lucide-react";
 import { useRef, useState } from "react";
 import {
   Dialog,
@@ -108,6 +114,41 @@ const getMentionTextClass = (isOwn: boolean) => {
   return "font-semibold text-violet-800 dark:text-violet-400";
 };
 
+const getReferencePreviewText = (reference?: Message["replyTo"] | null) => {
+  if (!reference) {
+    return "";
+  }
+
+  if (reference.content?.trim()) {
+    return reference.content;
+  }
+
+  if (reference.fileName?.trim()) {
+    return reference.fileName;
+  }
+
+  if (reference.imgUrl) {
+    return "Tệp đính kèm";
+  }
+
+  return "Tin nhắn";
+};
+
+const canManagePinnedMessage = (
+  conversation: Conversation,
+  userId?: string | null,
+) => {
+  if (!userId) {
+    return false;
+  }
+
+  if (conversation.type === "direct") {
+    return true;
+  }
+
+  return conversation.group?.createdBy?.toString() === userId.toString();
+};
+
 interface MessageItemProps {
   message: Message;
   index: number;
@@ -122,7 +163,7 @@ const MessageItem = ({
   selectedConvo,
 }: MessageItemProps) => {
   const { user } = useAuthStore();
-  const { reactToMessage } = useChatStore();
+  const { reactToMessage, setReplyMessage, togglePinnedMessage } = useChatStore();
   const [isReactionPickerOpen, setIsReactionPickerOpen] = useState(false);
   const [isSubmittingReaction, setIsSubmittingReaction] = useState(false);
   const [selectedReaction, setSelectedReaction] = useState<{
@@ -161,6 +202,9 @@ const MessageItem = ({
   const normalizeId = (value: string | { toString(): string } | null | undefined) =>
     value?.toString();
   const currentUserId = normalizeId(user?._id);
+  const canPinMessage = canManagePinnedMessage(selectedConvo, currentUserId);
+  const isPinnedMessage =
+    normalizeId(selectedConvo.pinnedMessage?.messageId) === normalizeId(message._id);
 
   const reactionUsers = selectedReaction
     ? selectedReaction.userIds.map((reactionUserId) => {
@@ -242,7 +286,7 @@ const MessageItem = ({
 
       <div
         className={cn(
-          "flex gap-2 message-bounce mt-1",
+          "flex items-end gap-2 message-bounce mt-1",
           message.isOwn ? "justify-end" : "justify-start"
         )}
       >
@@ -272,7 +316,7 @@ const MessageItem = ({
         {/* tin nhắn */}
         <div
           className={cn(
-            "max-w-xs lg:max-w-md space-y-1 flex flex-col",
+            "group/message-row max-w-xs lg:max-w-md space-y-1 flex flex-col",
             message.isOwn ? "items-end" : "items-start"
           )}
         >
@@ -281,92 +325,140 @@ const MessageItem = ({
             onOpenChange={setIsReactionPickerOpen}
           >
             <PopoverAnchor asChild>
-              <div className="relative">
-                <Card
-                  onPointerDown={(event) => {
-                    if (event.pointerType === "mouse" && event.button !== 0) {
-                      return;
-                    }
+              <div
+                className={cn(
+                  "flex items-center gap-2",
+                  message.isOwn ? "flex-row-reverse" : "flex-row"
+                )}
+              >
+                <div className="flex flex-col">
+                  <Card
+                    onPointerDown={(event) => {
+                      if (event.pointerType === "mouse" && event.button !== 0) {
+                        return;
+                      }
 
-                    startHoldTimer();
-                  }}
-                  onPointerUp={clearHoldTimer}
-                  onPointerLeave={clearHoldTimer}
-                  onPointerCancel={clearHoldTimer}
-                  onContextMenu={(event) => {
-                    event.preventDefault();
-                    clearHoldTimer();
-                    setIsReactionPickerOpen(true);
-                  }}
-                  className={cn(
-                    "p-3 touch-manipulation",
-                    message.isOwn ? "chat-bubble-sent border-0" : "chat-bubble-received"
-                  )}
-                >
-                  <div className="space-y-2">
-                    {renderMessageMedia(message)}
-                    {message.content ? (
-                      <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">
-                        {contentSegments.map((segment, segmentIndex) => (
-                          <span
-                            key={`${message._id}-segment-${segmentIndex}`}
-                            className={segment.isMention ? mentionTextClass : undefined}
-                          >
-                            {segment.text}
-                          </span>
-                        ))}
-                      </p>
-                    ) : null}
-                  </div>
-                </Card>
-
-                {visibleReactions.length > 0 ? (
-                  <div
+                      startHoldTimer();
+                    }}
+                    onPointerUp={clearHoldTimer}
+                    onPointerLeave={clearHoldTimer}
+                    onPointerCancel={clearHoldTimer}
+                    onContextMenu={(event) => {
+                      event.preventDefault();
+                      clearHoldTimer();
+                      setIsReactionPickerOpen(true);
+                    }}
                     className={cn(
-                      "relative z-10 mt-[-10px] flex flex-wrap gap-1 px-2",
-                      message.isOwn ? "justify-end" : "justify-start"
+                      "relative p-3 touch-manipulation",
+                      message.isOwn ? "chat-bubble-sent border-0" : "chat-bubble-received"
                     )}
                   >
-                    {visibleReactions.map((reaction) => {
-                      const hasReacted = Boolean(
-                        user?._id && reaction.userIds.includes(user._id)
-                      );
+                    <div className="space-y-2">
+                      {isPinnedMessage ? (
+                        <div className="flex items-center gap-1.5 rounded-md border border-primary/20 bg-primary/10 px-2 py-1 text-xs text-primary">
+                          <Pin className="size-3.5 shrink-0" />
+                          <span className="truncate font-medium">Tin nhắn đang được ghim</span>
+                        </div>
+                      ) : null}
 
-                      return (
-                        <button
-                          key={`${message._id}-${reaction.emoji}`}
-                          type="button"
-                          disabled={isSubmittingReaction}
-                          onClick={() =>
-                            setSelectedReaction({
-                              emoji: reaction.emoji,
-                              userIds: reaction.userIds,
-                            })
-                          }
-                          onPointerDown={(event) => {
-                            if (event.pointerType === "mouse" && event.button !== 0) {
-                              return;
-                            }
-
-                            startReactionHoldTimer(reaction.emoji);
-                          }}
-                          onPointerUp={clearReactionHoldTimer}
-                          onPointerLeave={clearReactionHoldTimer}
-                          onPointerCancel={clearReactionHoldTimer}
+                      {message.replyTo ? (
+                        <div
                           className={cn(
-                            "inline-flex items-center gap-1 rounded-full border bg-background/95 px-2 py-1 text-xs shadow-sm transition-colors",
-                            hasReacted
-                              ? "border-primary/60 text-primary"
-                              : "border-border/60 text-foreground hover:bg-muted"
+                            "rounded-2xl px-3 py-2 text-xs backdrop-blur-[1px]",
+                            message.isOwn
+                              ? "bg-white/14 text-white/70"
+                              : "bg-black/5 text-foreground/55"
                           )}
                         >
-                          <span>{reaction.emoji}</span>
-                          <span className="font-medium">{reaction.userIds.length}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : null}
+                          <p className="line-clamp-2 break-words leading-relaxed">
+                            {getReferencePreviewText(message.replyTo)}
+                          </p>
+                        </div>
+                      ) : null}
+
+                      {renderMessageMedia(message)}
+                      {message.content ? (
+                        <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">
+                          {contentSegments.map((segment, segmentIndex) => (
+                            <span
+                              key={`${message._id}-segment-${segmentIndex}`}
+                              className={segment.isMention ? mentionTextClass : undefined}
+                            >
+                              {segment.text}
+                            </span>
+                          ))}
+                        </p>
+                      ) : null}
+                    </div>
+                  </Card>
+
+                  {visibleReactions.length > 0 ? (
+                    <div
+                      className={cn(
+                        "relative z-10 mt-[-10px] flex flex-wrap gap-1 px-2",
+                        message.isOwn ? "justify-end" : "justify-start"
+                      )}
+                    >
+                      {visibleReactions.map((reaction) => {
+                        const hasReacted = Boolean(
+                          user?._id && reaction.userIds.includes(user._id)
+                        );
+
+                        return (
+                          <button
+                            key={`${message._id}-${reaction.emoji}`}
+                            type="button"
+                            disabled={isSubmittingReaction}
+                            onClick={() =>
+                              setSelectedReaction({
+                                emoji: reaction.emoji,
+                                userIds: reaction.userIds,
+                              })
+                            }
+                            onPointerDown={(event) => {
+                              if (event.pointerType === "mouse" && event.button !== 0) {
+                                return;
+                              }
+
+                              startReactionHoldTimer(reaction.emoji);
+                            }}
+                            onPointerUp={clearReactionHoldTimer}
+                            onPointerLeave={clearReactionHoldTimer}
+                            onPointerCancel={clearReactionHoldTimer}
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded-full border bg-background/95 px-2 py-1 text-xs shadow-sm transition-colors",
+                              hasReacted
+                                ? "border-primary/60 text-primary"
+                                : "border-border/60 text-foreground hover:bg-muted"
+                            )}
+                          >
+                            <span>{reaction.emoji}</span>
+                            <span className="font-medium">{reaction.userIds.length}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="pointer-events-none flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover/message-row:opacity-100">
+                  <button
+                    type="button"
+                    onClick={() => setReplyMessage(message)}
+                    className="pointer-events-auto inline-flex size-8 items-center justify-center rounded-full border border-border/50 bg-background/95 text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    <Reply className="size-4" />
+                  </button>
+                  {canPinMessage ? (
+                    <button
+                      type="button"
+                      onClick={() => void togglePinnedMessage(message._id)}
+                      className="pointer-events-auto inline-flex size-8 items-center justify-center rounded-full border border-border/50 bg-background/95 text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
+                    >
+                      <Pin className="size-4" />
+                    </button>
+                  ) : null}
+                </div>
               </div>
             </PopoverAnchor>
 

@@ -1,5 +1,10 @@
 import type { Socket } from "socket.io-client";
-import type { BotDefinition, Conversation, Message, MessageReaction } from "./chat";
+import type {
+  BotDefinition,
+  Conversation,
+  Message,
+  MessageReaction,
+} from "./chat";
 import type {
   Friend,
   FriendRequest,
@@ -47,12 +52,14 @@ export interface ChatState {
     }
   >;
   activeConversationId: string | null;
+  replyMessage: Message | null;
   convoLoading: boolean;
   messageLoading: boolean;
   loading: boolean;
   reset: () => void;
 
   setActiveConversation: (id: string | null) => void;
+  setReplyMessage: (message: Message | null) => void;
   fetchConversations: () => Promise<void>;
   fetchMessages: (conversationId?: string) => Promise<void>;
   sendDirectMessage: (
@@ -61,7 +68,8 @@ export interface ChatState {
     imgUrl?: string,
     mediaType?: string,
     fileName?: string,
-    fileSize?: number
+    fileSize?: number,
+    replyToMessageId?: string
   ) => Promise<void>;
   sendGroupMessage: (
     conversationId: string,
@@ -69,12 +77,14 @@ export interface ChatState {
     imgUrl?: string,
     mediaType?: string,
     fileName?: string,
-    fileSize?: number
+    fileSize?: number,
+    replyToMessageId?: string
   ) => Promise<void>;
   uploadMessageMedia: (
     file: File
   ) => Promise<{ mediaUrl: string; mediaType: string; fileName: string; fileSize: number }>;
   reactToMessage: (messageId: string, emoji: string) => Promise<boolean>;
+  togglePinnedMessage: (messageId: string) => Promise<boolean>;
   // add message
   addMessage: (message: Message) => Promise<void>;
   applyMessageReactions: (

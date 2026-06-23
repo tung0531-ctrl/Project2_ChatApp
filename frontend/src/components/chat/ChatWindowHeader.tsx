@@ -7,9 +7,66 @@ import UserAvatar from "./UserAvatar";
 import StatusBadge from "./StatusBadge";
 import GroupChatAvatar from "./GroupChatAvatar";
 import { useSocketStore } from "@/stores/useSocketStore";
+import { Pin } from "lucide-react";
+import { Button } from "../ui/button";
+
+const getPinnedPreviewText = (chat?: Conversation) => {
+  const pinnedMessage = chat?.pinnedMessage;
+
+  if (!pinnedMessage) {
+    return null;
+  }
+
+  if (pinnedMessage.content?.trim()) {
+    return pinnedMessage.content;
+  }
+
+  if (pinnedMessage.fileName?.trim()) {
+    return pinnedMessage.fileName;
+  }
+
+  if (pinnedMessage.imgUrl) {
+    return "Tệp đính kèm";
+  }
+
+  return "Tin nhắn đã ghim";
+};
+
+const getPinnedSenderName = (chat?: Conversation) => {
+  const pinnedMessage = chat?.pinnedMessage;
+
+  if (!chat || !pinnedMessage) {
+    return null;
+  }
+
+  if (pinnedMessage.messageType === "bot") {
+    return pinnedMessage.botMeta?.displayName ?? "Bot";
+  }
+
+  const sender = chat.participants.find(
+    (participant) => participant._id.toString() === pinnedMessage.senderId?.toString()
+  );
+
+  return sender?.displayName ?? "Người gửi";
+};
+
+const canManagePinnedMessage = (
+  conversation?: Conversation,
+  userId?: string | null,
+) => {
+  if (!conversation || !userId) {
+    return false;
+  }
+
+  if (conversation.type === "direct") {
+    return true;
+  }
+
+  return conversation.group?.createdBy?.toString() === userId.toString();
+};
 
 const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
-  const { conversations, activeConversationId } = useChatStore();
+  const { conversations, activeConversationId, togglePinnedMessage } = useChatStore();
   const { user } = useAuthStore();
   const { onlineUsers } = useSocketStore();
 
@@ -32,9 +89,13 @@ const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
     if (!user || !otherUser) return;
   }
 
+  const pinnedPreview = getPinnedPreviewText(chat);
+  const pinnedSenderName = getPinnedSenderName(chat);
+  const canUnpinMessage = canManagePinnedMessage(chat, user?._id);
+
   return (
-    <header className="sticky top-0 z-10 px-4 py-2 flex items-center bg-background">
-      <div className="flex items-center gap-2 w-full">
+    <header className="sticky top-0 z-10 bg-background">
+      <div className="px-4 py-2 flex items-center gap-2 w-full">
         <SidebarTrigger className="-ml-1 text-foreground" />
         <Separator
           orientation="vertical"
@@ -72,6 +133,33 @@ const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
           </h2>
         </div>
       </div>
+
+      {chat.pinnedMessage ? (
+        <div className="border-t border-border/40 px-4 py-2">
+          <div className="flex items-start justify-between gap-3 rounded-lg bg-muted/50 px-3 py-2">
+            <div className="flex min-w-0 items-start gap-2">
+            <Pin className="mt-0.5 size-4 shrink-0 text-primary" />
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-primary">
+                Tin nhắn đã ghim{pinnedSenderName ? ` • ${pinnedSenderName}` : ""}
+              </p>
+              <p className="truncate text-sm text-foreground">{pinnedPreview}</p>
+            </div>
+            </div>
+            {canUnpinMessage ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 shrink-0 px-2 text-primary hover:bg-primary/10 hover:text-primary"
+                onClick={() => void togglePinnedMessage(chat.pinnedMessage?.messageId ?? "")}
+              >
+                Bỏ ghim
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
     </header>
   );
 };

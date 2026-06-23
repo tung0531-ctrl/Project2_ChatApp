@@ -22,6 +22,71 @@ const reactionSchema = new mongoose.Schema(
   }
 );
 
+const messageReferenceSchema = new mongoose.Schema(
+  {
+    messageId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Message",
+      required: true,
+    },
+    senderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    content: {
+      type: String,
+      default: null,
+    },
+    imgUrl: {
+      type: String,
+      default: null,
+    },
+    mediaType: {
+      type: String,
+      default: null,
+    },
+    fileName: {
+      type: String,
+      default: null,
+    },
+    messageType: {
+      type: String,
+      enum: ["user", "bot", "system"],
+      default: "user",
+    },
+    botMeta: {
+      type: {
+        botId: {
+          type: String,
+          default: null,
+        },
+        displayName: {
+          type: String,
+          default: null,
+        },
+        trigger: {
+          type: String,
+          default: null,
+        },
+        avatarUrl: {
+          type: String,
+          default: null,
+        },
+      },
+      default: null,
+      _id: false,
+    },
+    createdAt: {
+      type: Date,
+      default: null,
+    },
+  },
+  {
+    _id: false,
+  }
+);
+
 const messageSchema = new mongoose.Schema(
   {
     conversationId: {
@@ -119,6 +184,10 @@ const messageSchema = new mongoose.Schema(
     reactions: {
       type: [reactionSchema],
       default: [],
+    },
+    replyTo: {
+      type: messageReferenceSchema,
+      default: null,
     },
   },
   {

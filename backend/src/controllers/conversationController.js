@@ -13,6 +13,18 @@ const formatParticipants = (participants = []) =>
     joinedAt: p.joinedAt,
   }));
 
+const formatMessageReference = (reference) => {
+  if (!reference) {
+    return null;
+  }
+
+  return {
+    ...reference.toObject?.(),
+    messageId: reference.messageId?.toString?.() ?? reference.messageId ?? null,
+    senderId: reference.senderId?.toString?.() ?? reference.senderId ?? null,
+  };
+};
+
 const formatConversation = (conversation) => ({
   ...conversation.toObject(),
   group: conversation.group
@@ -22,6 +34,7 @@ const formatConversation = (conversation) => ({
       }
     : conversation.group,
   unreadCounts: conversation.unreadCounts || {},
+  pinnedMessage: formatMessageReference(conversation.pinnedMessage),
   participants: formatParticipants(conversation.participants || []),
 });
 

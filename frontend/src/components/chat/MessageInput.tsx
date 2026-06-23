@@ -1,8 +1,8 @@
 import { useAuthStore } from "@/stores/useAuthStore";
-import type { BotDefinition, Conversation } from "@/types/chat";
+import type { BotDefinition, Conversation, Message } from "@/types/chat";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
-import { Paperclip, Send, X } from "lucide-react";
+import { MessageSquareReply, Paperclip, Send, X } from "lucide-react";
 import EmojiPicker from "./EmojiPicker";
 import { useChatStore } from "@/stores/useChatStore";
 import { toast } from "sonner";
@@ -61,6 +61,26 @@ const getMentionKeyForParticipant = (participant: Conversation["participants"][n
 
 const mentionHighlightClass = "font-semibold text-violet-600 dark:text-violet-300";
 
+const getReplyPreviewText = (message: Message | null) => {
+  if (!message) {
+    return "";
+  }
+
+  if (message.content?.trim()) {
+    return message.content;
+  }
+
+  if (message.fileName?.trim()) {
+    return message.fileName;
+  }
+
+  if (message.imgUrl) {
+    return "Tệp đính kèm";
+  }
+
+  return "Tin nhắn";
+};
+
 const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
   const { user } = useAuthStore();
   const {
@@ -68,6 +88,8 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
     sendGroupMessage,
     uploadMessageMedia,
     fetchAvailableBots,
+    replyMessage,
+    setReplyMessage,
   } = useChatStore();
   const [value, setValue] = useState("");
   const [selectedMedia, setSelectedMedia] = useState<File | null>(null);
@@ -132,6 +154,10 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
   useEffect(() => {
     setActiveSuggestionIndex(0);
   }, [selectedConvo._id]);
+
+  useEffect(() => {
+    setReplyMessage(null);
+  }, [selectedConvo._id, setReplyMessage]);
 
   const resetSelectedMedia = () => {
     setSelectedMedia(null);
@@ -297,7 +323,8 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
           uploadedMedia?.mediaUrl,
           uploadedMedia?.mediaType,
           uploadedMedia?.fileName,
-          uploadedMedia?.fileSize
+          uploadedMedia?.fileSize,
+          replyMessage?._id
         );
       } else {
         await sendGroupMessage(
@@ -306,13 +333,15 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
           uploadedMedia?.mediaUrl,
           uploadedMedia?.mediaType,
           uploadedMedia?.fileName,
-          uploadedMedia?.fileSize
+          uploadedMedia?.fileSize,
+          replyMessage?._id
         );
       }
 
       setValue("");
       setCaretPosition(0);
       resetSelectedMedia();
+      setReplyMessage(null);
     } catch (error) {
       console.error(error);
       toast.error("Lỗi xảy ra khi gửi tin nhắn. Bạn hãy thử lại!");
@@ -360,6 +389,27 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
 
   return (
     <div className="bg-background p-3">
+      {replyMessage ? (
+        <div className="mb-3 flex items-start justify-between gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex items-center gap-2 text-primary">
+              <MessageSquareReply className="size-4" />
+              <p className="text-xs font-semibold">Đang trả lời tin nhắn</p>
+            </div>
+            <p className="truncate text-sm text-foreground">{getReplyPreviewText(replyMessage)}</p>
+          </div>
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setReplyMessage(null)}
+          >
+            <X className="size-4" />
+          </Button>
+        </div>
+      ) : null}
+
       {selectedMedia && previewUrl ? (
         <div className="mb-3 flex items-start justify-between gap-3 rounded-lg border border-border/60 bg-primary-foreground p-3">
           <div className="min-w-0 flex-1 space-y-2">

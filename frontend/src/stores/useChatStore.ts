@@ -37,16 +37,19 @@ export const useChatStore = create<ChatState>()(
       conversations: [],
       messages: {},
       activeConversationId: null,
+      replyMessage: null,
       convoLoading: false, // convo loading
       messageLoading: false,
       loading: false,
 
       setActiveConversation: (id) => set({ activeConversationId: id }),
+      setReplyMessage: (message) => set({ replyMessage: message }),
       reset: () => {
         set({
           conversations: [],
           messages: {},
           activeConversationId: null,
+          replyMessage: null,
           convoLoading: false,
           messageLoading: false,
         });
@@ -131,13 +134,26 @@ export const useChatStore = create<ChatState>()(
           return false;
         }
       },
+      togglePinnedMessage: async (messageId) => {
+        try {
+          const { conversation } = await chatService.togglePinnedMessage(messageId);
+
+          get().updateConversation(conversation);
+          return true;
+        } catch (error) {
+          console.error("Lỗi xảy ra khi ghim tin nhắn", error);
+          toast.error("Không thể ghim tin nhắn lúc này.");
+          return false;
+        }
+      },
       sendDirectMessage: async (
         recipientId,
         content,
         imgUrl,
         mediaType,
         fileName,
-        fileSize
+        fileSize,
+        replyToMessageId
       ) => {
         try {
           const { activeConversationId } = get();
@@ -148,12 +164,14 @@ export const useChatStore = create<ChatState>()(
             mediaType,
             fileName,
             fileSize,
-            activeConversationId || undefined
+            activeConversationId || undefined,
+            replyToMessageId
           );
           set((state) => ({
             conversations: state.conversations.map((c) =>
               c._id === activeConversationId ? { ...c, seenBy: [] } : c
             ),
+            replyMessage: null,
           }));
         } catch (error) {
           console.error("Lỗi xảy ra khi gửi direct message", error);
@@ -165,7 +183,8 @@ export const useChatStore = create<ChatState>()(
         imgUrl,
         mediaType,
         fileName,
-        fileSize
+        fileSize,
+        replyToMessageId
       ) => {
         try {
           await chatService.sendGroupMessage(
@@ -174,12 +193,14 @@ export const useChatStore = create<ChatState>()(
             imgUrl,
             mediaType,
             fileName,
-            fileSize
+            fileSize,
+            replyToMessageId
           );
           set((state) => ({
             conversations: state.conversations.map((c) =>
               c._id === get().activeConversationId ? { ...c, seenBy: [] } : c
             ),
+            replyMessage: null,
           }));
         } catch (error) {
           console.error("Lỗi xảy ra gửi group message", error);
@@ -315,6 +336,8 @@ export const useChatStore = create<ChatState>()(
             state.activeConversationId === conversationId
               ? null
               : state.activeConversationId,
+          replyMessage:
+            state.activeConversationId === conversationId ? null : state.replyMessage,
         }));
       },
       createConversation: async (type, name, memberIds) => {

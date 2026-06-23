@@ -30,6 +30,19 @@ export interface MessageReaction {
   userIds: string[];
 }
 
+export interface MessageReference {
+  messageId: string;
+  senderId: string;
+  content: string | null;
+  imgUrl?: string | null;
+  mediaType?: string | null;
+  fileName?: string | null;
+  messageType?: "user" | "bot" | "system";
+  botMeta?: BotMeta | null;
+  createdAt?: string | null;
+  pinnedAt?: string | null;
+}
+
 export interface SeenUser {
   _id: string;
   displayName?: string;
@@ -67,6 +80,7 @@ export interface Conversation {
   type: "direct" | "group";
   group: Group;
   participants: Participant[];
+  pinnedMessage?: MessageReference | null;
   lastMessageAt: string;
   seenBy: SeenUserRef[];
   lastMessage: LastMessage | null;
@@ -96,6 +110,7 @@ export interface Message {
   messageType?: "user" | "bot" | "system";
   botMeta?: BotMeta | null;
   reactions?: MessageReaction[];
+  replyTo?: MessageReference | null;
   updatedAt?: string | null;
   createdAt: string;
   isOwn?: boolean;

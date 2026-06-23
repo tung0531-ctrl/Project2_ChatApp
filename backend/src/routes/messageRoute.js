@@ -5,6 +5,7 @@ import {
   sendDirectMessage,
   sendGroupMessage,
   toggleMessageReaction,
+  togglePinnedMessage,
 } from "../controllers/messageController.js";
 import {
   checkFriendship,
@@ -18,5 +19,6 @@ router.post("/upload", uploadMedia.single("file"), uploadChatMedia);
 router.post("/direct", checkFriendship, sendDirectMessage);
 router.post("/group", checkGroupMembership, sendGroupMessage);
 router.patch("/:messageId/reactions", toggleMessageReaction);
+router.patch("/:messageId/pin", togglePinnedMessage);
 
 export default router;

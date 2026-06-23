@@ -26,6 +26,10 @@ interface ToggleReactionResponse {
   reactions: MessageReaction[];
 }
 
+interface TogglePinnedMessageResponse {
+  conversation: Conversation;
+}
+
 const pageLimit = 50;
 
 export const chatService = {
@@ -49,7 +53,8 @@ export const chatService = {
     mediaType?: string,
     fileName?: string,
     fileSize?: number,
-    conversationId?: string
+    conversationId?: string,
+    replyToMessageId?: string
   ) {
     const res = await api.post("/messages/direct", {
       recipientId,
@@ -59,6 +64,7 @@ export const chatService = {
       fileName,
       fileSize,
       conversationId,
+      replyToMessageId,
     });
 
     return res.data.message;
@@ -70,7 +76,8 @@ export const chatService = {
     imgUrl?: string,
     mediaType?: string,
     fileName?: string,
-    fileSize?: number
+    fileSize?: number,
+    replyToMessageId?: string
   ) {
     const res = await api.post("/messages/group", {
       conversationId,
@@ -79,6 +86,7 @@ export const chatService = {
       mediaType,
       fileName,
       fileSize,
+      replyToMessageId,
     });
     return res.data.message;
   },
@@ -98,6 +106,11 @@ export const chatService = {
 
   async reactToMessage(messageId: string, emoji: string): Promise<ToggleReactionResponse> {
     const res = await api.patch(`/messages/${messageId}/reactions`, { emoji });
+    return res.data;
+  },
+
+  async togglePinnedMessage(messageId: string): Promise<TogglePinnedMessageResponse> {
+    const res = await api.patch(`/messages/${messageId}/pin`);
     return res.data;
   },
 
