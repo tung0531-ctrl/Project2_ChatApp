@@ -9,6 +9,12 @@ import SeenByAvatars from "./SeenByAvatars";
 import { Popover, PopoverAnchor, PopoverContent } from "../ui/popover";
 import { FileText, FileSpreadsheet, Paperclip } from "lucide-react";
 import { useRef, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
 
 const REACTION_OPTIONS = ["👍", "❤️", "😂", "😮", "😢", "😡"];
 const LONG_PRESS_DURATION = 350;
@@ -119,7 +125,12 @@ const MessageItem = ({
   const { reactToMessage } = useChatStore();
   const [isReactionPickerOpen, setIsReactionPickerOpen] = useState(false);
   const [isSubmittingReaction, setIsSubmittingReaction] = useState(false);
+  const [selectedReaction, setSelectedReaction] = useState<{
+    emoji: string;
+    userIds: string[];
+  } | null>(null);
   const holdTimerRef = useRef<number | null>(null);
+  const reactionHoldTimerRef = useRef<number | null>(null);
   const prev = index + 1 < messages.length ? messages[index + 1] : undefined;
 
   const isShowTime =
@@ -148,10 +159,41 @@ const MessageItem = ({
     (reaction) => reaction.userIds.length > 0
   );
 
+  const reactionUsers = selectedReaction
+    ? selectedReaction.userIds.map((reactionUserId) => {
+        if (reactionUserId === user?._id) {
+          return {
+            _id: user._id,
+            displayName: user.displayName,
+            username: user.username,
+            avatarUrl: user.avatarUrl ?? undefined,
+          };
+        }
+
+        const matchedParticipant = selectedConvo.participants.find(
+          (participant) => participant._id === reactionUserId
+        );
+
+        return {
+          _id: reactionUserId,
+          displayName: matchedParticipant?.displayName ?? "Người dùng",
+          username: matchedParticipant?.username,
+          avatarUrl: matchedParticipant?.avatarUrl ?? undefined,
+        };
+      })
+    : [];
+
   const clearHoldTimer = () => {
     if (holdTimerRef.current) {
       window.clearTimeout(holdTimerRef.current);
       holdTimerRef.current = null;
+    }
+  };
+
+  const clearReactionHoldTimer = () => {
+    if (reactionHoldTimerRef.current) {
+      window.clearTimeout(reactionHoldTimerRef.current);
+      reactionHoldTimerRef.current = null;
     }
   };
 
@@ -160,6 +202,14 @@ const MessageItem = ({
     holdTimerRef.current = window.setTimeout(() => {
       setIsReactionPickerOpen(true);
       holdTimerRef.current = null;
+    }, LONG_PRESS_DURATION);
+  };
+
+  const startReactionHoldTimer = (emoji: string) => {
+    clearReactionHoldTimer();
+    reactionHoldTimerRef.current = window.setTimeout(() => {
+      void handleReactionSelect(emoji);
+      reactionHoldTimerRef.current = null;
     }, LONG_PRESS_DURATION);
   };
 
@@ -284,7 +334,22 @@ const MessageItem = ({
                           key={`${message._id}-${reaction.emoji}`}
                           type="button"
                           disabled={isSubmittingReaction}
-                          onClick={() => handleReactionSelect(reaction.emoji)}
+                          onClick={() =>
+                            setSelectedReaction({
+                              emoji: reaction.emoji,
+                              userIds: reaction.userIds,
+                            })
+                          }
+                          onPointerDown={(event) => {
+                            if (event.pointerType === "mouse" && event.button !== 0) {
+                              return;
+                            }
+
+                            startReactionHoldTimer(reaction.emoji);
+                          }}
+                          onPointerUp={clearReactionHoldTimer}
+                          onPointerLeave={clearReactionHoldTimer}
+                          onPointerCancel={clearReactionHoldTimer}
                           className={cn(
                             "inline-flex items-center gap-1 rounded-full border bg-background/95 px-2 py-1 text-xs shadow-sm transition-colors",
                             hasReacted
@@ -355,6 +420,45 @@ const MessageItem = ({
           )}
         </div>
       </div>
+
+      <Dialog
+        open={Boolean(selectedReaction)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedReaction(null);
+          }
+        }}
+      >
+        <DialogContent className="border-border/30 glass-strong sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedReaction?.emoji} Người đã thả cảm xúc
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            {reactionUsers.map((reactionUser) => (
+              <div
+                key={`${selectedReaction?.emoji}-${reactionUser._id}`}
+                className="flex items-center gap-3 rounded-lg border border-border/30 bg-background/60 p-3"
+              >
+                <UserAvatar
+                  type="chat"
+                  name={reactionUser.displayName}
+                  avatarUrl={reactionUser.avatarUrl}
+                />
+
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{reactionUser.displayName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {reactionUser.username ? `@${reactionUser.username}` : "Không có username"}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
