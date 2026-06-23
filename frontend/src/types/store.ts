@@ -141,6 +141,7 @@ export interface NotificationState {
 export interface UserState {
   loading: boolean;
   updateAvatarUrl: (formData: FormData) => Promise<void>;
+  updateBackgroundUrl: (formData: FormData) => Promise<void>;
   updateProfile: (payload: UpdateProfilePayload) => Promise<void>;
   updateAccountSecurity: (payload: UpdateAccountSecurityPayload) => Promise<boolean>;
   fetchUserProfile: (userId: string) => Promise<User | null>;

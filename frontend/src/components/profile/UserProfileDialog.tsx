@@ -48,8 +48,19 @@ const UserProfileDialog = ({ userId, open, setOpen }: UserProfileDialogProps) =>
           </div>
         ) : (
           <div className="space-y-4">
-            <Card className="overflow-hidden border-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-0">
-              <CardContent className="mt-20 flex flex-col items-center gap-6 pb-8 sm:flex-row sm:items-end">
+            <Card className="relative overflow-hidden border-0 p-0">
+              {profile.backgroundUrl ? (
+                <div
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{ backgroundImage: `url(${profile.backgroundUrl})` }}
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+              )}
+
+              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/45" />
+
+              <CardContent className="relative z-10 mt-20 flex flex-col items-center gap-6 pb-8 sm:flex-row sm:items-end">
                 <UserAvatar
                   type="profile"
                   name={profile.displayName}

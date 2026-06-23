@@ -41,6 +41,25 @@ export const useUserStore = create<UserState>((set) => ({
       set({ loading: false });
     }
   },
+  updateBackgroundUrl: async (formData) => {
+    try {
+      set({ loading: true });
+      const { user, setUser } = useAuthStore.getState();
+      const data = await userService.uploadBackground(formData);
+
+      if (user) {
+        setUser({
+          ...user,
+          backgroundUrl: data.backgroundUrl,
+        });
+      }
+    } catch (error) {
+      console.error("Lỗi khi updateBackgroundUrl", error);
+      toast.error("Upload hình nền không thành công!");
+    } finally {
+      set({ loading: false });
+    }
+  },
   updateProfile: async (payload) => {
     try {
       set({ loading: true });

@@ -36,6 +36,12 @@ const userSchema = new mongoose.Schema(
     avatarId: {
       type: String, // Cloudinary public_id để xoá hình
     },
+    backgroundUrl: {
+      type: String,
+    },
+    backgroundId: {
+      type: String,
+    },
     bio: {
       type: String,
       maxlength: 500, // tuỳ

@@ -1,5 +1,8 @@
 import bcrypt from "bcrypt";
-import { uploadImageFromBuffer } from "../middlewares/uploadMiddleware.js";
+import {
+  uploadBackgroundImageFromBuffer,
+  uploadImageFromBuffer,
+} from "../middlewares/uploadMiddleware.js";
 import User from "../models/User.js";
 
 export const authMe = async (req, res) => {
@@ -27,9 +30,12 @@ export const searchUserByUsername = async (req, res) => {
     const keyword = username.trim();
 
     const users = await User.find({
-      accountType: "human",
       username: { $regex: keyword, $options: "i" },
       _id: { $ne: currentUserId },
+      $or: [
+        { accountType: "human" },
+        { accountType: { $exists: false } },
+      ],
     })
       .select("_id displayName username avatarUrl")
       .limit(10)
@@ -51,7 +57,7 @@ export const getUserProfile = async (req, res) => {
     }
 
     const user = await User.findById(userId).select(
-      "_id username email displayName avatarUrl bio phone createdAt updatedAt"
+      "_id username email displayName avatarUrl backgroundUrl bio phone createdAt updatedAt"
     );
 
     if (!user) {
@@ -247,6 +253,41 @@ export const uploadAvatar = async (req, res) => {
     return res.status(200).json({ avatarUrl: updatedUser.avatarUrl });
   } catch (error) {
     console.error("Lỗi xảy ra khi upload avatar", error);
+    return res.status(500).json({ message: "Upload failed" });
+  }
+};
+
+export const uploadBackground = async (req, res) => {
+  try {
+    const file = req.file;
+    const userId = req.user._id;
+
+    if (!file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const result = await uploadBackgroundImageFromBuffer(file.buffer, {
+      public_id: `${Date.now()}-background`,
+    });
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        backgroundUrl: result.secure_url,
+        backgroundId: result.public_id,
+      },
+      {
+        new: true,
+      }
+    ).select("backgroundUrl");
+
+    if (!updatedUser?.backgroundUrl) {
+      return res.status(400).json({ message: "Background trả về null" });
+    }
+
+    return res.status(200).json({ backgroundUrl: updatedUser.backgroundUrl });
+  } catch (error) {
+    console.error("Lỗi xảy ra khi upload background", error);
     return res.status(500).json({ message: "Upload failed" });
   }
 };

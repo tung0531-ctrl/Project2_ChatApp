@@ -34,6 +34,28 @@ export const uploadImageFromBuffer = (buffer, options) => {
   });
 };
 
+export const uploadBackgroundImageFromBuffer = (buffer, options) => {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: "chatapp/backgrounds",
+        resource_type: "image",
+        transformation: [{ width: 1400, height: 420, crop: "fill" }],
+        ...options,
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(result);
+        }
+      }
+    );
+
+    uploadStream.end(buffer);
+  });
+};
+
 export const uploadMediaFromBuffer = (buffer, options = {}) => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(

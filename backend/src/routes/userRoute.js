@@ -6,6 +6,7 @@ import {
   updateAccountSecurity,
   updateMyProfile,
   uploadAvatar,
+  uploadBackground,
 } from "../controllers/userController.js";
 import { upload } from "../middlewares/uploadMiddleware.js";
 
@@ -17,5 +18,6 @@ router.patch("/security", updateAccountSecurity);
 router.get("/search", searchUserByUsername);
 router.get("/:userId/profile", getUserProfile);
 router.post("/uploadAvatar", upload.single("file"), uploadAvatar);
+router.post("/uploadBackground", upload.single("file"), uploadBackground);
 
 export default router;
