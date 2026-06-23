@@ -201,6 +201,7 @@ const MessageItem = ({
   const holdTimerRef = useRef<number | null>(null);
   const reactionHoldTimerRef = useRef<number | null>(null);
   const prev = index + 1 < messages.length ? messages[index + 1] : undefined;
+  const next = index > 0 ? messages[index - 1] : undefined;
 
   const isShowTime =
     index === 0 ||
@@ -208,7 +209,10 @@ const MessageItem = ({
       new Date(prev?.createdAt || 0).getTime() >
       300000; // 5 phút
 
-  const isGroupBreak = isShowTime || message.senderId !== prev?.senderId;
+  const isAvatarBreak =
+    !next ||
+    message.senderId !== next.senderId ||
+    new Date(next.createdAt).getTime() - new Date(message.createdAt).getTime() > 300000;
 
   const participant = selectedConvo.participants.find(
     (p: Participant) => p._id.toString() === message.senderId.toString()
@@ -320,14 +324,14 @@ const MessageItem = ({
 
       <div
         className={cn(
-          "flex items-end gap-2 message-bounce mt-2",
+          "flex items-start gap-2 message-bounce mt-2",
           message.isOwn ? "justify-end" : "justify-start"
         )}
       >
         {/* avatar */}
         {!message.isOwn && (
           <div className="w-8">
-            {isGroupBreak && (
+            {isAvatarBreak && (
               <div className="space-y-1">
                 <UserAvatar
                   type="chat"
