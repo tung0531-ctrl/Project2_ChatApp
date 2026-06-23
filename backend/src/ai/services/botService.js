@@ -33,10 +33,7 @@ const resolveBotUser = async (bot) => {
       $setOnInsert: {
         username: bot.systemUser.username,
         email: bot.systemUser.email,
-        displayName: bot.systemUser.displayName,
         hashedPassword,
-        accountType: "system_bot",
-        avatarUrl: bot.systemUser.avatarUrl,
       },
       $set: {
         displayName: bot.systemUser.displayName,
