@@ -1,5 +1,5 @@
 import type { Socket } from "socket.io-client";
-import type { BotDefinition, Conversation, Message } from "./chat";
+import type { BotDefinition, Conversation, Message, MessageReaction } from "./chat";
 import type {
   Friend,
   FriendRequest,
@@ -74,8 +74,14 @@ export interface ChatState {
   uploadMessageMedia: (
     file: File
   ) => Promise<{ mediaUrl: string; mediaType: string; fileName: string; fileSize: number }>;
+  reactToMessage: (messageId: string, emoji: string) => Promise<boolean>;
   // add message
   addMessage: (message: Message) => Promise<void>;
+  applyMessageReactions: (
+    conversationId: string,
+    messageId: string,
+    reactions: MessageReaction[]
+  ) => void;
   // update convo
   updateConversation: (conversation: Partial<Conversation> & { _id: string }) => void;
   markAsSeen: () => Promise<void>;

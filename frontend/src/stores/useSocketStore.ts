@@ -67,6 +67,12 @@ export const useSocketStore = create<SocketState>((set, get) => ({
       useChatStore.getState().updateConversation(updatedConversation);
     });
 
+    socket.on("message-reaction-updated", ({ conversationId, messageId, reactions }) => {
+      useChatStore
+        .getState()
+        .applyMessageReactions(conversationId, messageId, reactions);
+    });
+
     // read message
     socket.on("read-message", ({ conversation }) => {
       const updated = {

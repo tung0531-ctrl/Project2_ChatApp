@@ -1,10 +1,17 @@
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useChatStore } from "@/stores/useChatStore";
 import { cn, formatMessageTime, splitTextWithMentions } from "@/lib/utils";
 import type { Conversation, Message, Participant } from "@/types/chat";
 import UserAvatar from "./UserAvatar";
 import { Card } from "../ui/card";
 import { Badge } from "../ui/badge";
 import SeenByAvatars from "./SeenByAvatars";
+import { Popover, PopoverAnchor, PopoverContent } from "../ui/popover";
 import { FileText, FileSpreadsheet, Paperclip } from "lucide-react";
+import { useRef, useState } from "react";
+
+const REACTION_OPTIONS = ["👍", "❤️", "😂", "😮", "😢", "😡"];
+const LONG_PRESS_DURATION = 350;
 
 const formatFileSize = (size?: number | null) => {
   if (!size) {
@@ -108,6 +115,11 @@ const MessageItem = ({
   messages,
   selectedConvo,
 }: MessageItemProps) => {
+  const { user } = useAuthStore();
+  const { reactToMessage } = useChatStore();
+  const [isReactionPickerOpen, setIsReactionPickerOpen] = useState(false);
+  const [isSubmittingReaction, setIsSubmittingReaction] = useState(false);
+  const holdTimerRef = useRef<number | null>(null);
   const prev = index + 1 < messages.length ? messages[index + 1] : undefined;
 
   const isShowTime =
@@ -132,6 +144,39 @@ const MessageItem = ({
     ? splitTextWithMentions(message.content)
     : [];
   const mentionTextClass = getMentionTextClass(Boolean(message.isOwn));
+  const visibleReactions = (message.reactions ?? []).filter(
+    (reaction) => reaction.userIds.length > 0
+  );
+
+  const clearHoldTimer = () => {
+    if (holdTimerRef.current) {
+      window.clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+  };
+
+  const startHoldTimer = () => {
+    clearHoldTimer();
+    holdTimerRef.current = window.setTimeout(() => {
+      setIsReactionPickerOpen(true);
+      holdTimerRef.current = null;
+    }, LONG_PRESS_DURATION);
+  };
+
+  const handleReactionSelect = async (emoji: string) => {
+    if (isSubmittingReaction) {
+      return;
+    }
+
+    setIsSubmittingReaction(true);
+    const success = await reactToMessage(message._id, emoji);
+
+    if (success) {
+      setIsReactionPickerOpen(false);
+    }
+
+    setIsSubmittingReaction(false);
+  };
 
   return (
     <>
@@ -178,28 +223,119 @@ const MessageItem = ({
             message.isOwn ? "items-end" : "items-start"
           )}
         >
-          <Card
-            className={cn(
-              "p-3",
-              message.isOwn ? "chat-bubble-sent border-0" : "chat-bubble-received"
-            )}
+          <Popover
+            open={isReactionPickerOpen}
+            onOpenChange={setIsReactionPickerOpen}
           >
-            <div className="space-y-2">
-              {renderMessageMedia(message)}
-              {message.content ? (
-                <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">
-                  {contentSegments.map((segment, segmentIndex) => (
-                    <span
-                      key={`${message._id}-segment-${segmentIndex}`}
-                      className={segment.isMention ? mentionTextClass : undefined}
+            <PopoverAnchor asChild>
+              <div className="relative">
+                <Card
+                  onPointerDown={(event) => {
+                    if (event.pointerType === "mouse" && event.button !== 0) {
+                      return;
+                    }
+
+                    startHoldTimer();
+                  }}
+                  onPointerUp={clearHoldTimer}
+                  onPointerLeave={clearHoldTimer}
+                  onPointerCancel={clearHoldTimer}
+                  onContextMenu={(event) => {
+                    event.preventDefault();
+                    clearHoldTimer();
+                    setIsReactionPickerOpen(true);
+                  }}
+                  className={cn(
+                    "p-3 touch-manipulation",
+                    message.isOwn ? "chat-bubble-sent border-0" : "chat-bubble-received"
+                  )}
+                >
+                  <div className="space-y-2">
+                    {renderMessageMedia(message)}
+                    {message.content ? (
+                      <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">
+                        {contentSegments.map((segment, segmentIndex) => (
+                          <span
+                            key={`${message._id}-segment-${segmentIndex}`}
+                            className={segment.isMention ? mentionTextClass : undefined}
+                          >
+                            {segment.text}
+                          </span>
+                        ))}
+                      </p>
+                    ) : null}
+                  </div>
+                </Card>
+
+                {visibleReactions.length > 0 ? (
+                  <div
+                    className={cn(
+                      "relative z-10 mt-[-10px] flex flex-wrap gap-1 px-2",
+                      message.isOwn ? "justify-end" : "justify-start"
+                    )}
+                  >
+                    {visibleReactions.map((reaction) => {
+                      const hasReacted = Boolean(
+                        user?._id && reaction.userIds.includes(user._id)
+                      );
+
+                      return (
+                        <button
+                          key={`${message._id}-${reaction.emoji}`}
+                          type="button"
+                          disabled={isSubmittingReaction}
+                          onClick={() => handleReactionSelect(reaction.emoji)}
+                          className={cn(
+                            "inline-flex items-center gap-1 rounded-full border bg-background/95 px-2 py-1 text-xs shadow-sm transition-colors",
+                            hasReacted
+                              ? "border-primary/60 text-primary"
+                              : "border-border/60 text-foreground hover:bg-muted"
+                          )}
+                        >
+                          <span>{reaction.emoji}</span>
+                          <span className="font-medium">{reaction.userIds.length}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            </PopoverAnchor>
+
+            <PopoverContent
+              side="top"
+              align={message.isOwn ? "end" : "start"}
+              sideOffset={10}
+              className="w-auto rounded-full border-border/50 bg-background/95 p-2 shadow-lg"
+            >
+              <div className="flex items-center gap-1">
+                {REACTION_OPTIONS.map((emoji) => {
+                  const isActive = Boolean(
+                    user?._id &&
+                      (message.reactions ?? []).some(
+                        (reaction) =>
+                          reaction.emoji === emoji && reaction.userIds.includes(user._id)
+                      )
+                  );
+
+                  return (
+                    <button
+                      key={`${message._id}-picker-${emoji}`}
+                      type="button"
+                      disabled={isSubmittingReaction}
+                      onClick={() => handleReactionSelect(emoji)}
+                      className={cn(
+                        "flex size-10 items-center justify-center rounded-full text-lg transition-transform hover:scale-110 hover:bg-muted",
+                        isActive ? "bg-primary/10 ring-1 ring-primary/30" : "bg-transparent"
+                      )}
                     >
-                      {segment.text}
-                    </span>
-                  ))}
-                </p>
-              ) : null}
-            </div>
-          </Card>
+                      {emoji}
+                    </button>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
 
           {/* seen/ delivered */}
           {message.isOwn && message._id === selectedConvo.lastMessage?._id && (

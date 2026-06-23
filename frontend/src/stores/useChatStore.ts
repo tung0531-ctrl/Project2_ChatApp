@@ -116,6 +116,21 @@ export const useChatStore = create<ChatState>()(
       uploadMessageMedia: async (file) => {
         return chatService.uploadMessageMedia(file);
       },
+      reactToMessage: async (messageId, emoji) => {
+        try {
+          const { conversationId, reactions } = await chatService.reactToMessage(
+            messageId,
+            emoji
+          );
+
+          get().applyMessageReactions(conversationId, messageId, reactions);
+          return true;
+        } catch (error) {
+          console.error("Lỗi xảy ra khi thả cảm xúc", error);
+          toast.error("Không thể thả cảm xúc lúc này.");
+          return false;
+        }
+      },
       sendDirectMessage: async (
         recipientId,
         content,
@@ -205,6 +220,29 @@ export const useChatStore = create<ChatState>()(
         } catch (error) {
           console.error("Lỗi xảy khi ra add message:", error);
         }
+      },
+      applyMessageReactions: (conversationId, messageId, reactions) => {
+        set((state) => {
+          const currentConversationMessages = state.messages[conversationId];
+
+          if (!currentConversationMessages) {
+            return state;
+          }
+
+          const nextItems = currentConversationMessages.items.map((message) =>
+            message._id === messageId ? { ...message, reactions } : message
+          );
+
+          return {
+            messages: {
+              ...state.messages,
+              [conversationId]: {
+                ...currentConversationMessages,
+                items: nextItems,
+              },
+            },
+          };
+        });
       },
       updateConversation: (conversation) => {
         set((state) => ({

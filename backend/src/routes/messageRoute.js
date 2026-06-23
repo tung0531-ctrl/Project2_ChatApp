@@ -4,6 +4,7 @@ import {
   uploadChatMedia,
   sendDirectMessage,
   sendGroupMessage,
+  toggleMessageReaction,
 } from "../controllers/messageController.js";
 import {
   checkFriendship,
@@ -16,5 +17,6 @@ const router = express.Router();
 router.post("/upload", uploadMedia.single("file"), uploadChatMedia);
 router.post("/direct", checkFriendship, sendDirectMessage);
 router.post("/group", checkGroupMembership, sendGroupMessage);
+router.patch("/:messageId/reactions", toggleMessageReaction);
 
 export default router;

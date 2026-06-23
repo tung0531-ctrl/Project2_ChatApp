@@ -9,6 +9,17 @@ import { uploadMediaFromBuffer } from "../middlewares/uploadMiddleware.js";
 import { buildBotReplyForGroupMessage } from "../ai/services/botService.js";
 import { detectMessageModeration } from "../utils/moderationHelper.js";
 
+const ALLOWED_REACTIONS = new Set(["👍", "❤️", "😂", "😮", "😢", "😡"]);
+
+const normalizeReactions = (reactions = []) => {
+  return reactions
+    .map((reaction) => ({
+      emoji: reaction.emoji,
+      userIds: (reaction.userIds ?? []).map((userId) => userId.toString()),
+    }))
+    .filter((reaction) => reaction.userIds.length > 0);
+};
+
 const normalizeMessagePayload = ({ content, imgUrl, mediaType, fileName, fileSize }) => {
   const normalizedContent = content?.trim() ?? "";
 
@@ -186,6 +197,82 @@ export const sendGroupMessage = async (req, res) => {
     return res.status(201).json({ message });
   } catch (error) {
     console.error("Lỗi xảy ra khi gửi tin nhắn nhóm", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
+export const toggleMessageReaction = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const emoji = req.body?.emoji?.trim?.();
+    const userId = req.user._id.toString();
+
+    if (!emoji || !ALLOWED_REACTIONS.has(emoji)) {
+      return res.status(400).json({ message: "Biểu cảm không hợp lệ" });
+    }
+
+    const message = await Message.findById(messageId);
+
+    if (!message) {
+      return res.status(404).json({ message: "Không tìm thấy tin nhắn" });
+    }
+
+    const conversation = await Conversation.findById(message.conversationId);
+
+    if (!conversation) {
+      return res.status(404).json({ message: "Không tìm thấy cuộc trò chuyện" });
+    }
+
+    const isParticipant = conversation.participants.some(
+      (participant) => participant.userId.toString() === userId,
+    );
+
+    if (!isParticipant) {
+      return res.status(403).json({ message: "Bạn không ở trong cuộc trò chuyện này" });
+    }
+
+    const existingReaction = (message.reactions ?? []).find((reaction) =>
+      reaction.userIds.some((reactionUserId) => reactionUserId.toString() === userId),
+    );
+    const hadSameReaction = existingReaction?.emoji === emoji;
+
+    message.reactions = (message.reactions ?? []).map((reaction) => ({
+      emoji: reaction.emoji,
+      userIds: reaction.userIds.filter((reactionUserId) => reactionUserId.toString() !== userId),
+    }));
+
+    const matchingReaction = message.reactions.find((reaction) => reaction.emoji === emoji);
+
+    if (!hadSameReaction) {
+      if (matchingReaction) {
+        matchingReaction.userIds.push(req.user._id);
+      } else {
+        message.reactions.push({
+          emoji,
+          userIds: [req.user._id],
+        });
+      }
+    }
+
+    message.reactions = message.reactions.filter((reaction) => reaction.userIds.length > 0);
+
+    await message.save();
+
+    const normalizedReactions = normalizeReactions(message.reactions);
+
+    io.to(conversation._id.toString()).emit("message-reaction-updated", {
+      conversationId: conversation._id.toString(),
+      messageId: message._id.toString(),
+      reactions: normalizedReactions,
+    });
+
+    return res.status(200).json({
+      messageId: message._id.toString(),
+      conversationId: conversation._id.toString(),
+      reactions: normalizedReactions,
+    });
+  } catch (error) {
+    console.error("Lỗi khi thả cảm xúc cho tin nhắn", error);
     return res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };

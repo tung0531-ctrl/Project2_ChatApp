@@ -25,6 +25,11 @@ export interface BotMeta {
   avatarUrl?: string | null;
 }
 
+export interface MessageReaction {
+  emoji: string;
+  userIds: string[];
+}
+
 export interface SeenUser {
   _id: string;
   displayName?: string;
@@ -90,6 +95,7 @@ export interface Message {
   fileSize?: number | null;
   messageType?: "user" | "bot" | "system";
   botMeta?: BotMeta | null;
+  reactions?: MessageReaction[];
   updatedAt?: string | null;
   createdAt: string;
   isOwn?: boolean;

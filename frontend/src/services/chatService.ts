@@ -5,6 +5,7 @@ import type {
   ConversationResponse,
   GroupSearchResponse,
   Message,
+  MessageReaction,
 } from "@/types/chat";
 
 interface FetchMessageProps {
@@ -17,6 +18,12 @@ interface UploadMessageMediaResponse {
   mediaType: string;
   fileName: string;
   fileSize: number;
+}
+
+interface ToggleReactionResponse {
+  messageId: string;
+  conversationId: string;
+  reactions: MessageReaction[];
 }
 
 const pageLimit = 50;
@@ -86,6 +93,11 @@ export const chatService = {
       },
     });
 
+    return res.data;
+  },
+
+  async reactToMessage(messageId: string, emoji: string): Promise<ToggleReactionResponse> {
+    const res = await api.patch(`/messages/${messageId}/reactions`, { emoji });
     return res.data;
   },
 
