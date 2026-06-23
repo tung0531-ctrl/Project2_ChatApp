@@ -109,7 +109,7 @@ export const createConversation = async (req, res) => {
     }
 
     await conversation.populate([
-      { path: "participants.userId", select: "displayName avatarUrl" },
+      { path: "participants.userId", select: "username displayName avatarUrl" },
       {
         path: "seenBy",
         select: "displayName avatarUrl",
@@ -165,7 +165,7 @@ export const getConversations = async (req, res) => {
       .sort({ lastMessageAt: -1, updatedAt: -1 })
       .populate({
         path: "participants.userId",
-        select: "displayName avatarUrl",
+        select: "username displayName avatarUrl",
       })
       .populate({
         path: "lastMessage.senderId",
@@ -260,7 +260,7 @@ export const searchJoinableGroups = async (req, res) => {
       .limit(10)
       .populate({
         path: "participants.userId",
-        select: "displayName avatarUrl",
+        select: "username displayName avatarUrl",
       })
       .populate({
         path: "lastMessage.senderId",
@@ -336,7 +336,7 @@ export const joinGroup = async (req, res) => {
     await conversation.populate([
       {
         path: "participants.userId",
-        select: "displayName avatarUrl",
+        select: "username displayName avatarUrl",
       },
       {
         path: "lastMessage.senderId",
@@ -383,7 +383,7 @@ export const leaveGroup = async (req, res) => {
     const conversation = await Conversation.findById(conversationId)
       .populate({
         path: "participants.userId",
-        select: "displayName avatarUrl",
+        select: "username displayName avatarUrl",
       })
       .populate({
         path: "lastMessage.senderId",
@@ -412,7 +412,7 @@ export const leaveGroup = async (req, res) => {
     await conversation.populate([
       {
         path: "participants.userId",
-        select: "displayName avatarUrl",
+        select: "username displayName avatarUrl",
       },
       {
         path: "lastMessage.senderId",
@@ -443,7 +443,7 @@ export const kickGroupMember = async (req, res) => {
     const conversation = await Conversation.findById(conversationId)
       .populate({
         path: "participants.userId",
-        select: "displayName avatarUrl",
+        select: "username displayName avatarUrl",
       })
       .populate({
         path: "lastMessage.senderId",
@@ -484,7 +484,7 @@ export const kickGroupMember = async (req, res) => {
     await conversation.populate([
       {
         path: "participants.userId",
-        select: "displayName avatarUrl",
+        select: "username displayName avatarUrl",
       },
       {
         path: "lastMessage.senderId",
@@ -532,7 +532,7 @@ export const updateGroupDescription = async (req, res) => {
     const conversation = await Conversation.findById(conversationId)
       .populate({
         path: "participants.userId",
-        select: "displayName avatarUrl",
+        select: "username displayName avatarUrl",
       })
       .populate({
         path: "lastMessage.senderId",
@@ -583,7 +583,7 @@ export const updateGroupBots = async (req, res) => {
     const conversation = await Conversation.findById(conversationId)
       .populate({
         path: "participants.userId",
-        select: "displayName avatarUrl",
+        select: "username displayName avatarUrl",
       })
       .populate({
         path: "lastMessage.senderId",

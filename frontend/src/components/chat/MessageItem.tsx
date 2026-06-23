@@ -158,10 +158,13 @@ const MessageItem = ({
   const visibleReactions = (message.reactions ?? []).filter(
     (reaction) => reaction.userIds.length > 0
   );
+  const normalizeId = (value: string | { toString(): string } | null | undefined) =>
+    value?.toString();
+  const currentUserId = normalizeId(user?._id);
 
   const reactionUsers = selectedReaction
     ? selectedReaction.userIds.map((reactionUserId) => {
-        if (reactionUserId === user?._id) {
+        if (user && normalizeId(reactionUserId) === currentUserId) {
           return {
             _id: user._id,
             displayName: user.displayName,
@@ -171,7 +174,7 @@ const MessageItem = ({
         }
 
         const matchedParticipant = selectedConvo.participants.find(
-          (participant) => participant._id === reactionUserId
+          (participant) => normalizeId(participant._id) === normalizeId(reactionUserId)
         );
 
         return {
