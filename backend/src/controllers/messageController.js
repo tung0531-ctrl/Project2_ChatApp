@@ -7,6 +7,7 @@ import {
 import { io } from "../socket/index.js";
 import { uploadMediaFromBuffer } from "../middlewares/uploadMiddleware.js";
 import { buildBotReplyForGroupMessage } from "../ai/services/botService.js";
+import { detectMessageModeration } from "../utils/moderationHelper.js";
 
 const normalizeMessagePayload = ({ content, imgUrl, mediaType, fileName, fileSize }) => {
   const normalizedContent = content?.trim() ?? "";
@@ -33,6 +34,17 @@ const createAndEmitMessage = async ({
   messageType = "user",
   botMeta = null,
 }) => {
+  const moderation =
+    messageType === "user"
+      ? detectMessageModeration(content ?? "")
+      : {
+          status: "clean",
+          isFlagged: false,
+          matchedKeywords: [],
+          reasonCodes: [],
+          flaggedAt: null,
+        };
+
   const message = await Message.create({
     conversationId: conversation._id,
     senderId,
@@ -43,6 +55,7 @@ const createAndEmitMessage = async ({
     fileSize,
     messageType,
     botMeta,
+    moderation,
   });
 
   updateConversationAfterCreateMessage(conversation, message, senderId);

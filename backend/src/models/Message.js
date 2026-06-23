@@ -60,6 +60,40 @@ const messageSchema = new mongoose.Schema(
       default: null,
       _id: false,
     },
+    moderation: {
+      type: {
+        status: {
+          type: String,
+          enum: ["clean", "flagged"],
+          default: "clean",
+        },
+        isFlagged: {
+          type: Boolean,
+          default: false,
+          index: true,
+        },
+        matchedKeywords: {
+          type: [String],
+          default: [],
+        },
+        reasonCodes: {
+          type: [String],
+          default: [],
+        },
+        flaggedAt: {
+          type: Date,
+          default: null,
+        },
+      },
+      default: () => ({
+        status: "clean",
+        isFlagged: false,
+        matchedKeywords: [],
+        reasonCodes: [],
+        flaggedAt: null,
+      }),
+      _id: false,
+    },
   },
   {
     timestamps: true,
@@ -67,6 +101,7 @@ const messageSchema = new mongoose.Schema(
 );
 
 messageSchema.index({ conversationId: 1, createdAt: -1 });
+messageSchema.index({ "moderation.isFlagged": 1, createdAt: -1 });
 
 const Message = mongoose.model("Message", messageSchema);
 
