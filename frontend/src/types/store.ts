@@ -1,5 +1,5 @@
 import type { Socket } from "socket.io-client";
-import type { Conversation, Message } from "./chat";
+import type { BotDefinition, Conversation, Message } from "./chat";
 import type {
   Friend,
   FriendRequest,
@@ -94,6 +94,8 @@ export interface ChatState {
     conversationId: string,
     description: string
   ) => Promise<boolean>;
+  fetchAvailableBots: () => Promise<BotDefinition[]>;
+  updateGroupBots: (conversationId: string, botIds: string[]) => Promise<boolean>;
 }
 
 export interface SocketState {

@@ -1,0 +1,83 @@
+{
+  "botId": "botGame",
+  "displayName": "Bot Game",
+  "trigger": "@botGame",
+  "description": "He chuyen gia tra loi kien thuc co ban ve tuong Lien Quan.",
+  "systemUser": {
+    "username": "botgame_system",
+    "email": "botgame.system@chatapp.local",
+    "displayName": "Bot Game",
+    "avatarUrl": null
+  },
+  "examples": [
+    { "text": "chao bot game", "intent": "greeting" },
+    { "text": "hello bot game", "intent": "greeting" },
+    { "text": "bot game oi", "intent": "greeting" },
+    { "text": "violet di duong nao", "intent": "hero_role" },
+    { "text": "nakroth la tuong gi", "intent": "hero_role" },
+    { "text": "krixi choi vi tri nao", "intent": "hero_role" },
+    { "text": "maloch hop vai tro gi", "intent": "hero_role" },
+    { "text": "ky nang cua violet la gi", "intent": "hero_skill" },
+    { "text": "nakroth co bo ky nang nao", "intent": "hero_skill" },
+    { "text": "krixi co skill nao manh", "intent": "hero_skill" },
+    { "text": "maloch co chieu gi manh", "intent": "hero_skill" },
+    { "text": "build violet nhu nao", "intent": "hero_build" },
+    { "text": "len do cho nakroth", "intent": "hero_build" },
+    { "text": "krixi nen len do gi", "intent": "hero_build" },
+    { "text": "maloch dung trang bi nao", "intent": "hero_build" }
+  ],
+  "entities": {
+    "heroes": [
+      {
+        "id": "violet",
+        "aliases": ["violet"],
+        "knowledge": {
+          "role": "Violet la xa thu, thuong di duong Rong hoac duoc bao ke de gay sat thuong cuoi tran.",
+          "skillSummary": "Violet manh nhat o kha nang cau ria tam xa bang Dam Xuyen Thau sau khi lan nguoi, ket hop Nem Luu Dan de cau mau va Don Cao Xa de ket lieu.",
+          "build": "Mot huong build co ban cho Violet la: Giay Du Muc, Thanh Kiem, Song Dao Bao Tap, Kiem Fafnir, Cung Ta Ma, Giap Ho Menh. Co the doi mon phong thu theo tran dau."
+        }
+      },
+      {
+        "id": "nakroth",
+        "aliases": ["nakroth", "nak"],
+        "knowledge": {
+          "role": "Nakroth la sat thu di rung, manh o kha nang co dong, bat le va day le tu giua tran den cuoi tran.",
+          "skillSummary": "Nakroth manh nhat o bo ky nang co nhieu lan luot va hat tung. Chieu Boi Tham Doan Menh giup ap sat, Ngu Quyet Don xu ly khong che, va Gươm Hanh Quyét de don sat thuong dien rong.",
+          "build": "Mot huong build co ban cho Nakroth la: Riu Leviathan hoac Riu Truy Hon, Giay Kien Cuong, Thuong Longinus, To Hop Kiem, Phuc Hop Kiem, Giap Ho Menh."
+        }
+      },
+      {
+        "id": "krixi",
+        "aliases": ["krixi"],
+        "knowledge": {
+          "role": "Krixi la phap su duong giua, manh o sat thuong dien rong va cau ria giao tranh.",
+          "skillSummary": "Krixi gay kho chiu nho Bom Tinh Quang cau ria, Buoc Chan Khong Che de giu chan muc tieu, va Mua Sao Bang sat thuong dien rong trong giao tranh tong.",
+          "build": "Mot huong build co ban cho Krixi la: Giay Phu Thuy, Ngoc Dai Phap Su, Vuong Mien Hecate, Truong Hon, Sach Thanh, Qua Cau Bang Suong hoac Giap Ho Menh phep."
+        }
+      },
+      {
+        "id": "maloch",
+        "aliases": ["maloch"],
+        "knowledge": {
+          "role": "Maloch la dau si do don, thuong di duong Ta Than Caesar va mo giao tranh rat tot.",
+          "skillSummary": "Maloch manh o sat thuong chuan tu Quet Kiem, lam cham va tao khong gian bang Doa Dia Nguc, cung voi Kiem Dia Nguc de mo giao tranh tam xa.",
+          "build": "Mot huong build co ban cho Maloch la: Giay Kien Cuong, Ao Choang Than Ra, Thuong Longinus, Huan Chuong Troy, Giap Thong Kho, Giap Ho Menh."
+        }
+      }
+    ]
+  },
+  "rules": [
+    { "intent": "greeting", "responseType": "static", "responseKey": "greeting" },
+    { "intent": "hero_role", "entityType": "hero", "knowledgeField": "role" },
+    { "intent": "hero_skill", "entityType": "hero", "knowledgeField": "skillSummary" },
+    { "intent": "hero_build", "entityType": "hero", "knowledgeField": "build" }
+  ],
+  "responses": {
+    "greeting": [
+      "Chao ca nhom, minh la Bot Game. Hay mention @botGame va hoi ve tuong Lien Quan nhu vai tro, ky nang hoac build co ban.",
+      "Bot Game da san sang. Moi nguoi co the goi @botGame de hoi ve vai tro, ky nang va build cua mot so tuong Lien Quan."
+    ],
+    "askHero": "Minh chua xac dinh duoc tuong ban dang hoi. Hay mention @botGame kem ten tuong cu the, vi du: @botGame Violet co bo ky nang gi?",
+    "fallback": "Minh chua tim thay cau tra loi phu hop trong kho tri thuc game hien tai. Ban co the hoi ve vai tro, ky nang hoac build cua Violet, Nakroth, Krixi, hoac Maloch."
+  }
+}

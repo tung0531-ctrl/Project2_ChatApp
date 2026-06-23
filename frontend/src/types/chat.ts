@@ -5,6 +5,25 @@ export interface Participant {
   joinedAt: string;
 }
 
+export interface BotConfig {
+  botId: string;
+  enabled: boolean;
+}
+
+export interface BotDefinition {
+  botId: string;
+  displayName: string;
+  trigger: string;
+  description: string;
+}
+
+export interface BotMeta {
+  botId: string;
+  displayName: string;
+  trigger: string;
+  avatarUrl?: string | null;
+}
+
 export interface SeenUser {
   _id: string;
   displayName?: string;
@@ -17,6 +36,7 @@ export interface Group {
   name: string;
   description?: string;
   createdBy: string;
+  bots?: BotConfig[];
 }
 
 export interface LastMessage {
@@ -27,6 +47,8 @@ export interface LastMessage {
   mediaType?: string | null;
   fileName?: string | null;
   fileSize?: number | null;
+  messageType?: "user" | "bot" | "system";
+  botMeta?: BotMeta | null;
   sender: {
     _id: string;
     displayName: string;
@@ -65,6 +87,8 @@ export interface Message {
   mediaType?: string | null;
   fileName?: string | null;
   fileSize?: number | null;
+  messageType?: "user" | "bot" | "system";
+  botMeta?: BotMeta | null;
   updatedAt?: string | null;
   createdAt: string;
   isOwn?: boolean;

@@ -32,6 +32,27 @@ const groupSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    bots: {
+      type: [
+        new mongoose.Schema(
+          {
+            botId: {
+              type: String,
+              required: true,
+              trim: true,
+            },
+            enabled: {
+              type: Boolean,
+              default: true,
+            },
+          },
+          {
+            _id: false,
+          }
+        ),
+      ],
+      default: [],
+    },
   },
   {
     _id: false,
@@ -68,6 +89,21 @@ const lastMessageSchema = new mongoose.Schema(
     fileSize: {
       type: Number,
       default: null,
+    },
+    messageType: {
+      type: String,
+      enum: ["user", "bot", "system"],
+      default: "user",
+    },
+    botMeta: {
+      type: {
+        botId: { type: String, default: null },
+        displayName: { type: String, default: null },
+        trigger: { type: String, default: null },
+        avatarUrl: { type: String, default: null },
+      },
+      default: null,
+      _id: false,
     },
   },
   {

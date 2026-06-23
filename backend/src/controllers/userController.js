@@ -27,6 +27,7 @@ export const searchUserByUsername = async (req, res) => {
     const keyword = username.trim();
 
     const users = await User.find({
+      accountType: "human",
       username: { $regex: keyword, $options: "i" },
       _id: { $ne: currentUserId },
     })

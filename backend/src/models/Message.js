@@ -33,6 +33,33 @@ const messageSchema = new mongoose.Schema(
       type: Number,
       default: null,
     },
+    messageType: {
+      type: String,
+      enum: ["user", "bot", "system"],
+      default: "user",
+    },
+    botMeta: {
+      type: {
+        botId: {
+          type: String,
+          default: null,
+        },
+        displayName: {
+          type: String,
+          default: null,
+        },
+        trigger: {
+          type: String,
+          default: null,
+        },
+        avatarUrl: {
+          type: String,
+          default: null,
+        },
+      },
+      default: null,
+      _id: false,
+    },
   },
   {
     timestamps: true,

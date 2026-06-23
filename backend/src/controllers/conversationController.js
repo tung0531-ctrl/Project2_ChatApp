@@ -2,6 +2,7 @@ import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
 import { io } from "../socket/index.js";
 import { createNotification } from "../utils/notificationHelper.js";
+import { getAvailableBotDefinitions } from "../ai/registry/index.js";
 
 const formatParticipants = (participants = []) =>
   participants.map((p) => ({
@@ -274,6 +275,15 @@ export const searchJoinableGroups = async (req, res) => {
     });
   } catch (error) {
     console.error("Lỗi khi tìm nhóm chat", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
+export const getAvailableBots = async (_req, res) => {
+  try {
+    return res.status(200).json({ bots: getAvailableBotDefinitions() });
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách bot khả dụng", error);
     return res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };
@@ -559,6 +569,64 @@ export const updateGroupDescription = async (req, res) => {
     return res.status(200).json({ conversation: formatted });
   } catch (error) {
     console.error("Lỗi khi cập nhật mô tả nhóm", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
+export const updateGroupBots = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user._id.toString();
+    const requestedBotIds = Array.isArray(req.body?.botIds) ? req.body.botIds : [];
+
+    const conversation = await Conversation.findById(conversationId)
+      .populate({
+        path: "participants.userId",
+        select: "displayName avatarUrl",
+      })
+      .populate({
+        path: "lastMessage.senderId",
+        select: "displayName avatarUrl",
+      })
+      .populate({
+        path: "seenBy",
+        select: "displayName avatarUrl",
+      });
+
+    if (!conversation) {
+      return res.status(404).json({ message: "Conversation không tồn tại" });
+    }
+
+    if (conversation.type !== "group") {
+      return res.status(400).json({ message: "Chỉ nhóm chat mới có thể quản lý bot" });
+    }
+
+    if (!isConversationParticipant(conversation, userId)) {
+      return res.status(403).json({ message: "Bạn không ở trong nhóm này" });
+    }
+
+    if (conversation.group?.createdBy?.toString() !== userId) {
+      return res.status(403).json({ message: "Chỉ trưởng nhóm mới được cập nhật bot" });
+    }
+
+    const availableBotIds = new Set(getAvailableBotDefinitions().map((bot) => bot.botId));
+    const sanitizedBotIds = [...new Set(requestedBotIds)]
+      .filter((botId) => typeof botId === "string")
+      .filter((botId) => availableBotIds.has(botId));
+
+    conversation.group.bots = sanitizedBotIds.map((botId) => ({
+      botId,
+      enabled: true,
+    }));
+
+    await conversation.save();
+
+    const formatted = formatConversation(conversation);
+    io.to(conversationId).emit("conversation-updated", formatted);
+
+    return res.status(200).json({ conversation: formatted });
+  } catch (error) {
+    console.error("Lỗi khi cập nhật bot nhóm", error);
     return res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };

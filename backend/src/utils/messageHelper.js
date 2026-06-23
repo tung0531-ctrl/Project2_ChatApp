@@ -15,6 +15,8 @@ export const updateConversationAfterCreateMessage = (
       mediaType: message.mediaType ?? null,
       fileName: message.fileName ?? null,
       fileSize: message.fileSize ?? null,
+      messageType: message.messageType ?? "user",
+      botMeta: message.botMeta ?? null,
     },
   });
 

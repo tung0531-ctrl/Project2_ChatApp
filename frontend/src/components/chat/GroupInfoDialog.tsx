@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Conversation } from "@/types/chat";
+import type { BotDefinition, Conversation } from "@/types/chat";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useChatStore } from "@/stores/useChatStore";
 import {
@@ -15,6 +15,7 @@ import { Separator } from "../ui/separator";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
 import { UserX } from "lucide-react";
+import { Switch } from "../ui/switch";
 
 interface GroupInfoDialogProps {
   convo: Conversation;
@@ -28,9 +29,18 @@ const GroupInfoDialog = ({
   onOpenChange,
 }: GroupInfoDialogProps) => {
   const { user } = useAuthStore();
-  const { loading, kickGroupMember, updateGroupDescription } = useChatStore();
+  const {
+    loading,
+    kickGroupMember,
+    updateGroupDescription,
+    fetchAvailableBots,
+    updateGroupBots,
+  } = useChatStore();
   const [description, setDescription] = useState("");
+  const [availableBots, setAvailableBots] = useState<BotDefinition[]>([]);
+  const [selectedBotIds, setSelectedBotIds] = useState<string[]>([]);
   const ownerId = convo.group?.createdBy?.toString?.() ?? convo.group?.createdBy;
+  const isOwner = user?._id === ownerId;
 
   useEffect(() => {
     if (!open) {
@@ -38,14 +48,40 @@ const GroupInfoDialog = ({
     }
 
     setDescription(convo.group?.description ?? "");
+    setSelectedBotIds(
+      (convo.group?.bots ?? []).filter((bot) => bot.enabled).map((bot) => bot.botId)
+    );
   }, [convo.group?.description, open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    let active = true;
+
+    const loadBots = async () => {
+      const bots = await fetchAvailableBots();
+
+      if (!active) {
+        return;
+      }
+
+      setAvailableBots(bots);
+    };
+
+    loadBots();
+
+    return () => {
+      active = false;
+    };
+  }, [fetchAvailableBots, isOwner, open]);
 
   const owner =
     convo.participants.find((participant) => participant._id === ownerId)
       ?.displayName ?? "Không xác định";
 
   const groupDescription = convo.group?.description?.trim() || "Chưa có mô tả nhóm.";
-  const isOwner = user?._id === ownerId;
   const createdAt = new Date(convo.createdAt).toLocaleDateString("vi-VN", {
     day: "2-digit",
     month: "2-digit",
@@ -59,6 +95,20 @@ const GroupInfoDialog = ({
 
   const handleKickMember = async (memberId: string) => {
     await kickGroupMember(convo._id, memberId);
+  };
+
+  const handleToggleBot = (botId: string, enabled: boolean) => {
+    setSelectedBotIds((current) => {
+      if (enabled) {
+        return current.includes(botId) ? current : [...current, botId];
+      }
+
+      return current.filter((currentBotId) => currentBotId !== botId);
+    });
+  };
+
+  const handleSaveBots = async () => {
+    await updateGroupBots(convo._id, selectedBotIds);
   };
 
   return (
@@ -143,6 +193,76 @@ const GroupInfoDialog = ({
                 </div>
               ) : null}
             </Card>
+          </div>
+
+          <Separator className="border-border/30" />
+
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Bot trong nhóm</h3>
+              <p className="text-xs text-muted-foreground">
+                {isOwner
+                  ? "Bật hoặc tắt các bot chuyên gia có sẵn cho nhóm chat này."
+                  : "Danh sách bot chuyên gia đang được bật trong nhóm chat."}
+              </p>
+            </div>
+
+            {availableBots.length === 0 && !isOwner ? (
+              <Card className="border-border/30 bg-background/60 p-4 text-sm text-muted-foreground">
+                {(convo.group?.bots ?? []).filter((bot) => bot.enabled).length > 0
+                  ? (convo.group?.bots ?? [])
+                      .filter((bot) => bot.enabled)
+                      .map((bot) => bot.botId)
+                      .join(", ")
+                  : "Nhóm này chưa bật bot nào."}
+              </Card>
+            ) : null}
+
+            {availableBots.map((bot) => {
+              const checked = selectedBotIds.includes(bot.botId);
+
+              return (
+                <Card
+                  key={bot.botId}
+                  className="flex flex-row items-start justify-between gap-4 border-border/30 bg-background/60 p-4"
+                >
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-foreground">
+                        {bot.displayName}
+                      </p>
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        {bot.trigger}
+                      </span>
+                    </div>
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      {bot.description}
+                    </p>
+                  </div>
+
+                  <Switch
+                    checked={checked}
+                    disabled={!isOwner || loading}
+                    onCheckedChange={(enabled) => handleToggleBot(bot.botId, enabled)}
+                    aria-label={`Bat tat ${bot.displayName}`}
+                  />
+                </Card>
+              );
+            })}
+
+            {isOwner ? (
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={loading}
+                  onClick={handleSaveBots}
+                  className="bg-gradient-primary hover:opacity-90 transition-opacity"
+                >
+                  {loading ? "Đang lưu..." : "Lưu bot nhóm"}
+                </Button>
+              </div>
+            ) : null}
           </div>
 
           <Separator className="border-border/30" />

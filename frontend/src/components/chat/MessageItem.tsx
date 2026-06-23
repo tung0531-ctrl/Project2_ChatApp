@@ -113,6 +113,13 @@ const MessageItem = ({
   const participant = selectedConvo.participants.find(
     (p: Participant) => p._id.toString() === message.senderId.toString()
   );
+  const isBotMessage = message.messageType === "bot";
+  const senderName = isBotMessage
+    ? (message.botMeta?.displayName ?? "Bot")
+    : (participant?.displayName ?? "ChatApp");
+  const senderAvatar = isBotMessage
+    ? (message.botMeta?.avatarUrl ?? undefined)
+    : (participant?.avatarUrl ?? undefined);
 
   return (
     <>
@@ -133,11 +140,21 @@ const MessageItem = ({
         {!message.isOwn && (
           <div className="w-8">
             {isGroupBreak && (
-              <UserAvatar
-                type="chat"
-                name={participant?.displayName ?? "ChatApp"}
-                avatarUrl={participant?.avatarUrl ?? undefined}
-              />
+              <div className="space-y-1">
+                <UserAvatar
+                  type="chat"
+                  name={senderName}
+                  avatarUrl={senderAvatar}
+                />
+                {isBotMessage ? (
+                  <Badge
+                    variant="secondary"
+                    className="h-4 px-1.5 text-[10px]"
+                  >
+                    BOT
+                  </Badge>
+                ) : null}
+              </div>
             )}
           </div>
         )}

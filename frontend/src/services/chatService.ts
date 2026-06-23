@@ -1,5 +1,6 @@
 import api from "@/lib/axios";
 import type {
+  BotDefinition,
   Conversation,
   ConversationResponse,
   GroupSearchResponse,
@@ -133,6 +134,21 @@ export const chatService = {
   ): Promise<Conversation> {
     const res = await api.patch(`/conversations/${conversationId}/description`, {
       description,
+    });
+    return res.data.conversation;
+  },
+
+  async fetchAvailableBots(): Promise<BotDefinition[]> {
+    const res = await api.get("/conversations/bots/available");
+    return res.data.bots;
+  },
+
+  async updateGroupBots(
+    conversationId: string,
+    botIds: string[]
+  ): Promise<Conversation> {
+    const res = await api.patch(`/conversations/${conversationId}/bots`, {
+      botIds,
     });
     return res.data.conversation;
   },

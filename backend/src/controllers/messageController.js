@@ -6,6 +6,7 @@ import {
 } from "../utils/messageHelper.js";
 import { io } from "../socket/index.js";
 import { uploadMediaFromBuffer } from "../middlewares/uploadMiddleware.js";
+import { buildBotReplyForGroupMessage } from "../ai/services/botService.js";
 
 const normalizeMessagePayload = ({ content, imgUrl, mediaType, fileName, fileSize }) => {
   const normalizedContent = content?.trim() ?? "";
@@ -19,6 +20,36 @@ const normalizeMessagePayload = ({ content, imgUrl, mediaType, fileName, fileSiz
     hasContent: Boolean(normalizedContent),
     hasMedia: Boolean(imgUrl),
   };
+};
+
+const createAndEmitMessage = async ({
+  conversation,
+  senderId,
+  content,
+  imgUrl = null,
+  mediaType = null,
+  fileName = null,
+  fileSize = null,
+  messageType = "user",
+  botMeta = null,
+}) => {
+  const message = await Message.create({
+    conversationId: conversation._id,
+    senderId,
+    content,
+    imgUrl,
+    mediaType,
+    fileName,
+    fileSize,
+    messageType,
+    botMeta,
+  });
+
+  updateConversationAfterCreateMessage(conversation, message, senderId);
+  await conversation.save();
+  emitNewMessage(io, conversation, message);
+
+  return message;
 };
 
 export const uploadChatMedia = async (req, res) => {
@@ -79,8 +110,8 @@ export const sendDirectMessage = async (req, res) => {
       });
     }
 
-    const message = await Message.create({
-      conversationId: conversation._id,
+    const message = await createAndEmitMessage({
+      conversation,
       senderId,
       content: normalizedMessage.content,
       imgUrl: normalizedMessage.imgUrl,
@@ -88,12 +119,6 @@ export const sendDirectMessage = async (req, res) => {
       fileName: normalizedMessage.fileName,
       fileSize: normalizedMessage.fileSize,
     });
-
-    updateConversationAfterCreateMessage(conversation, message, senderId);
-
-    await conversation.save();
-
-    emitNewMessage(io, conversation, message);
 
     return res.status(201).json({ message });
   } catch (error) {
@@ -119,8 +144,8 @@ export const sendGroupMessage = async (req, res) => {
       return res.status(400).json({ message: "Thiếu nội dung hoặc file media" });
     }
 
-    const message = await Message.create({
-      conversationId,
+    const message = await createAndEmitMessage({
+      conversation,
       senderId,
       content: normalizedMessage.content,
       imgUrl: normalizedMessage.imgUrl,
@@ -129,10 +154,20 @@ export const sendGroupMessage = async (req, res) => {
       fileSize: normalizedMessage.fileSize,
     });
 
-    updateConversationAfterCreateMessage(conversation, message, senderId);
+    const botReply = await buildBotReplyForGroupMessage({
+      conversation,
+      content: normalizedMessage.content ?? "",
+    });
 
-    await conversation.save();
-    emitNewMessage(io, conversation, message);
+    if (botReply) {
+      await createAndEmitMessage({
+        conversation,
+        senderId: botReply.senderId,
+        content: botReply.content,
+        messageType: botReply.messageType,
+        botMeta: botReply.botMeta,
+      });
+    }
 
     return res.status(201).json({ message });
   } catch (error) {

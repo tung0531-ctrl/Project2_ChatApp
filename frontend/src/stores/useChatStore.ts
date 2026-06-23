@@ -387,6 +387,33 @@ export const useChatStore = create<ChatState>()(
           set({ loading: false });
         }
       },
+      fetchAvailableBots: async () => {
+        try {
+          return await chatService.fetchAvailableBots();
+        } catch (error) {
+          console.error("Lỗi khi lấy danh sách bot khả dụng", error);
+          return [];
+        }
+      },
+      updateGroupBots: async (conversationId, botIds) => {
+        try {
+          set({ loading: true });
+          const updatedConversation = await chatService.updateGroupBots(
+            conversationId,
+            botIds
+          );
+
+          get().updateConversation(updatedConversation);
+          toast.success("Đã cập nhật bot cho nhóm.");
+          return true;
+        } catch (error) {
+          console.error("Lỗi khi cập nhật bot cho nhóm", error);
+          toast.error("Không thể cập nhật bot cho nhóm lúc này.");
+          return false;
+        } finally {
+          set({ loading: false });
+        }
+      },
     }),
     {
       name: CHAT_STORAGE_KEY,

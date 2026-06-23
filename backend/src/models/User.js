@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
+    accountType: {
+      type: String,
+      enum: ["human", "system_bot"],
+      default: "human",
+    },
     username: {
       type: String,
       required: true,
