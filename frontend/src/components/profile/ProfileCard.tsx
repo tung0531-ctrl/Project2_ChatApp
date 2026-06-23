@@ -52,12 +52,6 @@ const ProfileCard = ({ user }: ProfileCardProps) => {
           <h1 className="text-2xl font-semibold tracking-tight text-white">
             {user.displayName}
           </h1>
-
-          {user.bio && (
-            <p className="text-white/70 text-sm mt-2 max-w-lg line-clamp-2">
-              {user.bio}
-            </p>
-          )}
         </div>
 
         {/* status */}

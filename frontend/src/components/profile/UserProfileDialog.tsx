@@ -73,9 +73,6 @@ const UserProfileDialog = ({ userId, open, setOpen }: UserProfileDialogProps) =>
                     {profile.displayName}
                   </h2>
                   <p className="mt-1 text-sm text-white/75">@{profile.username}</p>
-                  <p className="mt-2 max-w-lg text-sm text-white/80">
-                    {profile.bio?.trim() || "Người dùng này chưa có tiểu sử."}
-                  </p>
                 </div>
 
                 <Badge
@@ -107,6 +104,15 @@ const UserProfileDialog = ({ userId, open, setOpen }: UserProfileDialogProps) =>
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Số điện thoại</p>
                 <p className="mt-1 text-sm font-medium text-foreground">
                   {profile.phone || "Chưa cập nhật"}
+                </p>
+              </Card>
+
+              <Card className="border-border/30 bg-background/60 p-4 sm:col-span-2">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Giới thiệu bản thân
+                </p>
+                <p className="mt-1 text-sm font-medium leading-6 text-foreground">
+                  {profile.bio?.trim() || "Người dùng này chưa cập nhật phần giới thiệu."}
                 </p>
               </Card>
 
