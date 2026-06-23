@@ -33,6 +33,10 @@ function App() {
         <Routes>
           {/* public routes */}
           <Route
+            path="/"
+            element={<SignInPage />}
+          />
+          <Route
             path="/signin"
             element={<SignInPage />}
           />
@@ -44,7 +48,7 @@ function App() {
           {/* protectect routes */}
           <Route element={<ProtectedRoute />}>
             <Route
-              path="/"
+              path="/chat"
               element={<ChatAppPage />}
             />
           </Route>
