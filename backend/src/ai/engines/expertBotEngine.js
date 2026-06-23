@@ -110,6 +110,68 @@ const findMatchedEntities = (normalizedText, indexedEntities = []) => {
   );
 };
 
+const preferredEntityTypesByIntent = {
+  hero_role: ["hero"],
+  hero_skill: ["hero"],
+  hero_build: ["hero"],
+  hero_strength: ["hero"],
+  hero_weakness: ["hero"],
+  hero_counter: ["hero"],
+  hero_lore: ["hero"],
+  item_info: ["item"],
+  item_category_list: ["itemCategory"],
+  tournament_info: ["tournament"],
+  tournament_history: ["tournament"],
+  team_info: ["team"],
+  player_info: ["player"],
+  patch_info: ["patch"],
+  patch_version_history: ["patch"],
+};
+
+const preferredEntityIdsByIntent = {
+  bot_identity: ["bot_identity_topic"],
+  bot_capabilities: ["bot_identity_topic"],
+  bot_how_it_works: ["bot_identity_topic"],
+  game_overview: ["game_overview_topic"],
+  game_modes: ["game_overview_topic"],
+  game_roles: ["game_overview_topic"],
+  game_history: ["game_overview_topic"],
+  objective_info: ["objectives_topic"],
+  tournament_overview: ["tournament_overview_topic"],
+  tournament_month_overview: ["june_tournaments_topic"],
+  item_overview: ["item_overview_topic"],
+  improve_skill: ["improve_skill_topic"],
+  beginner_guide: ["beginner_guide_topic"],
+  trivia_info: ["trivia_topic"],
+};
+
+const selectPrimaryEntity = (matchedEntities = [], intent = null) => {
+  const preferredEntityIds = preferredEntityIdsByIntent[intent] ?? [];
+  const preferredEntityTypes = preferredEntityTypesByIntent[intent] ?? [];
+
+  if (preferredEntityIds.length > 0) {
+    const preferredEntity = matchedEntities.find((entity) =>
+      preferredEntityIds.includes(entity.item.id),
+    );
+
+    if (preferredEntity) {
+      return preferredEntity;
+    }
+  }
+
+  if (preferredEntityTypes.length > 0) {
+    const preferredMatch = matchedEntities.find((entity) =>
+      preferredEntityTypes.includes(entity.entityType),
+    );
+
+    if (preferredMatch) {
+      return preferredMatch;
+    }
+  }
+
+  return matchedEntities[0] ?? null;
+};
+
 const normalizeRules = (rules = []) => {
   return rules.flatMap((rule, index) => {
     if (rule.if && rule.then) {
@@ -178,7 +240,7 @@ export const createExpertBotEngine = (definition) => {
       const normalizedText = normalizeText(rawText);
       const prediction = classifier.predict(normalizedText);
       const matchedEntities = findMatchedEntities(normalizedText, indexedEntities);
-      const primaryEntity = matchedEntities[0] ?? null;
+      const primaryEntity = selectPrimaryEntity(matchedEntities, prediction.intent);
 
       if (!prediction.intent || prediction.confidence < confidenceThreshold) {
         return {

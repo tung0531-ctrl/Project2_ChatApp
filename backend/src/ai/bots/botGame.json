@@ -110,6 +110,14 @@
     { "text": "có những trang bị gì trong game", "intent": "item_overview" },
     { "text": "trong game có những loại trang bị nào", "intent": "item_overview" },
     { "text": "trang bị trong liên quân gồm những nhóm nào", "intent": "item_overview" },
+    { "text": "liên quân có những món trang bị nào", "intent": "item_overview" },
+    { "text": "trang bị phép thì có những món đồ nào", "intent": "item_category_list" },
+    { "text": "đồ phép có những món nào", "intent": "item_category_list" },
+    { "text": "trang bị công vật lý gồm những gì", "intent": "item_category_list" },
+    { "text": "đồ tank liên quân có những món nào", "intent": "item_category_list" },
+    { "text": "liên quân có những đôi giày nào", "intent": "item_category_list" },
+    { "text": "đồ rừng trong liên quân gồm những gì", "intent": "item_category_list" },
+    { "text": "trang bị trợ thủ có những món nào", "intent": "item_category_list" },
 
     { "text": "làm sao để chơi giỏi", "intent": "improve_skill" },
     { "text": "cách chơi giỏi liên quân", "intent": "improve_skill" },
@@ -270,6 +278,56 @@
           "info": "Medallion of Troy là trang bị phòng thủ phép phổ biến, giúp tăng khả năng chống lại các pháp sư burst.",
           "usage": "Trang bị này hợp với tank, warrior và những hero cần sống sót trước sát thương phép mạnh ở giao tranh tổng.",
           "type": "Đây là trang bị phòng thủ phép."
+        }
+      }
+    ],
+    "itemCategories": [
+      {
+        "id": "physical_attack_items",
+        "name": "Trang bị công vật lý",
+        "aliases": ["trang bị công vật lý", "đồ vật lý", "item vật lý", "đồ ad", "đồ xạ thủ", "đồ sát thủ"],
+        "knowledge": {
+          "list": "Nhóm trang bị công vật lý mà bot đang nắm gồm các món tiêu biểu và thường gặp như Băng Nhẫn Skadi, Chùy Băng Sương, Chùy Cổ, Cung Bão Tố, Cung Gió Lốc, Cung Tà Ma, Dao Găm, Dao Truy Hồn, Diệt Thần Cung, Găng Bạch Kim, Găng Giác Đấu, Huyết Cung, Kiếm Fafnir, Kiếm Muramasa, Kiếm Truy Hồn, Liềm Đoạt Mệnh, Nanh Fenrir, Phi Tiêu, Phức Hợp Kiếm, Song Đao, Song Đao Bão Táp, Thánh Kiếm, Thập Tự Kiếm, Thương Longinus, Thương Xuyên Phá, Vuốt Hung Tàn và Xạ Nhật Cung. Nếu cần, bạn có thể hỏi tiếp từng món như Muramasa, Thánh Kiếm hay Nanh Fenrir để đi vào công dụng cụ thể."
+        }
+      },
+      {
+        "id": "magic_items",
+        "name": "Trang bị phép",
+        "aliases": ["trang bị phép", "đồ phép", "item phép", "đồ công phép", "trang bị pháp sư", "đồ pháp sư"],
+        "knowledge": {
+          "list": "Nhóm trang bị phép trong kho tri thức hiện tại gồm Cầu Chiêm Tinh, Dây Chuyền Ma Thuật, Huyết Trượng, Mặt Nạ Ma Quái, Ngọc Đại Pháp Sư, Nhẫn Hồng Ngọc, Nhẫn Lapis, Nhẫn Ma Pháp, Phượng Hoàng Lệ, Quả Cầu Băng Sương, Quyền Trượng Rhea, Sách Cổ, Sách Phép, Sách Thánh, Sổ Ma Thuật, Trượng Băng, Trượng Bùng Nổ, Trượng Hỗn Mang, Vương Miện Hecate và Xuyên Tâm Lệnh. Đây là nhóm item dành chủ yếu cho pháp sư theo hướng burst, xuyên kháng phép, sống sót hoặc hồi phục tài nguyên."
+        }
+      },
+      {
+        "id": "defense_items",
+        "name": "Trang bị phòng thủ",
+        "aliases": ["trang bị phòng thủ", "đồ thủ", "đồ tank", "item tank", "đồ chống chịu", "trang bị chống chịu"],
+        "knowledge": {
+          "list": "Nhóm trang bị phòng thủ mà bot đang theo dõi gồm Áo Choàng Băng Giá, Áo Choàng Thần Ra, Đại Kháng Phép, Giáp Chân, Giáp Cuồng Nộ, Giáp Gaia, Giáp Hiệp Sĩ, Giáp Hộ Mệnh, Giáp Thống Khổ, Hercule Thịnh Nộ, Huân Chương Troy, Khiên Huyền Thoại, Khiên Thất Truyền, Mặt Nạ Berith và một số mảnh ghép giáp cơ bản như Giáp Nhẹ. Nhóm này phục vụ tank, đấu sĩ hoặc các kèo cần chống chịu vật lý, kháng phép, hồi phục và phản sát thương."
+        }
+      },
+      {
+        "id": "boots_items",
+        "name": "Giày",
+        "aliases": ["giày", "trang bị giày", "đôi giày", "giày liên quân", "item giày"],
+        "knowledge": {
+          "list": "Các đôi giày cơ bản trong Liên Quân mà bot đang nắm gồm Giày Du Mục, Giày Hermes, Giày Hộ Vệ, Giày Kiên Cường, Giày Phù Thủy, Giày Thép và Giày Thuật Sĩ. Khi chọn giày, bạn thường cân nhắc giữa tốc chạy, kháng hiệu ứng, xuyên phép, chống đòn đánh tay hoặc nhu cầu đảo đường sớm."
+        }
+      },
+      {
+        "id": "jungle_items",
+        "name": "Trang bị đi rừng",
+        "aliases": ["trang bị đi rừng", "đồ rừng", "item rừng", "dao rừng", "trừng trị", "đồ đi rừng"],
+        "knowledge": {
+          "list": "Nhóm trang bị đi rừng trong kho hiện tại gồm Rựa Thợ Săn, Dao Truy Kích, Gươm Loki, Gươm Uriel, Rìu Gnoll, Rìu Hyoga và Rìu Leviathan. Đây là nhóm item gắn với người chơi cầm Trừng Trị, giúp tăng tốc farm quái, tối ưu sát thương hoặc chống chịu tùy kiểu tướng đi rừng."
+        }
+      },
+      {
+        "id": "support_items",
+        "name": "Trang bị trợ thủ",
+        "aliases": ["trang bị trợ thủ", "đồ trợ thủ", "item trợ thủ", "đồ support", "item support", "đồ hỗ trợ"],
+        "knowledge": {
+          "list": "Nhóm trang bị trợ thủ mà bot đang theo dõi chủ yếu là hai nhánh Đại Địa và Liệt Hỏa, gồm các biến thể Hồi Huyết, Ma Nhãn, Mở Trói, Thần Khiên và Thần Tốc. Đây là nhóm item thiên về utility cho trợ thủ như hồi máu, giải hiệu ứng, tạo lá chắn, tăng tốc di chuyển hoặc mở giao tranh cho đồng đội."
         }
       }
     ],
@@ -453,9 +511,9 @@
         "name": "Item overview",
         "aliases": ["trang bị", "item", "đồ", "các loại trang bị"],
         "knowledge": {
-          "info": "Nhìn tổng quan, trang bị trong Liên Quân thường được chia thành vài nhóm dễ nhớ: công vật lý cho xạ thủ và sát thủ, công phép cho pháp sư, phòng thủ cho tank và đấu sĩ, xuyên giáp hoặc xuyên kháng phép để xử lý mục tiêu cứng, cùng với giày, trang bị rừng và một số món thiên về utility.",
-          "history": "Nếu mới làm quen, bạn không cần nhớ toàn bộ item ngay. Chỉ cần hiểu tướng của mình thuộc nhóm gây sát thương vật lý, phép hay chống chịu để chọn đúng nhóm trang bị trước.",
-          "importance": "Cách học item hiệu quả là đi từ nhóm trang bị, sau đó mới học từng món tiêu biểu như Thánh Kiếm cho chí mạng, Muramasa để xuyên giáp, Hecate cho pháp sư và Troy để chống phép."
+          "info": "Trong kho item hiện tại, bot đang chia trang bị Liên Quân thành 6 nhóm chính để dễ nhớ: công vật lý, công phép, phòng thủ, giày, đi rừng và trợ thủ. Nhóm công vật lý thường gặp các món như Thánh Kiếm, Song Đao Bão Táp, Kiếm Fafnir, Muramasa, Nanh Fenrir, Thương Longinus, Phức Hợp Kiếm và Xạ Nhật Cung. Nhóm công phép có Ngọc Đại Pháp Sư, Vương Miện Hecate, Trượng Bùng Nổ, Trượng Băng, Xuyên Tâm Lệnh, Quyền Trượng Rhea, Quả Cầu Băng Sương và Sách Thánh. Nhóm phòng thủ có Áo Choàng Thần Ra, Áo Choàng Băng Giá, Giáp Gaia, Giáp Thống Khổ, Huân Chương Troy, Khiên Huyền Thoại và Giáp Hộ Mệnh. Nhóm giày có Giày Kiên Cường, Giày Thuật Sĩ, Giày Phù Thủy, Giày Du Mục, Giày Thép, Giày Hermes và Giày Hộ Vệ. Nhóm đi rừng có Rựa Thợ Săn, Dao Truy Kích, Gươm Loki, Gươm Uriel, Rìu Leviathan, Rìu Gnoll và Rìu Hyoga. Nhóm trợ thủ có các nhánh Đại Địa và Liệt Hỏa như Hồi Huyết, Mở Trói, Thần Khiên, Thần Tốc và Ma Nhãn.",
+          "history": "Ngoài các món hoàn chỉnh, bộ trang bị còn có nhiều mảnh ghép cơ bản như Dao Găm, Kiếm Dài, Kiếm Ngắn, Găng Tay, Sách Phép, Sách Cổ, Nhẫn Ma Pháp, Giáp Nhẹ, Giáp Chân hay các loại bảo thạch. Vì vậy cách nhớ hiệu quả nhất là học theo nhóm trước rồi mới đi vào từng nhánh nâng cấp.",
+          "importance": "Nếu bạn hỏi kiểu tổng quan, bot sẽ ưu tiên trả về theo nhóm để dễ dùng thực chiến hơn. Sau đó bạn có thể hỏi tiếp theo mẫu như: trang bị phép có những món nào, đồ rừng gồm gì, hay Muramasa dùng để làm gì."
         }
       },
       {
@@ -691,6 +749,11 @@
       "then": { "assert": [{ "fact": "knowledgeField", "value": "info" }] }
     },
     {
+      "id": "item-category-list-field",
+      "if": { "all": [{ "fact": "intent", "oneOf": ["item_category_list", "item_overview"] }, { "fact": "entityType", "equals": "itemCategory" }] },
+      "then": { "assert": [{ "fact": "knowledgeField", "value": "list" }] }
+    },
+    {
       "id": "tournament-info-field",
       "if": { "all": [{ "fact": "intent", "equals": "tournament_info" }, { "fact": "entityType", "equals": "tournament" }] },
       "then": { "assert": [{ "fact": "knowledgeField", "value": "info" }] }
@@ -743,6 +806,11 @@
       "then": { "respond": { "type": "static", "responseKey": "askItem", "needsContext": true } }
     },
     {
+      "id": "ask-item-category-when-missing",
+      "if": { "all": [{ "fact": "intent", "equals": "item_category_list" }, { "fact": "entityId", "exists": false }] },
+      "then": { "respond": { "type": "static", "responseKey": "askItemCategory", "needsContext": true } }
+    },
+    {
       "id": "ask-tournament-when-missing",
       "if": { "all": [{ "fact": "intent", "oneOf": ["tournament_info", "tournament_history"] }, { "fact": "entityId", "exists": false }] },
       "then": { "respond": { "type": "static", "responseKey": "askTournamentScope", "needsContext": true } }
@@ -765,6 +833,7 @@
     ],
     "askHero": "Mình chưa xác định được tướng bạn đang hỏi. Hãy mention @botGame kèm tên tướng cụ thể, ví dụ: @botGame Violet có bộ kỹ năng gì?",
     "askItem": "Mình chưa nhận ra món trang bị cụ thể. Bạn có thể hỏi rõ hơn, ví dụ: @botGame Claves Sancti dùng để làm gì?",
+    "askItemCategory": "Mình cần rõ hơn bạn muốn xem nhóm trang bị nào. Bạn có thể hỏi theo mẫu như: @botGame trang bị phép có những món nào?, @botGame đồ rừng gồm những gì?, hay @botGame liên quân có những đôi giày nào?",
     "askTournamentScope": "Mình cần rõ hơn bạn đang hỏi giải nào hoặc tháng, năm nào. Ví dụ: @botGame AIC là giải gì?, @botGame lịch sử AWC thế nào?, hoặc @botGame giải đấu tháng 6 năm 2026 có gì?",
     "askPatchTimeframe": "Mình cần rõ hơn bạn đang hỏi bản cập nhật nào hoặc tháng, năm nào. Ví dụ: @botGame bản cập nhật tháng 6, @botGame patch 4 June 2026 có gì?, hoặc @botGame patch mới nhất là bản nào?",
     "askEsportsEntity": "Mình cần thêm tên đội tuyển hoặc tuyển thủ cụ thể để trả lời chuẩn hơn. Ví dụ: @botGame Team Flash có gì đặc biệt? hay @botGame Lai Bâng là ai?",
