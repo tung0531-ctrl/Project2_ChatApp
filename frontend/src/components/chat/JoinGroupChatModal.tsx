@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Users } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import { useChatStore } from "@/stores/useChatStore";
 import type { Conversation } from "@/types/chat";
 import {
@@ -76,7 +76,7 @@ const JoinGroupChatModal = () => {
           variant="ghost"
           className="flex z-10 size-5 items-center justify-center rounded-full transition hover:bg-sidebar-accent"
         >
-          <Search className="size-4" />
+          <Plus className="size-4" />
           <span className="sr-only">Tham gia nhóm chat</span>
         </Button>
       </DialogTrigger>

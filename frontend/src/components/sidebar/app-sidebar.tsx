@@ -38,6 +38,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { convoLoading, setActiveConversation } = useChatStore();
   const navigate = useNavigate();
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [groupSearchOpen, setGroupSearchOpen] = useState(false);
+  const [groupKeyword, setGroupKeyword] = useState("");
   const [friendSearchOpen, setFriendSearchOpen] = useState(false);
   const [friendKeyword, setFriendKeyword] = useState("");
   const [groupSectionPercent, setGroupSectionPercent] = useState(() => {
@@ -66,6 +68,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     fetchNotifications();
     getFriends();
   }, [user?._id]);
+
+  useEffect(() => {
+    if (groupSearchOpen) {
+      return;
+    }
+
+    setGroupKeyword("");
+  }, [groupSearchOpen]);
 
   useEffect(() => {
     if (friendSearchOpen) {
@@ -164,13 +174,36 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <div className="flex items-center justify-between">
                 <SidebarGroupLabel className="uppercase">nhóm chat</SidebarGroupLabel>
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setGroupSearchOpen((prev) => !prev)}
+                    className="inline-flex size-5 cursor-pointer items-center justify-center rounded-full hover:bg-sidebar-accent"
+                    aria-label="Tìm kiếm nhóm chat"
+                  >
+                    <Search className="size-4" />
+                  </button>
                   <JoinGroupChatModal />
                   <NewGroupChatModal />
                 </div>
               </div>
 
               <SidebarGroupContent className="min-h-0 flex-1">
-                {convoLoading ? <ConversationSkeleton /> : <GroupChatList />}
+                {groupSearchOpen ? (
+                  <div className="px-2 pb-2">
+                    <Input
+                      value={groupKeyword}
+                      onChange={(event) => setGroupKeyword(event.target.value)}
+                      placeholder="Tìm theo tên nhóm..."
+                      className="glass border-border/50 focus:border-primary/50 transition-smooth"
+                    />
+                  </div>
+                ) : null}
+
+                {convoLoading ? (
+                  <ConversationSkeleton />
+                ) : (
+                  <GroupChatList keyword={groupKeyword} />
+                )}
               </SidebarGroupContent>
             </SidebarGroup>
 
