@@ -72,7 +72,7 @@ export const tokenizeText = (text = "", stopwords = DEFAULT_STOPWORDS) => {
     .filter((token) => !stopwords.has(token));
 };
 
-const createNgrams = (tokens = [], ngramRange = [1, 2]) => {
+const createNgrams = (tokens = [], ngramRange = [1, 3]) => {
   const [minN, maxN] = ngramRange;
   const terms = [];
 
