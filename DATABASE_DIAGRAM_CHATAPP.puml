@@ -1,0 +1,254 @@
+@startuml
+title Database Diagram - ChatApp MongoDB Schema
+
+hide empty methods
+hide circle
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam packageStyle rectangle
+
+package "Collections" {
+  class User <<collection>> {
+    * _id : ObjectId
+    --
+    accountType : enum(human, system_bot)
+    username : string <<unique>>
+    hashedPassword : string
+    email : string <<unique>>
+    displayName : string
+    avatarUrl : string?
+    avatarId : string?
+    backgroundUrl : string?
+    backgroundId : string?
+    bio : string?
+    phone : string? <<sparse>>
+    createdAt : Date
+    updatedAt : Date
+  }
+
+  class Session <<collection>> {
+    * _id : ObjectId
+    --
+    userId : ObjectId <<ref User>>
+    refreshToken : string <<unique>>
+    expiresAt : Date <<TTL index>>
+    createdAt : Date
+    updatedAt : Date
+  }
+
+  class Friend <<collection>> {
+    * _id : ObjectId
+    --
+    userA : ObjectId <<ref User>>
+    userB : ObjectId <<ref User>>
+    createdAt : Date
+    updatedAt : Date
+  }
+
+  class FriendRequest <<collection>> {
+    * _id : ObjectId
+    --
+    from : ObjectId <<ref User>>
+    to : ObjectId <<ref User>>
+    message : string?
+    hiddenBySender : boolean
+    createdAt : Date
+    updatedAt : Date
+  }
+
+  class Notification <<collection>> {
+    * _id : ObjectId
+    --
+    recipient : ObjectId <<ref User>>
+    type : enum(friend_request, friend_request_accepted,
+                group_joined, group_kicked)
+    title : string
+    message : string
+    actor : NotificationActor
+    groupName : string?
+    friendRequestId : ObjectId? <<ref FriendRequest>>
+    conversationId : ObjectId? <<ref Conversation>>
+    read : boolean
+    hiddenForRecipient : boolean
+    createdAt : Date
+    updatedAt : Date
+  }
+
+  class Conversation <<collection>> {
+    * _id : ObjectId
+    --
+    type : enum(direct, group)
+    participants : Participant[]
+    group : GroupSettings?
+    lastMessageAt : Date?
+    seenBy : ObjectId[] <<ref User>>
+    lastMessage : LastMessageSnapshot?
+    pinnedMessage : MessageReference?
+    unreadCounts : Map<ObjectId, Number>
+    createdAt : Date
+    updatedAt : Date
+  }
+
+  class Message <<collection>> {
+    * _id : ObjectId
+    --
+    conversationId : ObjectId <<ref Conversation>>
+    senderId : ObjectId <<ref User>>
+    content : string?
+    imgUrl : string?
+    mediaType : string?
+    fileName : string?
+    fileSize : number?
+    messageType : enum(user, bot, system)
+    botMeta : BotMeta?
+    moderation : ModerationInfo
+    reactions : Reaction[]
+    replyTo : MessageReference?
+    createdAt : Date
+    updatedAt : Date
+  }
+}
+
+package "Embedded Structures" {
+  class Participant <<embedded>> {
+    userId : ObjectId <<ref User>>
+    joinedAt : Date
+  }
+
+  class GroupSettings <<embedded>> {
+    name : string
+    description : string
+    createdBy : ObjectId <<ref User>>
+    joinApprovalEnabled : boolean
+    pendingJoinRequests : PendingJoinRequest[]
+    bots : BotConfig[]
+  }
+
+  class PendingJoinRequest <<embedded>> {
+    userId : ObjectId <<ref User>>
+    createdAt : Date
+  }
+
+  class BotConfig <<embedded>> {
+    botId : string
+    enabled : boolean
+  }
+
+  class BotMeta <<embedded>> {
+    botId : string?
+    displayName : string?
+    trigger : string?
+    avatarUrl : string?
+  }
+
+  class LastMessageSnapshot <<embedded>> {
+    _id : string
+    content : string?
+    senderId : ObjectId <<ref User>>
+    createdAt : Date?
+    imgUrl : string?
+    mediaType : string?
+    fileName : string?
+    fileSize : number?
+    messageType : enum(user, bot, system)
+    botMeta : BotMeta?
+  }
+
+  class MessageReference <<embedded>> {
+    messageId : ObjectId <<ref Message>>
+    senderId : ObjectId <<ref User>>
+    content : string?
+    imgUrl : string?
+    mediaType : string?
+    fileName : string?
+    messageType : enum(user, bot, system)
+    botMeta : BotMeta?
+    createdAt : Date?
+    pinnedAt : Date?
+  }
+
+  class ModerationInfo <<embedded>> {
+    status : enum(clean, flagged)
+    isFlagged : boolean
+    matchedKeywords : string[]
+    reasonCodes : string[]
+    flaggedAt : Date?
+  }
+
+  class Reaction <<embedded>> {
+    emoji : string
+    userIds : ObjectId[] <<ref User>>
+  }
+
+  class NotificationActor <<embedded>> {
+    _id : ObjectId? <<ref User>>
+    username : string
+    displayName : string
+    avatarUrl : string?
+  }
+}
+
+User "1" <-- "0..*" Session : userId
+
+User "1" <-- "0..*" Friend : userA
+User "1" <-- "0..*" Friend : userB
+
+User "1" <-- "0..*" FriendRequest : from
+User "1" <-- "0..*" FriendRequest : to
+
+User "1" <-- "0..*" Notification : recipient
+FriendRequest "1" <-- "0..*" Notification : friendRequestId
+Conversation "1" <-- "0..*" Notification : conversationId
+
+Conversation "1" <-- "0..*" Message : conversationId
+User "1" <-- "0..*" Message : senderId
+
+Conversation *-- "1..*" Participant
+Conversation *-- "0..1" GroupSettings
+Conversation *-- "0..1" LastMessageSnapshot
+Conversation *-- "0..1" MessageReference : pinnedMessage
+
+GroupSettings *-- "0..*" PendingJoinRequest
+GroupSettings *-- "0..*" BotConfig
+
+Message *-- "1" ModerationInfo
+Message *-- "0..*" Reaction
+Message *-- "0..1" MessageReference : replyTo
+Message *-- "0..1" BotMeta
+
+Notification *-- "0..1" NotificationActor
+LastMessageSnapshot *-- "0..1" BotMeta
+MessageReference *-- "0..1" BotMeta
+
+User "1" <-- "0..*" Participant : participants.userId
+User "1" <-- "0..*" PendingJoinRequest : pendingJoinRequests.userId
+User "1" <-- "0..*" GroupSettings : createdBy
+User "1" <-- "0..*" LastMessageSnapshot : senderId
+User "1" <-- "0..*" MessageReference : senderId
+User "1" <-- "0..*" Reaction : reactions.userIds
+
+Message "1" <-- "0..*" MessageReference : messageId
+
+note right of Friend
+  Cap ban be duoc chuan hoa theo cap
+  userA < userB va co unique index (userA, userB).
+end note
+
+note right of Session
+  TTL index tren expiresAt de tu dong xoa
+  refresh token het han.
+end note
+
+note right of Conversation
+  Collection trung tam cua he thong chat.
+  Chua nhieu du lieu nhung de toi uu realtime:
+  participants, group settings, lastMessage,
+  pinnedMessage, seenBy va unreadCounts.
+end note
+
+note right of Message
+  Ho tro user message, bot message, media,
+  reaction, moderation va reply-to.
+end note
+
+@enduml

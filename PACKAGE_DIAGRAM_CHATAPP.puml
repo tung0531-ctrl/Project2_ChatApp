@@ -1,0 +1,59 @@
+@startuml
+title Package Diagram - ChatApp Architecture
+
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam defaultTextAlignment center
+
+package "Presentation (frontend)" {
+  rectangle "UI Components\nPages + Components" as FE_UI
+  rectangle "Client State\nStores + Services" as FE_State
+}
+
+package "API (backend)" {
+  rectangle "Routes + Middleware" as BE_Entry
+  rectangle "Controllers\nBusiness Logic" as BE_Logic
+}
+
+package "Realtime / AI" {
+  rectangle "Socket.IO" as BE_Socket
+  rectangle "AI Bot Engine" as AI_Core
+}
+
+package "Persistence / DB" {
+  rectangle "Mongoose Models" as BE_Models
+  database "MongoDB" as DB_Mongo
+}
+
+FE_UI --> FE_State : user actions
+FE_State --> BE_Entry : HTTP requests
+FE_State --> BE_Socket : realtime events
+
+BE_Entry --> BE_Logic : auth + routing
+BE_Logic --> BE_Models : CRUD queries
+BE_Models --> DB_Mongo : persist data
+
+BE_Logic --> BE_Socket : emit updates
+BE_Logic --> AI_Core : bot processing
+AI_Core --> BE_Models : read chat context
+
+BE_Socket --> FE_State : push messages
+
+note bottom of FE_State
+  Frontend di theo flow chinh:
+  UI -> store/service -> API hoac Socket.IO.
+end note
+
+note bottom of BE_Logic
+  Backend tap trung xu ly auth,
+  chat, group, notification va bot flow.
+end note
+
+note bottom of BE_Models
+  Conversation, Message, User va Session
+  la nhung model trung tam cua he thong.
+end note
+
+@enduml
