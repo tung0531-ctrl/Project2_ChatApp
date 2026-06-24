@@ -42,7 +42,6 @@ const DEFAULT_STOPWORDS = new Set([
   "the",
   "thi",
   "toi",
-  "toi",
   "tra",
   "trong",
   "tu",
@@ -138,6 +137,9 @@ export class TfidfVectorizer {
     let magnitude = 0;
 
     termCounts.forEach((count, term) => {
+      if (!this.vocabulary.has(term)) {
+        return;
+      }
       const tf = count / terms.length;
       const weight = tf * this.getIdf(term);
       vector.set(term, weight);
