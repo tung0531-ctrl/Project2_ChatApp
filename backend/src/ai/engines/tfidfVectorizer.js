@@ -63,6 +63,9 @@ const countTerms = (terms = []) => {
 
 export const tokenizeText = (text = "", stopwords = DEFAULT_STOPWORDS) => {
   return text
+    .toLowerCase()
+    .normalize("NFC")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .split(/\s+/)
     .map((token) => token.trim())
     .filter((token) => token.length > 1)
