@@ -1,0 +1,150 @@
+@startuml
+title Sequence Diagram - Use case Nhan tin
+
+autonumber
+hide footbox
+
+actor "Nguoi dung gui" as Sender
+participant "MessageInput\nFrontend UI" as MessageInput
+participant "useChatStore\nZustand" as ChatStore
+participant "chatService" as ChatService
+participant "axios instance\n+ interceptor" as Axios
+participant "Express Route\n/api/messages/*" as Route
+participant "protectedRoute\nJWT Middleware" as AuthMiddleware
+participant "Business Middleware\ncheckFriendship | checkGroupMembership" as BusinessMiddleware
+control "messageController" as MessageController
+control "conversationController" as ConversationController
+entity "Conversation Model" as ConversationModel
+entity "Message Model" as MessageModel
+control "messageHelper" as MessageHelper
+control "botService" as BotService
+collections "Socket.IO Server" as SocketServer
+participant "useSocketStore\nClient gui" as SenderSocketStore
+participant "Chat UI\nClient gui" as SenderUI
+participant "useSocketStore\nClient nhan" as ReceiverSocketStore
+participant "Chat UI\nClient nhan" as ReceiverUI
+
+== Chuan bi media tuy chon ==
+
+opt Nguoi dung gui anh, video hoac file
+  Sender -> MessageInput: Chon file dinh kem
+  MessageInput -> ChatStore: uploadMessageMedia(file)
+  ChatStore -> ChatService: uploadMessageMedia(file)
+  ChatService -> Axios: POST /api/messages/upload
+  Axios -> Route: /upload
+  Route -> AuthMiddleware: Xac thuc access token
+  AuthMiddleware --> Route: req.user hop le
+  Route -> MessageController: uploadChatMedia(req, res)
+  MessageController --> Route: mediaUrl, mediaType, fileName, fileSize
+  Route --> Axios: 200 OK + media metadata
+  Axios --> ChatService: media metadata
+  ChatService --> ChatStore: media metadata
+  ChatStore --> MessageInput: preview + payload san sang
+end
+
+== Gui tin nhan ==
+
+Sender -> MessageInput: Nhap noi dung va nhan Send
+MessageInput -> ChatStore: sendDirectMessage(...) hoac sendGroupMessage(...)
+
+alt Nhan tin direct
+  ChatStore -> ChatService: sendDirectMessage(recipientId, content, media...)
+  ChatService -> Axios: POST /api/messages/direct
+  Axios -> Route: /direct
+  Route -> AuthMiddleware: Xac thuc JWT
+  AuthMiddleware --> Route: req.user
+  Route -> BusinessMiddleware: checkFriendship(req, res, next)
+  BusinessMiddleware --> Route: Friendship hop le
+  Route -> MessageController: sendDirectMessage(req, res)
+
+  alt Chua co direct conversation
+    MessageController -> ConversationModel: create(type=direct, participants)
+    ConversationModel --> MessageController: conversation moi
+  else Da ton tai conversation
+    MessageController -> ConversationModel: findById(conversationId)
+    ConversationModel --> MessageController: conversation hien co
+  end
+
+  MessageController -> MessageModel: create(message)
+  MessageModel --> MessageController: message moi
+  MessageController -> MessageHelper: updateConversationAfterCreateMessage(...)
+  MessageHelper -> ConversationModel: update lastMessage, unreadCounts, seenBy
+  ConversationModel --> MessageHelper: conversation da cap nhat
+  MessageController -> MessageHelper: emitNewMessage(io, conversation, message)
+  MessageHelper -> SocketServer: emit new-message
+  MessageController --> Route: 201 Created + message
+
+else Nhan tin group
+  ChatStore -> ChatService: sendGroupMessage(conversationId, content, media...)
+  ChatService -> Axios: POST /api/messages/group
+  Axios -> Route: /group
+  Route -> AuthMiddleware: Xac thuc JWT
+  AuthMiddleware --> Route: req.user
+  Route -> BusinessMiddleware: checkGroupMembership(req, res, next)
+  BusinessMiddleware --> Route: req.conversation hop le
+  Route -> MessageController: sendGroupMessage(req, res)
+  MessageController -> MessageModel: create(message)
+  MessageModel --> MessageController: group message moi
+  MessageController -> MessageHelper: updateConversationAfterCreateMessage(...)
+  MessageHelper -> ConversationModel: update lastMessage, unreadCounts, seenBy
+  ConversationModel --> MessageHelper: conversation da cap nhat
+  MessageController -> MessageHelper: emitNewMessage(io, conversation, message)
+  MessageHelper -> SocketServer: emit new-message cho room group
+
+  opt Message co mention bot hop le
+    MessageController -> BotService: buildBotReplyForGroupMessage(...)
+    BotService -> ConversationModel: Kiem tra bot enablement trong group
+    BotService -> MessageModel: Lay recent messages khi can context
+    BotService --> MessageController: bot reply payload
+    MessageController -> MessageModel: create(bot message)
+    MessageModel --> MessageController: bot message moi
+    MessageController -> MessageHelper: updateConversationAfterCreateMessage(...)
+    MessageHelper -> ConversationModel: update lastMessage thanh bot reply
+    ConversationModel --> MessageHelper: conversation da cap nhat
+    MessageController -> MessageHelper: emitNewMessage(io, conversation, bot message)
+    MessageHelper -> SocketServer: emit new-message(bot)
+  end
+
+  MessageController --> Route: 201 Created + user message
+end
+
+Route --> Axios: HTTP response
+Axios --> ChatService: response data
+ChatService --> ChatStore: message da gui
+ChatStore --> MessageInput: reset input, clear reply/media
+
+== Dong bo realtime ==
+
+SocketServer -> SenderSocketStore: new-message(message, conversation, unreadCounts)
+SenderSocketStore -> ChatStore: addMessage(message)
+SenderSocketStore -> ChatStore: updateConversation(conversation)
+ChatStore -> SenderUI: Render message moi trong khung chat
+
+SocketServer -> ReceiverSocketStore: new-message(message, conversation, unreadCounts)
+ReceiverSocketStore -> ChatStore: addMessage(message)
+ReceiverSocketStore -> ChatStore: updateConversation(conversation)
+ReceiverSocketStore -> ReceiverUI: Render tin nhan moi
+
+opt Client nhan dang mo dung conversation
+  ReceiverSocketStore -> ChatStore: markAsSeen()
+  ChatStore -> ChatService: markAsSeen(conversationId)
+  ChatService -> Axios: PATCH /api/conversations/:id/seen
+  Axios -> Route: conversationRoute
+  Route -> AuthMiddleware: Xac thuc JWT
+  AuthMiddleware --> Route: req.user
+  Route -> ConversationController: markAsSeen(req, res)
+  ConversationController -> ConversationModel: update seenBy va unreadCounts
+  ConversationController -> SocketServer: emit read-message
+  SocketServer -> SenderSocketStore: read-message(conversation)
+  SocketServer -> ReceiverSocketStore: read-message(conversation)
+end
+
+note right of MessageController
+  Luong nay bam sat code hien tai:
+  - direct: /api/messages/direct + checkFriendship
+  - group: /api/messages/group + checkGroupMembership
+  - metadata conversation duoc cap nhat qua messageHelper
+  - bot chi chen vao nhanh group va chi khi mention hop le
+end note
+
+@enduml

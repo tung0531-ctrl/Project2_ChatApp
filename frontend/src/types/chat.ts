@@ -12,6 +12,14 @@ export interface BotConfig {
   enabled: boolean;
 }
 
+export interface PendingJoinRequest {
+  userId: string;
+  username?: string;
+  displayName: string;
+  avatarUrl?: string | null;
+  createdAt: string;
+}
+
 export interface BotDefinition {
   botId: string;
   displayName: string;
@@ -56,6 +64,8 @@ export interface Group {
   name: string;
   description?: string;
   createdBy: string;
+  joinApprovalEnabled?: boolean;
+  pendingJoinRequests?: PendingJoinRequest[];
   bots?: BotConfig[];
 }
 

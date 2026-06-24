@@ -15,7 +15,7 @@ import UserAvatar from "./UserAvatar";
 import { Separator } from "../ui/separator";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
-import { UserX } from "lucide-react";
+import { Check, ShieldCheck, UserX, X } from "lucide-react";
 import { Switch } from "../ui/switch";
 import UserProfileDialog from "../profile/UserProfileDialog";
 
@@ -37,10 +37,13 @@ const GroupInfoDialog = ({
     updateGroupDescription,
     fetchAvailableBots,
     updateGroupBots,
+    updateGroupJoinApproval,
+    handleGroupJoinRequest,
   } = useChatStore();
   const [description, setDescription] = useState("");
   const [availableBots, setAvailableBots] = useState<BotDefinition[]>([]);
   const [selectedBotIds, setSelectedBotIds] = useState<string[]>([]);
+  const [joinApprovalEnabled, setJoinApprovalEnabled] = useState(false);
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const ownerId = convo.group?.createdBy?.toString?.() ?? convo.group?.createdBy;
@@ -52,10 +55,11 @@ const GroupInfoDialog = ({
     }
 
     setDescription(convo.group?.description ?? "");
+    setJoinApprovalEnabled(Boolean(convo.group?.joinApprovalEnabled));
     setSelectedBotIds(
       (convo.group?.bots ?? []).filter((bot) => bot.enabled).map((bot) => bot.botId)
     );
-  }, [convo.group?.description, open]);
+  }, [convo.group?.bots, convo.group?.description, convo.group?.joinApprovalEnabled, open]);
 
   useEffect(() => {
     if (!open) {
@@ -115,6 +119,19 @@ const GroupInfoDialog = ({
     await updateGroupBots(convo._id, selectedBotIds);
   };
 
+  const handleSaveJoinApproval = async () => {
+    await updateGroupJoinApproval(convo._id, joinApprovalEnabled);
+  };
+
+  const handleResolveJoinRequest = async (
+    requestUserId: string,
+    action: "approve" | "reject"
+  ) => {
+    await handleGroupJoinRequest(convo._id, requestUserId, action);
+  };
+
+  const pendingJoinRequests = convo.group?.pendingJoinRequests ?? [];
+
   return (
     <Dialog
       open={open}
@@ -167,11 +184,11 @@ const GroupInfoDialog = ({
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   Mô tả nhóm
                 </p>
-                {!isOwner && (
+                {!isOwner ? (
                   <p className="mt-1 text-sm leading-relaxed text-foreground">
                     {groupDescription}
                   </p>
-                )}
+                ) : null}
               </div>
 
               {isOwner ? (
@@ -206,8 +223,8 @@ const GroupInfoDialog = ({
               <h3 className="text-sm font-semibold text-foreground">Bot trong nhóm</h3>
               <p className="text-xs text-muted-foreground">
                 {isOwner
-                  ? "Bật hoặc tắt các bot chuyên gia có sẵn cho nhóm chat này."
-                  : "Danh sách bot chuyên gia đang được bật trong nhóm chat."}
+                  ? "Bật hoặc tắt bot cho nhóm."
+                  : "Danh sách bot đang bật."}
               </p>
             </div>
 
@@ -275,7 +292,7 @@ const GroupInfoDialog = ({
             <div>
               <h3 className="text-sm font-semibold text-foreground">Thành viên nhóm</h3>
               <p className="text-xs text-muted-foreground">
-                Danh sách các thành viên hiện đang có trong nhóm.
+                Danh sách thành viên hiện có.
               </p>
             </div>
 
@@ -335,6 +352,104 @@ const GroupInfoDialog = ({
                 </Card>
               );
             })}
+          </div>
+
+          <Separator className="border-border/30" />
+
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Kiểm duyệt</h3>
+              <p className="text-xs text-muted-foreground">
+                {convo.group?.joinApprovalEnabled ? "Đang bật" : "Đang tắt"}
+              </p>
+            </div>
+
+            <Card className="border-border/30 bg-background/60 p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="size-4 text-primary" />
+                    <p className="text-sm font-medium text-foreground">Duyệt yêu cầu tham gia</p>
+                  </div>
+                </div>
+
+                <Switch
+                  checked={joinApprovalEnabled}
+                  disabled={!isOwner || loading}
+                  onCheckedChange={setJoinApprovalEnabled}
+                  aria-label="Bat tat kiem duyet tham gia nhom"
+                />
+              </div>
+
+              {isOwner ? (
+                <div className="mt-3 flex justify-end">
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={loading}
+                    onClick={handleSaveJoinApproval}
+                    className="bg-gradient-primary hover:opacity-90 transition-opacity"
+                  >
+                    {loading ? "Đang lưu..." : "Lưu"}
+                  </Button>
+                </div>
+              ) : null}
+            </Card>
+
+            {isOwner ? (
+              pendingJoinRequests.length === 0 ? (
+                <Card className="border-border/30 bg-background/60 p-4 text-sm text-muted-foreground">
+                  Chưa có yêu cầu chờ duyệt.
+                </Card>
+              ) : (
+                pendingJoinRequests.map((request) => (
+                  <Card
+                    key={`${request.userId}-${request.createdAt}`}
+                    className="flex flex-row items-center justify-between gap-3 border-border/30 bg-background/60 p-3"
+                  >
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <UserAvatar
+                        type="chat"
+                        name={request.displayName}
+                        avatarUrl={request.avatarUrl ?? undefined}
+                      />
+
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {request.displayName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {request.username ? `@${request.username}` : "Người dùng"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="ml-auto flex shrink-0 items-center gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="primary"
+                        disabled={loading}
+                        onClick={() => handleResolveJoinRequest(request.userId, "approve")}
+                      >
+                        <Check className="size-4" />
+                        Đồng ý
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructiveOutline"
+                        disabled={loading}
+                        onClick={() => handleResolveJoinRequest(request.userId, "reject")}
+                      >
+                        <X className="size-4" />
+                        Từ chối
+                      </Button>
+                    </div>
+                  </Card>
+                ))
+              )
+            ) : null}
           </div>
         </div>
       </DialogContent>

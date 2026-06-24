@@ -31,6 +31,12 @@ interface TogglePinnedMessageResponse {
   conversation: Conversation;
 }
 
+interface JoinGroupResponse {
+  status: "joined" | "requested";
+  conversation?: Conversation;
+  message?: string;
+}
+
 const pageLimit = 50;
 
 export const chatService = {
@@ -134,9 +140,9 @@ export const chatService = {
     return res.data;
   },
 
-  async joinGroup(conversationId: string): Promise<Conversation> {
+  async joinGroup(conversationId: string): Promise<JoinGroupResponse> {
     const res = await api.patch(`/conversations/${conversationId}/join`);
-    return res.data.conversation;
+    return res.data;
   },
 
   async leaveGroup(conversationId: string): Promise<Conversation> {
@@ -176,6 +182,28 @@ export const chatService = {
     const res = await api.patch(`/conversations/${conversationId}/bots`, {
       botIds,
     });
+    return res.data.conversation;
+  },
+
+  async updateGroupJoinApproval(
+    conversationId: string,
+    enabled: boolean
+  ): Promise<Conversation> {
+    const res = await api.patch(`/conversations/${conversationId}/join-approval`, {
+      enabled,
+    });
+    return res.data.conversation;
+  },
+
+  async handleGroupJoinRequest(
+    conversationId: string,
+    requestUserId: string,
+    action: "approve" | "reject"
+  ): Promise<Conversation> {
+    const res = await api.patch(
+      `/conversations/${conversationId}/join-requests/${requestUserId}`,
+      { action }
+    );
     return res.data.conversation;
   },
 };

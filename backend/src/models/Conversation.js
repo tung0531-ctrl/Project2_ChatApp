@@ -33,6 +33,31 @@ const groupSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    joinApprovalEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    pendingJoinRequests: {
+      type: [
+        new mongoose.Schema(
+          {
+            userId: {
+              type: mongoose.Schema.Types.ObjectId,
+              ref: "User",
+              required: true,
+            },
+            createdAt: {
+              type: Date,
+              default: Date.now,
+            },
+          },
+          {
+            _id: false,
+          }
+        ),
+      ],
+      default: [],
+    },
     bots: {
       type: [
         new mongoose.Schema(

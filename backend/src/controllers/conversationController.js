@@ -5,6 +5,25 @@ import { io } from "../socket/index.js";
 import { createNotification } from "../utils/notificationHelper.js";
 import { getAvailableBotDefinitions } from "../ai/registry/index.js";
 
+const conversationPopulate = [
+  {
+    path: "participants.userId",
+    select: "username displayName avatarUrl",
+  },
+  {
+    path: "group.pendingJoinRequests.userId",
+    select: "username displayName avatarUrl",
+  },
+  {
+    path: "lastMessage.senderId",
+    select: "displayName avatarUrl",
+  },
+  {
+    path: "seenBy",
+    select: "displayName avatarUrl",
+  },
+];
+
 const formatParticipants = (participants = []) =>
   participants.map((p) => ({
     _id: p.userId?._id ?? p.userId,
@@ -26,12 +45,24 @@ const formatMessageReference = (reference) => {
   };
 };
 
+const formatPendingJoinRequests = (pendingJoinRequests = []) =>
+  pendingJoinRequests.map((request) => ({
+    userId: request.userId?._id ?? request.userId,
+    username: request.userId?.username,
+    displayName: request.userId?.displayName,
+    avatarUrl: request.userId?.avatarUrl ?? null,
+    createdAt: request.createdAt,
+  }));
+
 const formatConversation = (conversation) => ({
   ...conversation.toObject(),
   group: conversation.group
     ? {
         ...conversation.group.toObject?.(),
         createdBy: conversation.group.createdBy?.toString?.() ?? conversation.group.createdBy,
+        pendingJoinRequests: formatPendingJoinRequests(
+          conversation.group.pendingJoinRequests || []
+        ),
       }
     : conversation.group,
   unreadCounts: conversation.unreadCounts || {},
@@ -65,6 +96,37 @@ const removeParticipantFromConversation = (conversation, userId) => {
 
   return true;
 };
+
+const hasPendingJoinRequest = (conversation, userId) =>
+  conversation.group?.pendingJoinRequests?.some(
+    (request) =>
+      request.userId?._id?.toString() === userId || request.userId?.toString?.() === userId,
+  );
+
+const addParticipantToConversation = (conversation, userId) => {
+  if (isConversationParticipant(conversation, userId.toString())) {
+    return false;
+  }
+
+  conversation.participants.push({
+    userId,
+    joinedAt: new Date(),
+  });
+  conversation.unreadCounts.set(userId.toString(), 0);
+
+  return true;
+};
+
+const notifyGroupJoined = async ({ recipient, actor, groupName, conversationId, title, message }) =>
+  createNotification({
+    recipient,
+    type: "group_joined",
+    title,
+    message,
+    actor,
+    groupName,
+    conversationId,
+  });
 
 export const createConversation = async (req, res) => {
   try {
@@ -122,14 +184,7 @@ export const createConversation = async (req, res) => {
       return res.status(400).json({ message: "Conversation type không hợp lệ" });
     }
 
-    await conversation.populate([
-      { path: "participants.userId", select: "username displayName avatarUrl" },
-      {
-        path: "seenBy",
-        select: "displayName avatarUrl",
-      },
-      { path: "lastMessage.senderId", select: "displayName avatarUrl" },
-    ]);
+    await conversation.populate(conversationPopulate);
 
     const formatted = formatConversation(conversation);
 
@@ -177,18 +232,7 @@ export const getConversations = async (req, res) => {
       "participants.userId": userId,
     })
       .sort({ lastMessageAt: -1, updatedAt: -1 })
-      .populate({
-        path: "participants.userId",
-        select: "username displayName avatarUrl",
-      })
-      .populate({
-        path: "lastMessage.senderId",
-        select: "displayName avatarUrl",
-      })
-      .populate({
-        path: "seenBy",
-        select: "displayName avatarUrl",
-      });
+      .populate(conversationPopulate);
 
     const formatted = conversations.map((convo) => {
       return formatConversation(convo);
@@ -269,21 +313,17 @@ export const searchJoinableGroups = async (req, res) => {
           },
         },
       },
+      "group.pendingJoinRequests": {
+        $not: {
+          $elemMatch: {
+            userId,
+          },
+        },
+      },
     })
       .sort({ updatedAt: -1 })
       .limit(10)
-      .populate({
-        path: "participants.userId",
-        select: "username displayName avatarUrl",
-      })
-      .populate({
-        path: "lastMessage.senderId",
-        select: "displayName avatarUrl",
-      })
-      .populate({
-        path: "seenBy",
-        select: "displayName avatarUrl",
-      });
+      .populate(conversationPopulate);
 
     return res.status(200).json({
       groups: groups.map((group) => formatConversation(group)),
@@ -308,19 +348,7 @@ export const joinGroup = async (req, res) => {
     const { conversationId } = req.params;
     const userId = req.user._id;
 
-    const conversation = await Conversation.findById(conversationId)
-      .populate({
-        path: "participants.userId",
-        select: "displayName avatarUrl",
-      })
-      .populate({
-        path: "lastMessage.senderId",
-        select: "displayName avatarUrl",
-      })
-      .populate({
-        path: "seenBy",
-        select: "displayName avatarUrl",
-      });
+    const conversation = await Conversation.findById(conversationId).populate(conversationPopulate);
 
     if (!conversation) {
       return res.status(404).json({ message: "Không tìm thấy nhóm chat" });
@@ -340,36 +368,40 @@ export const joinGroup = async (req, res) => {
       return res.status(409).json({ message: "Bạn đã ở trong nhóm chat này rồi" });
     }
 
-    conversation.participants.push({
-      userId,
-      joinedAt: new Date(),
-    });
-    conversation.unreadCounts.set(userId.toString(), 0);
+    if (conversation.group?.joinApprovalEnabled) {
+      if (hasPendingJoinRequest(conversation, userId.toString())) {
+        return res.status(409).json({ message: "Bạn đã gửi yêu cầu tham gia nhóm này rồi" });
+      }
+
+      conversation.group.pendingJoinRequests.push({
+        userId,
+        createdAt: new Date(),
+      });
+
+      await conversation.save();
+      await conversation.populate(conversationPopulate);
+
+      const formattedPendingConversation = formatConversation(conversation);
+      io.to(conversationId).emit("conversation-updated", formattedPendingConversation);
+
+      return res.status(202).json({
+        status: "requested",
+        message: "Yêu cầu tham gia nhóm đã được gửi tới trưởng nhóm.",
+      });
+    }
+
+    addParticipantToConversation(conversation, userId);
 
     await conversation.save();
-    await conversation.populate([
-      {
-        path: "participants.userId",
-        select: "username displayName avatarUrl",
-      },
-      {
-        path: "lastMessage.senderId",
-        select: "displayName avatarUrl",
-      },
-      {
-        path: "seenBy",
-        select: "displayName avatarUrl",
-      },
-    ]);
+    await conversation.populate(conversationPopulate);
 
     const formatted = formatConversation(conversation);
 
     io.to(userId.toString()).emit("new-group", formatted);
     io.to(conversationId).emit("conversation-updated", formatted);
 
-    await createNotification({
+    await notifyGroupJoined({
       recipient: userId,
-      type: "group_joined",
       title: "Tham gia nhóm chat thành công",
       message: `Bạn đã tham gia nhóm chat ${formatted.group?.name ?? ""}.`,
       actor: {
@@ -382,7 +414,7 @@ export const joinGroup = async (req, res) => {
       conversationId: conversation._id,
     });
 
-    return res.status(200).json({ conversation: formatted });
+    return res.status(200).json({ status: "joined", conversation: formatted });
   } catch (error) {
     console.error("Lỗi khi tham gia nhóm chat", error);
     return res.status(500).json({ message: "Lỗi hệ thống" });
@@ -394,19 +426,7 @@ export const leaveGroup = async (req, res) => {
     const { conversationId } = req.params;
     const userId = req.user._id.toString();
 
-    const conversation = await Conversation.findById(conversationId)
-      .populate({
-        path: "participants.userId",
-        select: "username displayName avatarUrl",
-      })
-      .populate({
-        path: "lastMessage.senderId",
-        select: "displayName avatarUrl",
-      })
-      .populate({
-        path: "seenBy",
-        select: "displayName avatarUrl",
-      });
+    const conversation = await Conversation.findById(conversationId).populate(conversationPopulate);
 
     if (!conversation) {
       return res.status(404).json({ message: "Conversation không tồn tại" });
@@ -423,20 +443,7 @@ export const leaveGroup = async (req, res) => {
     }
 
     await conversation.save();
-    await conversation.populate([
-      {
-        path: "participants.userId",
-        select: "username displayName avatarUrl",
-      },
-      {
-        path: "lastMessage.senderId",
-        select: "displayName avatarUrl",
-      },
-      {
-        path: "seenBy",
-        select: "displayName avatarUrl",
-      },
-    ]);
+    await conversation.populate(conversationPopulate);
 
     const formatted = formatConversation(conversation);
 
@@ -454,19 +461,7 @@ export const kickGroupMember = async (req, res) => {
     const { conversationId, memberId } = req.params;
     const userId = req.user._id.toString();
 
-    const conversation = await Conversation.findById(conversationId)
-      .populate({
-        path: "participants.userId",
-        select: "username displayName avatarUrl",
-      })
-      .populate({
-        path: "lastMessage.senderId",
-        select: "displayName avatarUrl",
-      })
-      .populate({
-        path: "seenBy",
-        select: "displayName avatarUrl",
-      });
+    const conversation = await Conversation.findById(conversationId).populate(conversationPopulate);
 
     if (!conversation) {
       return res.status(404).json({ message: "Conversation không tồn tại" });
@@ -495,20 +490,7 @@ export const kickGroupMember = async (req, res) => {
     }
 
     await conversation.save();
-    await conversation.populate([
-      {
-        path: "participants.userId",
-        select: "username displayName avatarUrl",
-      },
-      {
-        path: "lastMessage.senderId",
-        select: "displayName avatarUrl",
-      },
-      {
-        path: "seenBy",
-        select: "displayName avatarUrl",
-      },
-    ]);
+    await conversation.populate(conversationPopulate);
 
     const formatted = formatConversation(conversation);
 
@@ -543,19 +525,7 @@ export const updateGroupDescription = async (req, res) => {
     const userId = req.user._id.toString();
     const description = req.body?.description?.trim() ?? "";
 
-    const conversation = await Conversation.findById(conversationId)
-      .populate({
-        path: "participants.userId",
-        select: "username displayName avatarUrl",
-      })
-      .populate({
-        path: "lastMessage.senderId",
-        select: "displayName avatarUrl",
-      })
-      .populate({
-        path: "seenBy",
-        select: "displayName avatarUrl",
-      });
+    const conversation = await Conversation.findById(conversationId).populate(conversationPopulate);
 
     if (!conversation) {
       return res.status(404).json({ message: "Conversation không tồn tại" });
@@ -594,19 +564,7 @@ export const updateGroupBots = async (req, res) => {
     const userId = req.user._id.toString();
     const requestedBotIds = Array.isArray(req.body?.botIds) ? req.body.botIds : [];
 
-    const conversation = await Conversation.findById(conversationId)
-      .populate({
-        path: "participants.userId",
-        select: "username displayName avatarUrl",
-      })
-      .populate({
-        path: "lastMessage.senderId",
-        select: "displayName avatarUrl",
-      })
-      .populate({
-        path: "seenBy",
-        select: "displayName avatarUrl",
-      });
+    const conversation = await Conversation.findById(conversationId).populate(conversationPopulate);
 
     if (!conversation) {
       return res.status(404).json({ message: "Conversation không tồn tại" });
@@ -642,6 +600,159 @@ export const updateGroupBots = async (req, res) => {
     return res.status(200).json({ conversation: formatted });
   } catch (error) {
     console.error("Lỗi khi cập nhật bot nhóm", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
+export const updateGroupJoinApproval = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user._id.toString();
+    const enabled = Boolean(req.body?.enabled);
+
+    const conversation = await Conversation.findById(conversationId).populate(conversationPopulate);
+
+    if (!conversation) {
+      return res.status(404).json({ message: "Conversation không tồn tại" });
+    }
+
+    if (conversation.type !== "group") {
+      return res.status(400).json({ message: "Chỉ nhóm chat mới có cài đặt kiểm duyệt tham gia" });
+    }
+
+    if (!isConversationParticipant(conversation, userId)) {
+      return res.status(403).json({ message: "Bạn không ở trong nhóm này" });
+    }
+
+    if (conversation.group?.createdBy?.toString() !== userId) {
+      return res.status(403).json({ message: "Chỉ trưởng nhóm mới được cập nhật cài đặt kiểm duyệt" });
+    }
+
+    conversation.group.joinApprovalEnabled = enabled;
+
+    const autoApprovedUserIds = [];
+
+    if (!enabled) {
+      const pendingRequests = conversation.group?.pendingJoinRequests ?? [];
+
+      pendingRequests.forEach((request) => {
+        const requestUserId = request.userId?._id ?? request.userId;
+
+        if (requestUserId && addParticipantToConversation(conversation, requestUserId)) {
+          autoApprovedUserIds.push(requestUserId.toString());
+        }
+      });
+
+      conversation.group.pendingJoinRequests = [];
+    }
+
+    await conversation.save();
+    await conversation.populate(conversationPopulate);
+
+    const formatted = formatConversation(conversation);
+
+    io.to(conversationId).emit("conversation-updated", formatted);
+
+    await Promise.all(
+      autoApprovedUserIds.map(async (approvedUserId) => {
+        io.to(approvedUserId).emit("new-group", formatted);
+
+        await notifyGroupJoined({
+          recipient: approvedUserId,
+          title: "Yêu cầu tham gia nhóm đã được chấp nhận",
+          message: `Bạn đã được thêm vào nhóm chat ${formatted.group?.name ?? ""}.`,
+          actor: {
+            _id: req.user._id,
+            username: req.user.username,
+            displayName: req.user.displayName,
+            avatarUrl: req.user.avatarUrl ?? null,
+          },
+          groupName: formatted.group?.name ?? "",
+          conversationId: conversation._id,
+        });
+      })
+    );
+
+    return res.status(200).json({ conversation: formatted });
+  } catch (error) {
+    console.error("Lỗi khi cập nhật cài đặt kiểm duyệt tham gia nhóm", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
+export const handleGroupJoinRequest = async (req, res) => {
+  try {
+    const { conversationId, requestUserId } = req.params;
+    const userId = req.user._id.toString();
+    const action = req.body?.action;
+
+    if (!["approve", "reject"].includes(action)) {
+      return res.status(400).json({ message: "Hành động xử lý yêu cầu tham gia không hợp lệ" });
+    }
+
+    const conversation = await Conversation.findById(conversationId).populate(conversationPopulate);
+
+    if (!conversation) {
+      return res.status(404).json({ message: "Conversation không tồn tại" });
+    }
+
+    if (conversation.type !== "group") {
+      return res.status(400).json({ message: "Chỉ nhóm chat mới có yêu cầu tham gia" });
+    }
+
+    if (!isConversationParticipant(conversation, userId)) {
+      return res.status(403).json({ message: "Bạn không ở trong nhóm này" });
+    }
+
+    if (conversation.group?.createdBy?.toString() !== userId) {
+      return res.status(403).json({ message: "Chỉ trưởng nhóm mới được xử lý yêu cầu tham gia" });
+    }
+
+    const pendingRequestIndex = (conversation.group?.pendingJoinRequests ?? []).findIndex(
+      (request) => (request.userId?._id ?? request.userId)?.toString() === requestUserId
+    );
+
+    if (pendingRequestIndex === -1) {
+      return res.status(404).json({ message: "Không tìm thấy yêu cầu tham gia nhóm" });
+    }
+
+    conversation.group.pendingJoinRequests.splice(pendingRequestIndex, 1);
+
+    if (action === "approve") {
+      addParticipantToConversation(conversation, requestUserId);
+    }
+
+    await conversation.save();
+    await conversation.populate(conversationPopulate);
+
+    const formatted = formatConversation(conversation);
+
+    io.to(conversationId).emit("conversation-updated", formatted);
+
+    if (action === "approve") {
+      io.to(requestUserId).emit("new-group", formatted);
+
+      await notifyGroupJoined({
+        recipient: requestUserId,
+        title: "Yêu cầu tham gia nhóm đã được chấp nhận",
+        message: `Bạn đã được thêm vào nhóm chat ${formatted.group?.name ?? ""}.`,
+        actor: {
+          _id: req.user._id,
+          username: req.user.username,
+          displayName: req.user.displayName,
+          avatarUrl: req.user.avatarUrl ?? null,
+        },
+        groupName: formatted.group?.name ?? "",
+        conversationId: conversation._id,
+      });
+    }
+
+    return res.status(200).json({
+      conversation: formatted,
+      status: action,
+    });
+  } catch (error) {
+    console.error("Lỗi khi xử lý yêu cầu tham gia nhóm", error);
     return res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };

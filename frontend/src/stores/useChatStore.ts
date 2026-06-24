@@ -379,16 +379,28 @@ export const useChatStore = create<ChatState>()(
       joinGroup: async (conversationId) => {
         try {
           set({ loading: true });
-          const conversation = await chatService.joinGroup(conversationId);
+          const result = await chatService.joinGroup(conversationId);
 
-          get().addConvo(conversation);
-          useSocketStore.getState().socket?.emit("join-conversation", conversation._id);
+          if (result.status === "requested") {
+            toast.success(
+              result.message || "Yêu cầu tham gia nhóm đã được gửi tới trưởng nhóm."
+            );
+            return "requested";
+          }
+
+          if (!result.conversation) {
+            toast.error("Không nhận được dữ liệu nhóm chat sau khi tham gia.");
+            return null;
+          }
+
+          get().addConvo(result.conversation);
+          useSocketStore.getState().socket?.emit("join-conversation", result.conversation._id);
           toast.success("Tham gia nhóm chat thành công.");
-          return true;
+          return "joined";
         } catch (error) {
           console.error("Lỗi khi tham gia nhóm chat", error);
           toast.error("Không thể tham gia nhóm chat lúc này.");
-          return false;
+          return null;
         } finally {
           set({ loading: false });
         }
@@ -471,6 +483,53 @@ export const useChatStore = create<ChatState>()(
         } catch (error) {
           console.error("Lỗi khi cập nhật bot cho nhóm", error);
           toast.error("Không thể cập nhật bot cho nhóm lúc này.");
+          return false;
+        } finally {
+          set({ loading: false });
+        }
+      },
+      updateGroupJoinApproval: async (conversationId, enabled) => {
+        try {
+          set({ loading: true });
+          const updatedConversation = await chatService.updateGroupJoinApproval(
+            conversationId,
+            enabled
+          );
+
+          get().updateConversation(updatedConversation);
+          toast.success(
+            enabled
+              ? "Đã bật kiểm duyệt yêu cầu tham gia nhóm."
+              : "Đã tắt kiểm duyệt yêu cầu tham gia nhóm."
+          );
+          return true;
+        } catch (error) {
+          console.error("Lỗi khi cập nhật kiểm duyệt tham gia nhóm", error);
+          toast.error("Không thể cập nhật cài đặt kiểm duyệt lúc này.");
+          return false;
+        } finally {
+          set({ loading: false });
+        }
+      },
+      handleGroupJoinRequest: async (conversationId, requestUserId, action) => {
+        try {
+          set({ loading: true });
+          const updatedConversation = await chatService.handleGroupJoinRequest(
+            conversationId,
+            requestUserId,
+            action
+          );
+
+          get().updateConversation(updatedConversation);
+          toast.success(
+            action === "approve"
+              ? "Đã chấp nhận yêu cầu tham gia nhóm."
+              : "Đã từ chối yêu cầu tham gia nhóm."
+          );
+          return true;
+        } catch (error) {
+          console.error("Lỗi khi xử lý yêu cầu tham gia nhóm", error);
+          toast.error("Không thể xử lý yêu cầu tham gia nhóm lúc này.");
           return false;
         } finally {
           set({ loading: false });

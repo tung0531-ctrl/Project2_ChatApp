@@ -56,9 +56,9 @@ const JoinGroupChatModal = () => {
       return;
     }
 
-    const success = await joinGroup(selectedGroup._id);
+    const result = await joinGroup(selectedGroup._id);
 
-    if (success) {
+    if (result) {
       setOpen(false);
     }
   };
@@ -139,6 +139,11 @@ const JoinGroupChatModal = () => {
               <p className="mt-2 text-xs text-muted-foreground">
                 Nhóm hiện có {memberCount} thành viên.
               </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {selectedGroup.group?.joinApprovalEnabled
+                  ? "Nhóm này đang bật kiểm duyệt. Yêu cầu của bạn sẽ được gửi tới trưởng nhóm để xét duyệt."
+                  : "Nhóm này đang tắt kiểm duyệt. Bạn sẽ được tham gia ngay nếu tiếp tục."}
+              </p>
             </Card>
 
             <DialogFooter>
@@ -155,7 +160,13 @@ const JoinGroupChatModal = () => {
                 onClick={handleJoinGroup}
                 className="bg-gradient-primary hover:opacity-90 transition-opacity"
               >
-                {loading ? "Đang tham gia..." : "Có, tham gia"}
+                {loading
+                  ? (selectedGroup.group?.joinApprovalEnabled
+                      ? "Đang gửi yêu cầu..."
+                      : "Đang tham gia...")
+                  : (selectedGroup.group?.joinApprovalEnabled
+                      ? "Gửi yêu cầu tham gia"
+                      : "Có, tham gia")}
               </Button>
             </DialogFooter>
           </div>

@@ -104,7 +104,7 @@ export interface ChatState {
     memberIds: string[]
   ) => Promise<void>;
   searchJoinableGroups: (keyword: string) => Promise<Conversation[]>;
-  joinGroup: (conversationId: string) => Promise<boolean>;
+  joinGroup: (conversationId: string) => Promise<"joined" | "requested" | null>;
   leaveGroup: (conversationId: string) => Promise<boolean>;
   kickGroupMember: (conversationId: string, memberId: string) => Promise<boolean>;
   updateGroupDescription: (
@@ -113,6 +113,12 @@ export interface ChatState {
   ) => Promise<boolean>;
   fetchAvailableBots: () => Promise<BotDefinition[]>;
   updateGroupBots: (conversationId: string, botIds: string[]) => Promise<boolean>;
+  updateGroupJoinApproval: (conversationId: string, enabled: boolean) => Promise<boolean>;
+  handleGroupJoinRequest: (
+    conversationId: string,
+    requestUserId: string,
+    action: "approve" | "reject"
+  ) => Promise<boolean>;
 }
 
 export interface SocketState {
