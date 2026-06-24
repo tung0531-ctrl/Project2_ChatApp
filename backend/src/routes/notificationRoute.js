@@ -1,3 +1,4 @@
+// Dinh nghia cac endpoint thao tac voi thong bao cua nguoi dung.
 import express from "express";
 import {
   getNotifications,

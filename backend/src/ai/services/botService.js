@@ -1,3 +1,4 @@
+// Dieu phoi trigger bot trong group chat, lay ngu canh va tao payload bot reply cho message flow.
 import bcrypt from "bcrypt";
 import User from "../../models/User.js";
 import Message from "../../models/Message.js";

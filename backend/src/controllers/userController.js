@@ -1,3 +1,4 @@
+// Quan ly thong tin tai khoan, profile, bao mat va upload avatar/background cua nguoi dung.
 import bcrypt from "bcrypt";
 import {
   uploadBackgroundImageFromBuffer,

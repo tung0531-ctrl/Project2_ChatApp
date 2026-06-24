@@ -1,3 +1,4 @@
+// Chua cac quy tac loc tu khoa va gan co moderation cho noi dung tin nhan user.
 const BANNED_KEYWORD_RULES = [
   { keyword: "chat cam", label: "chất cấm" },
   { keyword: "ma tuy", label: "ma túy" },

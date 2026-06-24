@@ -1,3 +1,4 @@
+// Dialog thong tin nhom de xem thanh vien, sua mo ta, kick member va bat/tat bot theo quyen owner.
 import { useEffect, useState } from "react";
 import type { BotDefinition, Conversation } from "@/types/chat";
 import { useAuthStore } from "@/stores/useAuthStore";

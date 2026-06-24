@@ -1,3 +1,4 @@
+// Dialog tao nhom chat moi bang cach chon ban be va dat ten nhom.
 import { useFriendStore } from "@/stores/useFriendStore";
 import { useState } from "react";
 import {

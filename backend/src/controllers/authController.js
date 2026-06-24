@@ -1,4 +1,5 @@
 // @ts-nocheck
+// Xu ly dang ky, dang nhap, dang xuat va refresh token cho toan bo auth flow cua ung dung.
 import bcrypt from "bcrypt";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";

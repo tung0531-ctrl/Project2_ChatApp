@@ -1,3 +1,4 @@
+// Dinh nghia cac endpoint conversation, message history, nhom chat va cau hinh bot theo group.
 import express from "express";
 import {
   createConversation,

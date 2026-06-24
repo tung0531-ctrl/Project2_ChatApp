@@ -1,3 +1,4 @@
+// Kiem tra quan he ban be hoac thanh vien nhom truoc khi cho phep tao conversation/gui tin nhan.
 import Conversation from "../models/Conversation.js";
 import Friend from "../models/Friend.js";
 

@@ -1,3 +1,4 @@
+// Form dang nhap gom validation, submit auth va dieu huong vao ung dung sau khi thanh cong.
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

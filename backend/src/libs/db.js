@@ -1,3 +1,4 @@
+// Tao ket noi MongoDB tap trung de backend co the dung chung trong qua trinh khoi dong.
 import mongoose from "mongoose";
 
 export const connectDB = async () => {

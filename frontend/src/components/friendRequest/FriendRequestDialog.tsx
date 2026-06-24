@@ -1,3 +1,4 @@
+// Dialog tong hop thong bao va friend request, cho phep accept/decline/hide theo tung tab.
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import {
   Dialog,

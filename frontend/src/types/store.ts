@@ -1,3 +1,4 @@
+// Dinh nghia cac contract TypeScript cho state va actions cua cac Zustand store.
 import type { Socket } from "socket.io-client";
 import type {
   BotDefinition,

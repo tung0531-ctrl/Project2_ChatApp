@@ -1,3 +1,4 @@
+// Dinh nghia cac contract TypeScript cho conversation, message, bot va participant trong chat domain.
 export interface Participant {
   _id: string;
   username?: string;

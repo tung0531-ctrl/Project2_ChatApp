@@ -1,3 +1,4 @@
+// Dialog read-only de xem profile nguoi dung khac tu danh sach ban be hoac trong group chat.
 import { useEffect, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { User } from "@/types/user";

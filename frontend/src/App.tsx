@@ -1,3 +1,4 @@
+// Ghep router goc, theme sync, socket lifecycle va route public/private cho toan bo frontend.
 import { BrowserRouter, Route, Routes } from "react-router";
 import SignInPage from "./pages/SignInPage";
 import ChatAppPage from "./pages/ChatAppPage";

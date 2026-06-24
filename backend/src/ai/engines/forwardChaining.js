@@ -1,3 +1,4 @@
+// Cung cap bo may suy dien IF-THEN de danh gia rule va chon response cho bot.
 const toArray = (value) => {
   if (Array.isArray(value)) {
     return value;

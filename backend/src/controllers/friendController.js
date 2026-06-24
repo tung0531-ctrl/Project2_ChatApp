@@ -1,3 +1,4 @@
+// Xu ly tim ban, gui va chap nhan loi moi ket ban, lay danh sach ban be va huy ket ban.
 import Friend from "../models/Friend.js";
 import User from "../models/User.js";
 import FriendRequest from "../models/FriendRequest.js";

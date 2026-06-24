@@ -1,3 +1,4 @@
+// Dialog profile cua chinh user, ghep card tong quan, thong tin ca nhan va cai dat bao mat.
 import type { Dispatch, SetStateAction } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import ProfileCard from "./ProfileCard";

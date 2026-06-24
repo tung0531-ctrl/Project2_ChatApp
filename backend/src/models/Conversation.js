@@ -1,3 +1,4 @@
+// Mongoose model luu direct/group conversation cung metadata unread, seen, pin va bot config.
 import mongoose from "mongoose";
 
 const participantSchema = new mongoose.Schema(

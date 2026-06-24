@@ -1,3 +1,4 @@
+// Khung chat tong, chon conversation dang active va ghep header, body, input tuong ung.
 import { useChatStore } from "@/stores/useChatStore";
 import ChatWelcomeScreen from "./ChatWelcomeScreen";
 import { SidebarInset } from "../ui/sidebar";

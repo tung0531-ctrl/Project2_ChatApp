@@ -1,3 +1,4 @@
+// Trien khai bo phan loai Naive Bayes nhe de du doan intent cho tung bot domain.
 import { TfidfVectorizer } from "./tfidfVectorizer.js";
 
 const dotSparseVectors = (left = new Map(), right = new Map()) => {

@@ -1,3 +1,4 @@
+// Mongoose model luu thong bao realtime va lich su thong bao cua tung nguoi dung.
 import mongoose from "mongoose";
 
 const notificationActorSchema = new mongoose.Schema(

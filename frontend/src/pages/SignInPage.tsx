@@ -1,3 +1,4 @@
+// Trang dang nhap public, boc layout va hien form dang nhap cho guest.
 import { SigninForm } from "@/components/auth/signin-form";
 
 const SignInPage = () => {

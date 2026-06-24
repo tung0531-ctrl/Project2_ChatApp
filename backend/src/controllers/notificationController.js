@@ -1,3 +1,4 @@
+// Cung cap API lay thong bao, danh dau da doc va xoa mem thong bao cua user.
 import Notification from "../models/Notification.js";
 
 const formatNotification = (notification) => ({

@@ -1,3 +1,4 @@
+// Zustand store quan ly phien dang nhap, user hien tai va cac thao tac auth tren client.
 import { create } from "zustand";
 import { toast } from "sonner";
 import { authService } from "@/services/authService";

@@ -1,3 +1,4 @@
+// Gom cac API auth de store co the dang ky, dang nhap, dang xuat va refresh phien.
 import api from "@/lib/axios";
 
 export const authService = {

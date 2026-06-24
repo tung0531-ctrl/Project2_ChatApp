@@ -1,3 +1,4 @@
+// Dieu phoi nghiep vu conversation, group membership, seen state, pin message va cau hinh bot theo nhom.
 import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
 import { io } from "../socket/index.js";

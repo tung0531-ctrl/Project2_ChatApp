@@ -1,3 +1,4 @@
+// Mongoose model luu tin nhan chat, media, reaction, moderation va metadata bot/reply-to.
 import mongoose from "mongoose";
 
 const reactionSchema = new mongoose.Schema(

@@ -832,7 +832,232 @@ Neu tiep tuc phat trien du an nay, nen lay cac quy tac sau lam mac dinh:
 - UI: giu design token, radius, shadow, gradient, utility class dong bo
 - naming: tang tinh nhat quan trong tung feature, khong sua tung manh le
 
-## 21. Ket luan
+## 21. Use case tong quan va chi tiet ky thuat theo nhom chuc nang
+
+Phan nay dong vai tro nhu mot bo tom tat vua theo goc nhin nghiep vu, vua theo goc nhin ky thuat de co the dung cho bao cao, handoff hoac tiep tuc phat trien tinh nang.
+
+### 21.1 Tac nhan chinh trong he thong
+
+- `guest`: nguoi chua dang nhap, chi duoc truy cap cac route auth.
+- `user`: nguoi da dang nhap, co the su dung profile, ban be, chat va thong bao.
+- `group owner`: user tao nhom, co them quyen sua mo ta, kick thanh vien va bat/tat bot.
+- `system bot`: tai khoan he thong duoc backend tao/quan ly de gui bot reply nhu message that.
+
+### 21.2 Nhom chuc nang xu ly dang nhap dang ky
+
+#### Use case tong quan
+
+- guest tao tai khoan moi bang username, password, email va ten hien thi.
+- guest dang nhap de lay quyen truy cap vao khu vuc chat.
+- user dang xuat de huy phien hien tai.
+- client tu dong refresh access token khi het han de giu phien dang nhap.
+- route private chi cho phep user co token hop le truy cap.
+
+#### Luong nghiep vu chinh
+
+1. Guest mo trang `signin` hoac `signup`.
+2. Form gui du lieu len auth API.
+3. Backend validate input va xu ly xac thuc.
+4. Khi dang nhap thanh cong, backend tra `accessToken` va set `refreshToken` vao cookie httpOnly.
+5. Frontend luu `accessToken` vao `useAuthStore`, sau do goi `fetchMe()` va `fetchConversations()`.
+6. Khi vao route private, `ProtectedRoute` kiem tra auth state; neu can thi goi refresh token truoc khi cho vao `/chat`.
+7. Neu access token het han trong qua trinh su dung, `axios` interceptor goi `/auth/refresh`, cap nhat token moi va retry request.
+
+#### Truong hop loi va rang buoc
+
+- username trung khi dang ky -> tra `409`.
+- sai username/password khi dang nhap -> tra `401`.
+- khong co access token o route private -> tra `401`.
+- access token het han hoac sai -> tra `403`.
+- refresh token khong ton tai, het han hoac khong hop le -> frontend clear auth state va yeu cau dang nhap lai.
+- neu refresh tra ve `userId` khac voi user dang dang nhap trong store, frontend coi day la `AUTH_USER_MISMATCH` va huy phien.
+
+#### Noi dung ky thuat can giu de hoan thien
+
+- backend auth nam o `authRoute.js` + `authController.js` + `authMiddleware.js` + `Session.js`.
+- password duoc hash bang `bcrypt.hash(password, 10)` truoc khi luu.
+- backend dang dung access token song ngan va refresh token luu DB, khong phai stateless JWT hoan toan.
+- cookie refresh token dang de `httpOnly`, `secure`, `sameSite: "none"` de phu hop frontend/backend tach origin.
+- frontend auth nam o `useAuthStore`, `authService`, `ProtectedRoute`, `lib/axios.ts`.
+- auth state duoc persist bang `sessionStorage`, giup reload trang van giu duoc phien nhung khong giu dai han nhu localStorage.
+- moi route private backend phai di qua `protectedRoute`, khong duoc verify JWT lai thu cong trong tung controller moi.
+
+### 21.3 Nhom chuc nang quan ly profile nguoi dung
+
+#### Use case tong quan
+
+- user xem thong tin tai khoan cua chinh minh.
+- user cap nhat display name, email, so dien thoai, bio.
+- user doi username va/hoac doi mat khau khi co mat khau cu hop le.
+- user upload avatar va anh nen profile.
+- user xem profile cua nguoi dung khac tu danh sach ban be hoac trong chat.
+
+#### Luong nghiep vu chinh
+
+1. User dang nhap thanh cong va frontend lay `me` tu backend.
+2. Profile form hien thong tin hien tai tu `useAuthStore.user`.
+3. User sua thong tin ca nhan va submit.
+4. Frontend goi `userService`, store cap nhat lai `useAuthStore.user`.
+5. Neu thay avatar hoac background, frontend upload file qua multipart form-data.
+6. Backend upload len Cloudinary, luu URL vao `User` model, tra URL moi ve cho client.
+7. Khi can xem profile cua nguoi khac, frontend goi endpoint read-only theo `userId`.
+
+#### Truong hop loi va rang buoc
+
+- displayName hoac email rong -> tra `400`.
+- email da ton tai -> tra `409`.
+- phone neu co thi khong duoc trung -> tra `409`.
+- doi mat khau phai co ca `currentPassword` va `newPassword`.
+- `newPassword` phai du do dai toi thieu.
+- mat khau cu sai -> tra `401`.
+- upload file ma khong co file -> tra `400`.
+
+#### Noi dung ky thuat can giu de hoan thien
+
+- backend profile flow nam trong `userController.js` va `userRoute.js`.
+- `authMe` lay user tu `req.user`, nghia la profile cua minh phu thuoc truc tiep vao auth middleware.
+- `updateMyProfile` dang co co che normalize `displayName`, `email`, `phone`, `bio` truoc khi update.
+- `updateAccountSecurity` tach rieng khoi profile thong thuong de tranh tron logic profile voi logic bao mat.
+- upload avatar/background dung multer memory storage + Cloudinary helpers trong `uploadMiddleware.js`.
+- frontend tach ro `useUserStore` cho thao tac profile va `useAuthStore` cho session/auth state.
+- sau khi update avatar hoac profile, frontend refetch hoac dong bo lai conversation de tranh avatar/displayName cu trong khung chat.
+
+### 21.4 Nhom chuc nang ket ban va tham gia nhom cho cac tai khoan
+
+#### Use case tong quan
+
+- user tim kiem tai khoan khac theo username.
+- user gui loi moi ket ban kem loi nhan ngan.
+- user nhan, chap nhan hoac tu choi loi moi ket ban.
+- user xem danh sach ban be hien tai.
+- user huy ket ban va dong thoi xoa direct conversation lien quan.
+- user tao nhom chat, tim nhom de tham gia, tham gia nhom, roi nhom.
+- group owner kick thanh vien khoi nhom.
+
+#### Luong nghiep vu chinh
+
+1. User tim username qua search API.
+2. User gui friend request.
+3. Backend tao `FriendRequest` va tao thong bao real-time cho nguoi nhan.
+4. Nguoi nhan chap nhan -> backend tao `Friend`, xoa request, xoa notification cu va emit `friends-updated`.
+5. Khi tao direct conversation, backend dam bao hai user la ban qua middleware friendship check.
+6. Khi tao group, creator them danh sach thanh vien, backend tao conversation type `group` va emit `new-group`.
+7. User co the tim group chua tham gia theo ten, sau do `joinGroup`.
+8. User roi nhom hoac bi kick -> backend cap nhat `participants`, `unreadCounts`, `seenBy` va emit `conversation-updated`.
+
+#### Truong hop loi va rang buoc
+
+- khong the gui loi moi ket ban cho chinh minh.
+- khong the gui loi moi neu da la ban hoac da co request pending.
+- khong the nhan/tu choi request cua nguoi khac.
+- direct chat va gui direct message chi hop le khi co quan he ban be.
+- chi conversation type `group` moi duoc join, leave, kick.
+- khong duoc join group neu da la thanh vien.
+- chi truong nhom moi duoc kick thanh vien.
+
+#### Noi dung ky thuat can giu de hoan thien
+
+- friend flow nam o `friendController.js`, `Friend.js`, `FriendRequest.js`, `friendMiddleware.js`.
+- friendship dang duoc chuan hoa theo cap `userA`, `userB` de tranh trung cap ban be.
+- notification duoc dung lam kenh thong bao chinh cho friend request, group joined, group kicked.
+- group membership thuc te nam trong `Conversation.participants`, khong can them collection membership rieng.
+- `unfriend` hien tai con xoa ca direct conversation va lich su message, day la quyet dinh nghiep vu quan trong can giu dong bo neu mo rong tinh nang.
+- frontend friend/group orchestration nam o `useFriendStore`, `useChatStore`, `friendService`, `chatService`.
+- socket event lien quan nhom va ban be gom `friends-updated`, `new-group`, `conversation-updated`, `conversation-removed`.
+
+### 21.5 Nhom chuc nang quan ly khung chat
+
+#### Use case tong quan
+
+- user xem danh sach conversation va chon conversation dang hoat dong.
+- user gui tin nhan direct hoac group.
+- user gui text, anh, video, GIF hoac file dinh kem thong dung.
+- user xem lich su tin nhan theo phan trang.
+- user danh dau da xem tin nhan.
+- user reply tin nhan, tha reaction, xem seen avatars.
+- user ghim tin nhan trong conversation; voi group thi owner co quyen quan ly pin.
+- user nhan cap nhat real-time khi co tin nhan moi, reaction moi, seen moi, thong bao moi.
+
+#### Luong nghiep vu chinh
+
+1. Sau dang nhap, frontend fetch conversations va ket noi socket.
+2. Socket auto join cac room conversation cua user.
+3. Khi user mo mot conversation, frontend fetch message history theo `cursor`.
+4. User nhap noi dung trong `MessageInput`; neu co file thi upload media truoc.
+5. Frontend goi API gui tin nhan direct hoac group.
+6. Backend tao `Message`, cap nhat `Conversation.lastMessage`, `lastMessageAt`, `unreadCounts`, `seenBy`, sau do emit `new-message`.
+7. Frontend nhan event, merge message vao state, cap nhat conversation va neu dang mo khung chat do thi goi `markAsSeen()`.
+8. Khi user tha reaction hoac pin tin nhan, backend cap nhat DB va emit event tuong ung cho tat ca client trong room.
+
+#### Truong hop loi va rang buoc
+
+- khong duoc gui message neu khong co text va cung khong co media.
+- reply target phai ton tai va thuoc dung conversation.
+- reaction chi chap nhan tap emoji da whitelist.
+- user khong nam trong conversation thi khong duoc tha reaction hoac thao tac tren message conversation do.
+- voi group, chi owner moi duoc pin hoac bo pin theo logic hien tai.
+- pagination message dung `createdAt < cursor`, nen can giu sort nhat quan khi mo rong truy van.
+
+#### Noi dung ky thuat can giu de hoan thien
+
+- backend chat flow tap trung o `messageController.js`, `conversationController.js`, `messageHelper.js`, `Message.js`, `Conversation.js`.
+- `Conversation` hien la aggregate root cho metadata chat: `lastMessage`, `seenBy`, `unreadCounts`, `pinnedMessage`.
+- frontend chat state tap trung o `useChatStore`, socket lifecycle o `useSocketStore`, UI o `ChatWindowLayout`, `MessageInput`, `MessageItem`.
+- attachment flow hien tai la upload truoc, gui message sau. Neu muon them progress UI hoac retry, phai bam vao flow nay.
+- `messages` dang de in-memory theo `conversationId`, con `conversations` duoc persist vao `sessionStorage`.
+- mark-as-seen hien la co che chu dong tu client khi dang mo active conversation va co unread > 0.
+- realtime contract hien tai can giu on dinh cho cac event: `new-message`, `message-reaction-updated`, `read-message`, `conversation-updated`, `conversation-removed`.
+
+### 21.6 Nhom chuc nang tich hop bot AI theo huong he chuyen gia
+
+#### Use case tong quan
+
+- group owner bat hoac tat cac bot co san trong tung nhom.
+- thanh vien nhom mention bot bang trigger co dinh de yeu cau tra loi.
+- bot phan tich noi dung cau hoi va tra ve cau tra loi trong pham vi tri thuc da duoc dinh nghia.
+- bot reply xuat hien trong luong chat nhu mot message that, co sender rieng va metadata rieng.
+
+#### Luong nghiep vu chinh
+
+1. Group owner mo `GroupInfoDialog` va chon bot can bat.
+2. Frontend goi API cap nhat `group.bots` trong conversation.
+3. User gui group message co mention trigger, vi du `@botGame`.
+4. Backend luu user message nhu binh thuong.
+5. `botService` detect bot trigger, kiem tra so luong trigger va trang thai enable trong group.
+6. Engine cua bot normalize text, classify intent bang Naive Bayes + TF-IDF, tim entity va suy dien qua tap luat IF-THEN.
+7. Neu can them ngu canh, service lay recent messages va thu suy luan lai.
+8. Neu co ket qua hop le, backend tao mot `bot` message va emit `new-message` nhu message user thong thuong.
+9. Frontend render bot badge, mention highlight va preview metadata nhu cac message khac.
+
+#### Truong hop loi va rang buoc
+
+- bot chi hoat dong trong `group`, khong dung cho `direct`.
+- message mention nhieu hon 1 bot trong cung mot lan gui -> bo qua bot flow.
+- bot chua duoc bat trong group -> khong tra loi.
+- classifier khong du tin cay hoac khong match du intent/entity -> tra fallback ngan gon.
+- bot khong tu nhay vao tin nhan neu khong bi mention dung trigger.
+- hien tai moi bot knowledge la backend-managed, user khong tu sua duoc tri thuc tren UI.
+
+#### Noi dung ky thuat can giu de hoan thien
+
+- source of truth cua bot nam trong `backend/src/ai/bots/*.json` va registry/engine chung, khong nam trong controller.
+- `Conversation.group.bots` la noi luu enablement theo tung group.
+- `Message.messageType = "bot"` va `botMeta` la co so de frontend phan biet va render bot message.
+- bot system user duoc `resolveBotUser()` tao/duy tri trong collection `User` voi `accountType: "system_bot"`.
+- engine hien tai gom `tfidfVectorizer.js`, `naiveBayes.js`, `forwardChaining.js`, `expertBotEngine.js`.
+- neu them bot moi, uu tien them data pack moi vao `backend/src/ai/bots/` va dang ky qua registry, khong copy nhan logic controller/service.
+- neu mo rong kho tri thuc bot cu, can cap nhat dong bo `examples`, `entities`, `rules`, `responses` de tranh classifier va rule base lech nhau.
+
+### 21.7 Goi y cach trinh bay nhom chuc nang trong bao cao hoac handoff
+
+Neu can viet lai gon hon cho tai lieu bao cao, moi nhom chuc nang co the trinh bay theo 4 dong co dinh:
+
+1. muc tieu nghiep vu cua nhom chuc nang
+2. tac nhan va quyen han lien quan
+3. luong xu ly chinh frontend -> backend -> database -> realtime
+4. cac rang buoc bao mat, validate va gioi han ky thuat can giu
+
+## 22. Ket luan
 
 Neu dung dung file nay lam base, moi thay doi trong tuong lai nen duoc xem qua 4 lop sau truoc khi code:
 

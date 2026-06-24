@@ -1,3 +1,4 @@
+// Mongoose model luu tai khoan con nguoi va system bot cung thong tin profile co ban.
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(

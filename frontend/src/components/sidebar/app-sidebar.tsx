@@ -1,3 +1,4 @@
+// Sidebar chinh cua ung dung, gom navigation, user menu va cac khoi truy cap nhanh trong chat app.
 import { NavUser } from "@/components/sidebar/nav-user";
 import {
   Sidebar,

@@ -1,3 +1,4 @@
+// Dinh nghia cac endpoint thong tin nguoi dung, profile, bao mat va upload hinh anh ca nhan.
 import express from "express";
 import {
   authMe,

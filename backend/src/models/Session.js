@@ -1,3 +1,4 @@
+// Mongoose model luu refresh token va thoi han session cho auth flow dang nhap.
 import mongoose from "mongoose";
 
 const sessionSchema = new mongoose.Schema(

@@ -1,3 +1,4 @@
+// Gom cac API conversation/message/group chat va bot settings dung cho chat domain.
 import api from "@/lib/axios";
 import type {
   BotDefinition,

@@ -1,3 +1,4 @@
+// Zustand store quan ly search user, friend request, danh sach ban be va huy ket ban.
 import { friendService } from "@/services/friendService";
 import type { FriendState } from "@/types/store";
 import { create } from "zustand";

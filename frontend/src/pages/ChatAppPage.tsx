@@ -1,3 +1,4 @@
+// Trang chat private, ghep sidebar va khung chat chinh sau khi nguoi dung da dang nhap.
 import ChatWindowLayout from "@/components/chat/ChatWindowLayout";
 import { AppSidebar } from "@/components/sidebar/app-sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";

@@ -1,3 +1,4 @@
+// Render tung message cung media, reaction, reply preview, pin state va bot metadata.
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useChatStore } from "@/stores/useChatStore";
 import { cn, formatMessageTime, splitTextWithMentions } from "@/lib/utils";

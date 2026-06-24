@@ -1,3 +1,4 @@
+// Nut mo luong tao direct conversation moi tu danh sach ban be hien co.
 import { useFriendStore } from "@/stores/useFriendStore";
 import { Card } from "../ui/card";
 import { Dialog, DialogTrigger } from "../ui/dialog";

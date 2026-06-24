@@ -1,3 +1,4 @@
+// Hien thong tin conversation dang chon va cac hanh dong chinh o dau khung chat.
 import { useChatStore } from "@/stores/useChatStore";
 import type { Conversation } from "@/types/chat";
 import { SidebarTrigger } from "../ui/sidebar";

@@ -1,3 +1,4 @@
+// Chua cac utility dung chung cho class merge, dinh dang va xu ly mention trong giao dien chat.
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 

@@ -1,3 +1,4 @@
+// Gom cac API tim ban, ket ban, danh sach ban be va quan ly friend request.
 import api from "@/lib/axios";
 
 export const friendService = {

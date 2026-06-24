@@ -1,3 +1,4 @@
+// Mongoose model luu quan he ban be theo cap user da duoc chuan hoa de tranh trung lap.
 import mongoose from "mongoose";
 
 const friendSchema = new mongoose.Schema(

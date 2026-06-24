@@ -1,3 +1,4 @@
+// Dinh nghia cac contract TypeScript cho user, profile va notification domain.
 export interface User {
   _id: string;
   username: string;

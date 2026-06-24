@@ -1,3 +1,4 @@
+// Dinh nghia cac endpoint lien quan den ban be va loi moi ket ban.
 import express from "express";
 
 import {

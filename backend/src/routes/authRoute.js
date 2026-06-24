@@ -1,3 +1,4 @@
+// Dinh nghia cac endpoint cong khai cho dang ky, dang nhap, dang xuat va refresh token.
 import express from "express";
 import {
   refreshToken,

@@ -1,3 +1,4 @@
+// Chua helper cap nhat metadata conversation va emit su kien socket sau khi tao message.
 export const updateConversationAfterCreateMessage = (
   conversation,
   message,

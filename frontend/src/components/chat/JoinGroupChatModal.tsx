@@ -1,3 +1,4 @@
+// Dialog tim nhom co san theo ten va cho phep user tham gia nhom phu hop.
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Users } from "lucide-react";
 import { useChatStore } from "@/stores/useChatStore";

@@ -1,3 +1,4 @@
+// Hien danh sach direct conversations duoc suy ra tu danh sach ban be va keyword loc.
 import { useFriendStore } from "@/stores/useFriendStore";
 import { useChatStore } from "@/stores/useChatStore";
 import DirectMessageCard from "./DirectMessageCard";

@@ -1,3 +1,4 @@
+// Xu ly upload media, gui tin nhan direct/group, reaction, pin va kich hoat bot reply trong luong chat.
 import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
 import {

@@ -1,3 +1,4 @@
+// Render lich su tin nhan, infinite scroll va dong bo cuon cho conversation dang mo.
 import { useChatStore } from "@/stores/useChatStore";
 import ChatWelcomeScreen from "./ChatWelcomeScreen";
 import MessageItem from "./MessageItem";

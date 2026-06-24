@@ -1,3 +1,4 @@
+// Trien khai vectorizer TF-IDF dung cho train/predict va tinh do tuong dong van ban cua bot.
 const DEFAULT_STOPWORDS = new Set([
   "a",
   "an",

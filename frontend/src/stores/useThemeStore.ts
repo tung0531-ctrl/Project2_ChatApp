@@ -1,3 +1,4 @@
+// Zustand store don gian de luu theme sang/toi va persist lua chon giao dien.
 import type { ThemeState } from "@/types/store";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";

@@ -1,3 +1,4 @@
+// Nap va parse bot definition JSON thanh du lieu dau vao cho registry va AI engine.
 import fs from "fs";
 import path from "path";
 

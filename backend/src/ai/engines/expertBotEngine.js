@@ -1,3 +1,4 @@
+// Ghep classifier, entity matching va forward chaining thanh mot engine he chuyen gia dung chung.
 import { NaiveBayesClassifier } from "./naiveBayes.js";
 import { runForwardChaining } from "./forwardChaining.js";
 

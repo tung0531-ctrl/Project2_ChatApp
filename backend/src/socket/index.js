@@ -1,3 +1,4 @@
+// Khoi tao Socket.IO server, xac thuc ket noi va quan ly room online/conversation cho tung user.
 import { Server } from "socket.io";
 import http from "http";
 import express from "express";

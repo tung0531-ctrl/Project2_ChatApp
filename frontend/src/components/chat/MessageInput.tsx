@@ -1,3 +1,4 @@
+// O nhap tin nhan chinh ho tro text, media, reply-to va mention user/bot trong group chat.
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { BotDefinition, Conversation, Message } from "@/types/chat";
 import { useEffect, useRef, useState } from "react";

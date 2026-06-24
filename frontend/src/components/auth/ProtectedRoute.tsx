@@ -1,3 +1,4 @@
+// Chan route private, tu dong refresh/fetchMe khi can va chi cho user hop le vao khu vuc chat.
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router";

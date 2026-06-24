@@ -1,4 +1,5 @@
 // @ts-nocheck
+// Xac thuc access token JWT cho cac route private va nap thong tin user vao req.user.
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 

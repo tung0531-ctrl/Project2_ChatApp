@@ -1,3 +1,4 @@
+// Trang dang ky public, boc layout va hien form tao tai khoan moi.
 import { SignupForm } from "@/components/auth/signup-form";
 
 const SignUpPage = () => {

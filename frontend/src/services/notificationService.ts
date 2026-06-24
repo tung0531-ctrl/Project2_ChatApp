@@ -1,3 +1,4 @@
+// Gom cac API lay thong bao, danh dau da doc va xoa mem thong bao.
 import api from "@/lib/axios";
 import type { Notification } from "@/types/user";
 

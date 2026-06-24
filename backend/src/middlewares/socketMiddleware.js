@@ -1,3 +1,4 @@
+// Xac thuc JWT cho ket noi Socket.IO va gan user vao socket de dung trong realtime flow.
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 

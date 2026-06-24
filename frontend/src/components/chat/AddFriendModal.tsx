@@ -1,3 +1,4 @@
+// Dialog tim nguoi dung theo username va gui loi moi ket ban ngay trong giao dien chat.
 import { useEffect, useState } from "react";
 import {
   Dialog,

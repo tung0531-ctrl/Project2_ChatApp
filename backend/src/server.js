@@ -1,3 +1,4 @@
+// Khoi tao backend Express, nap middleware chung, mount route va mo cong server sau khi ket noi DB.
 import express from "express";
 import dotenv from "dotenv";
 import { connectDB } from "./libs/db.js";

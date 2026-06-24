@@ -1,3 +1,4 @@
+// Dinh nghia cac endpoint gui tin nhan, upload media va thao tac tren message.
 import express from "express";
 
 import {

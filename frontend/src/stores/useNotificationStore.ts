@@ -1,3 +1,4 @@
+// Zustand store luu thong bao, unread badge va cac thao tac an/mark read tren client.
 import { create } from "zustand";
 import type { NotificationState } from "@/types/store";
 import { notificationService } from "@/services/notificationService";

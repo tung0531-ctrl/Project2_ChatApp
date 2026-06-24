@@ -1,3 +1,4 @@
+// Cau hinh multer va helper upload file len Cloudinary cho avatar, background va media chat.
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 

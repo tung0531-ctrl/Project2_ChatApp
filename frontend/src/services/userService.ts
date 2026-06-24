@@ -1,3 +1,4 @@
+// Gom cac API profile, bao mat tai khoan va upload avatar/background cua user.
 import api from "@/lib/axios";
 import type {
   UpdateAccountSecurityPayload,

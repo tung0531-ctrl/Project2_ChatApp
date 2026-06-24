@@ -1,3 +1,4 @@
+// Zustand store quan ly ket noi Socket.IO va dong bo state realtime vao cac store khac.
 import { create } from "zustand";
 import { io, type Socket } from "socket.io-client";
 import { useAuthStore } from "./useAuthStore";

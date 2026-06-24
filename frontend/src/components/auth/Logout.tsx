@@ -1,3 +1,4 @@
+// Nut dang xuat de dong phien hien tai va dua nguoi dung ve man hinh auth.
 import { Button } from "../ui/button";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { LogOut } from "lucide-react";

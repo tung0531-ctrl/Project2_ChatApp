@@ -1,3 +1,4 @@
+// Tao thong bao theo mot diem dung chung va emit realtime den dung nguoi nhan.
 import Notification from "../models/Notification.js";
 import { io } from "../socket/index.js";
 

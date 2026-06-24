@@ -1,3 +1,4 @@
+// Form dang ky gom validation dau vao va goi auth flow tao tai khoan moi.
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

@@ -1,3 +1,4 @@
+// Zustand store trung tam cho conversations, messages, group actions va upload/send message flow.
 import { chatService } from "@/services/chatService";
 import type { ChatState } from "@/types/store";
 import { create } from "zustand";
