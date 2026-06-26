@@ -19,7 +19,7 @@ export const normalizeText = (text = "") => {
     .trim();
 };
 
-const normalizeSynonyms = (text = "", synonymMap = {}) => {
+export const normalizeSynonyms = (text = "", synonymMap = {}) => {
   if (!text) {
     return text;
   }
@@ -247,9 +247,29 @@ export const createExpertBotEngine = (definition) => {
     text: normalizeSynonyms(normalizeText(example.text), synonymMap),
   }));
   const classifierOptions = definition.classifier ?? {};
-  const classifier = classifierOptions.type === "svm"
-    ? new SupportVectorMachineClassifier(normalizedExamples, classifierOptions)
-    : new NaiveBayesClassifier(normalizedExamples, classifierOptions);
+  let classifier;
+
+  if (classifierOptions.type === "svm") {
+    if (classifierOptions.pretrainedModelPath) {
+      try {
+        classifier = SupportVectorMachineClassifier.fromFile(
+          classifierOptions.pretrainedModelPath,
+          classifierOptions,
+        );
+      } catch (error) {
+        console.warn(
+          `[${definition.botId}] Failed to load pretrained SVM model from ${classifierOptions.pretrainedModelPath}. Falling back to on-boot training. ${error.message}`,
+        );
+      }
+    }
+
+    if (!classifier) {
+      classifier = new SupportVectorMachineClassifier(normalizedExamples, classifierOptions);
+    }
+  } else {
+    classifier = new NaiveBayesClassifier(normalizedExamples, classifierOptions);
+  }
+
   const indexedEntities = createEntityIndex(definition.entities);
   const entityLookup = createEntityLookup(definition.entities);
   const normalizedRules = normalizeRules(definition.rules);

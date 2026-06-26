@@ -160,4 +160,27 @@ export class TfidfVectorizer {
       .slice(0, limit)
       .map(([term]) => term);
   }
+
+  toJSON() {
+    return {
+      ngramRange: this.ngramRange,
+      stopwords: Array.from(this.stopwords),
+      documentCount: this.documentCount,
+      documentFrequency: Array.from(this.documentFrequency.entries()),
+      vocabulary: Array.from(this.vocabulary.values()),
+    };
+  }
+
+  static fromJSON(state = {}) {
+    const vectorizer = new TfidfVectorizer([], {
+      ngramRange: state.ngramRange,
+      stopwords: state.stopwords ?? [],
+    });
+
+    vectorizer.documentCount = state.documentCount ?? 0;
+    vectorizer.documentFrequency = new Map(state.documentFrequency ?? []);
+    vectorizer.vocabulary = new Set(state.vocabulary ?? []);
+
+    return vectorizer;
+  }
 }

@@ -1,4 +1,7 @@
 // Trien khai linear SVM da lop toi gian bang SGD tren vector TF-IDF de suy ra intent cho botClinic.
+import fs from "fs";
+import path from "path";
+
 import { TfidfVectorizer } from "./tfidfVectorizer.js";
 
 const dotSparseVectors = (left = new Map(), right = new Map()) => {
@@ -63,17 +66,34 @@ const softmaxMargins = (items = []) => {
     .sort((left, right) => right.confidence - left.confidence);
 };
 
+const serializeWeightTable = (table = new Map()) => {
+  return Array.from(table.entries()).map(([intent, weights]) => [intent, Array.from(weights.entries())]);
+};
+
+const deserializeWeightTable = (entries = []) => {
+  return new Map(entries.map(([intent, weights]) => [intent, new Map(weights)]));
+};
+
 export class SupportVectorMachineClassifier {
   constructor(examples = [], options = {}) {
     this.epochs = options.epochs ?? 8;
     this.learningRate = options.learningRate ?? 0.08;
     this.decay = options.decay ?? 0.01;
     this.regularization = options.regularization ?? 0.0005;
+    this.modelLabel = options.modelLabel ?? "svm";
+    this.logPrefix = `[${this.modelLabel}]`;
     this.exampleIntents = new Map();
     this.exampleVectors = [];
     this.intentWeights = new Map();
     this.intentBiases = new Map();
     this.intents = [];
+    this.vectorizer = new TfidfVectorizer([], options.vectorizerOptions);
+
+    if (options.pretrainedState) {
+      this.hydrate(options.pretrainedState);
+      return;
+    }
+
     this.vectorizer = new TfidfVectorizer(
       examples.map((example) => example.text),
       options.vectorizerOptions,
@@ -82,8 +102,34 @@ export class SupportVectorMachineClassifier {
     this.train(examples);
   }
 
+  hydrate(state = {}) {
+    this.vectorizer = TfidfVectorizer.fromJSON(state.vectorizer ?? {});
+    this.intents = state.intents ?? [];
+    this.intentWeights = deserializeWeightTable(state.intentWeights ?? []);
+    this.intentBiases = new Map(state.intentBiases ?? []);
+    this.rebuildExampleIndexes(state.normalizedExamples ?? []);
+  }
+
+  rebuildExampleIndexes(examples = []) {
+    this.exampleIntents.clear();
+    this.exampleVectors = examples.map((example) => {
+      const vector = this.vectorizer.transformToSparse(example.text);
+
+      this.exampleIntents.set(example.text, example.intent);
+
+      return { ...example, vector };
+    });
+  }
+
   train(examples = []) {
+    console.info(
+      `${this.logPrefix} Training SVM model on ${examples.length} examples across ${this.epochs} epochs...`,
+    );
+    const startedAt = Date.now();
+
     this.intents = Array.from(new Set(examples.map((example) => example.intent))).sort();
+    this.intentWeights.clear();
+    this.intentBiases.clear();
 
     this.intents.forEach((intent) => {
       this.intentWeights.set(intent, new Map());
@@ -118,7 +164,16 @@ export class SupportVectorMachineClassifier {
 
         step += 1;
       }
+
+      const elapsedSeconds = ((Date.now() - startedAt) / 1000).toFixed(1);
+      console.info(
+        `${this.logPrefix} Finished epoch ${epoch + 1}/${this.epochs} after ${elapsedSeconds}s.`,
+      );
     }
+
+    console.info(
+      `${this.logPrefix} Training completed. Intents: ${this.intents.length}. Examples: ${trainingRows.length}.`,
+    );
   }
 
   predict(text = "") {
@@ -178,5 +233,45 @@ export class SupportVectorMachineClassifier {
       scores,
       keywords: this.vectorizer.extractKeywords(text),
     };
+  }
+
+  toJSON(metadata = {}) {
+    return {
+      meta: {
+        trainedAt: new Date().toISOString(),
+        modelLabel: this.modelLabel,
+        exampleCount: this.exampleVectors.length,
+        intentCount: this.intents.length,
+        epochs: this.epochs,
+        learningRate: this.learningRate,
+        decay: this.decay,
+        regularization: this.regularization,
+        ...metadata,
+      },
+      normalizedExamples: this.exampleVectors.map(({ text, intent }) => ({ text, intent })),
+      vectorizer: this.vectorizer.toJSON(),
+      intents: this.intents,
+      intentWeights: serializeWeightTable(this.intentWeights),
+      intentBiases: Array.from(this.intentBiases.entries()),
+    };
+  }
+
+  saveToFile(filePath, metadata = {}) {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, JSON.stringify(this.toJSON(metadata), null, 2), "utf8");
+    console.info(`${this.logPrefix} Saved pretrained SVM model to ${filePath}`);
+  }
+
+  static fromFile(filePath, options = {}) {
+    const state = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    const classifier = new SupportVectorMachineClassifier([], {
+      ...options,
+      pretrainedState: state,
+    });
+    const trainedAt = state.meta?.trainedAt ? ` Trained at ${state.meta.trainedAt}.` : "";
+
+    console.info(`${classifier.logPrefix} Loaded pretrained SVM model from ${filePath}.${trainedAt}`);
+
+    return classifier;
   }
 }
