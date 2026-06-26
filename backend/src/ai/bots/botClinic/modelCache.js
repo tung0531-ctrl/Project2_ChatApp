@@ -5,8 +5,14 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const BOT_CLINIC_MODEL_CACHE_PATH = path.resolve(__dirname, "modelCache.json");
+export const getClinicModelCachePath = (fileName = "modelCache.json") => {
+	return path.resolve(__dirname, fileName);
+};
 
-export const getBotClinicModelCachePath = () => BOT_CLINIC_MODEL_CACHE_PATH;
+export const hasClinicModelCache = (fileName = "modelCache.json") => {
+	return fs.existsSync(getClinicModelCachePath(fileName));
+};
 
-export const hasBotClinicModelCache = () => fs.existsSync(BOT_CLINIC_MODEL_CACHE_PATH);
+export const getBotClinicModelCachePath = () => getClinicModelCachePath("modelCache.json");
+
+export const hasBotClinicModelCache = () => hasClinicModelCache("modelCache.json");

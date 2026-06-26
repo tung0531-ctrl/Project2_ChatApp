@@ -1,4 +1,7 @@
 // Trien khai bo phan loai Naive Bayes nhe de du doan intent cho tung bot domain.
+import fs from "fs";
+import path from "path";
+
 import { TfidfVectorizer } from "./tfidfVectorizer.js";
 
 const dotSparseVectors = (left = new Map(), right = new Map()) => {
@@ -15,12 +18,21 @@ const dotSparseVectors = (left = new Map(), right = new Map()) => {
 export class NaiveBayesClassifier {
   constructor(examples = [], options = {}) {
     this.alpha = options.alpha ?? 1;
+    this.modelLabel = options.modelLabel ?? "naive-bayes";
+    this.logPrefix = `[${this.modelLabel}]`;
     this.intentDocCounts = new Map();
     this.intentFeatureWeights = new Map();
     this.intentTotalWeights = new Map();
     this.totalDocs = 0;
     this.exampleIntents = new Map();
     this.exampleVectors = [];
+    this.vectorizer = new TfidfVectorizer([], options.vectorizerOptions);
+
+    if (options.pretrainedState) {
+      this.hydrate(options.pretrainedState);
+      return;
+    }
+
     this.vectorizer = new TfidfVectorizer(
       examples.map((example) => example.text),
       options.vectorizerOptions,
@@ -29,7 +41,39 @@ export class NaiveBayesClassifier {
     this.train(examples);
   }
 
+  hydrate(state = {}) {
+    this.alpha = state.meta?.alpha ?? this.alpha;
+    this.vectorizer = TfidfVectorizer.fromJSON(state.vectorizer ?? {});
+    this.totalDocs = state.totalDocs ?? 0;
+    this.intentDocCounts = new Map(state.intentDocCounts ?? []);
+    this.intentFeatureWeights = new Map(
+      (state.intentFeatureWeights ?? []).map(([intent, weights]) => [intent, new Map(weights)]),
+    );
+    this.intentTotalWeights = new Map(state.intentTotalWeights ?? []);
+    this.rebuildExampleIndexes(state.normalizedExamples ?? []);
+  }
+
+  rebuildExampleIndexes(examples = []) {
+    this.exampleIntents.clear();
+    this.exampleVectors = examples.map((example) => {
+      const vector = this.vectorizer.transformToSparse(example.text);
+
+      this.exampleIntents.set(example.text, example.intent);
+
+      return { ...example, vector };
+    });
+  }
+
   train(examples = []) {
+    console.info(`${this.logPrefix} Training Naive Bayes model on ${examples.length} examples...`);
+
+    this.intentDocCounts.clear();
+    this.intentFeatureWeights.clear();
+    this.intentTotalWeights.clear();
+    this.totalDocs = 0;
+    this.exampleIntents.clear();
+    this.exampleVectors = [];
+
     examples.forEach(({ text, intent }) => {
       const vector = this.vectorizer.transformToSparse(text);
 
@@ -49,6 +93,10 @@ export class NaiveBayesClassifier {
         this.intentTotalWeights.set(intent, (this.intentTotalWeights.get(intent) || 0) + weight);
       });
     });
+
+    console.info(
+      `${this.logPrefix} Training completed. Intents: ${this.intentDocCounts.size}. Examples: ${this.totalDocs}.`,
+    );
   }
 
   predict(text = "") {
@@ -131,5 +179,47 @@ export class NaiveBayesClassifier {
       scores,
       keywords: this.vectorizer.extractKeywords(text),
     };
+  }
+
+  toJSON(metadata = {}) {
+    return {
+      meta: {
+        trainedAt: new Date().toISOString(),
+        modelLabel: this.modelLabel,
+        alpha: this.alpha,
+        exampleCount: this.exampleVectors.length,
+        intentCount: this.intentDocCounts.size,
+        ...metadata,
+      },
+      normalizedExamples: this.exampleVectors.map(({ text, intent }) => ({ text, intent })),
+      totalDocs: this.totalDocs,
+      vectorizer: this.vectorizer.toJSON(),
+      intentDocCounts: Array.from(this.intentDocCounts.entries()),
+      intentFeatureWeights: Array.from(this.intentFeatureWeights.entries()).map(
+        ([intent, weights]) => [intent, Array.from(weights.entries())],
+      ),
+      intentTotalWeights: Array.from(this.intentTotalWeights.entries()),
+    };
+  }
+
+  saveToFile(filePath, metadata = {}) {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, JSON.stringify(this.toJSON(metadata), null, 2), "utf8");
+    console.info(`${this.logPrefix} Saved pretrained Naive Bayes model to ${filePath}`);
+  }
+
+  static fromFile(filePath, options = {}) {
+    const state = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    const classifier = new NaiveBayesClassifier([], {
+      ...options,
+      pretrainedState: state,
+    });
+    const trainedAt = state.meta?.trainedAt ? ` Trained at ${state.meta.trainedAt}.` : "";
+
+    console.info(
+      `${classifier.logPrefix} Loaded pretrained Naive Bayes model from ${filePath}.${trainedAt}`,
+    );
+
+    return classifier;
   }
 }

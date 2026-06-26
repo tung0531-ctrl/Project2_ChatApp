@@ -25,6 +25,22 @@ const scenarios = [
       '@botClinic bot clinic lam duoc gi',
     ],
   },
+  {
+    botId: 'botClinicV2',
+    queries: [
+      '@botClinicV2 transfer 250 dollars to checking',
+      '@botClinicV2 set a reminder for tomorrow morning',
+      '@botClinicV2 what can bot clinic v2 do',
+    ],
+  },
+  {
+    botId: 'botClinicV3',
+    queries: [
+      '@botClinicV3 book a hotel in singapore',
+      '@botClinicV3 freeze my account temporarily',
+      '@botClinicV3 how does bot clinic v3 work',
+    ],
+  },
 ];
 
 for (const scenario of scenarios) {

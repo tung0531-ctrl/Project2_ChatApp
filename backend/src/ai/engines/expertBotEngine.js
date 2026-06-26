@@ -1,5 +1,6 @@
 // Ghep classifier, entity matching va forward chaining thanh mot engine he chuyen gia dung chung.
 import { NaiveBayesClassifier } from "./naiveBayes.js";
+import { LogisticRegressionClassifier } from "./logisticRegression.js";
 import { SupportVectorMachineClassifier } from "./supportVectorMachine.js";
 import { runForwardChaining } from "./forwardChaining.js";
 
@@ -247,27 +248,51 @@ export const createExpertBotEngine = (definition) => {
     text: normalizeSynonyms(normalizeText(example.text), synonymMap),
   }));
   const classifierOptions = definition.classifier ?? {};
+  const classifierType = classifierOptions.type ?? "naive-bayes";
   let classifier;
 
-  if (classifierOptions.type === "svm") {
-    if (classifierOptions.pretrainedModelPath) {
-      try {
-        classifier = SupportVectorMachineClassifier.fromFile(
-          classifierOptions.pretrainedModelPath,
-          classifierOptions,
-        );
-      } catch (error) {
-        console.warn(
-          `[${definition.botId}] Failed to load pretrained SVM model from ${classifierOptions.pretrainedModelPath}. Falling back to on-boot training. ${error.message}`,
-        );
-      }
+  const buildClassifier = () => {
+    if (classifierType === "svm") {
+      return new SupportVectorMachineClassifier(normalizedExamples, classifierOptions);
     }
 
-    if (!classifier) {
-      classifier = new SupportVectorMachineClassifier(normalizedExamples, classifierOptions);
+    if (classifierType === "logistic-regression") {
+      return new LogisticRegressionClassifier(normalizedExamples, classifierOptions);
     }
-  } else {
-    classifier = new NaiveBayesClassifier(normalizedExamples, classifierOptions);
+
+    return new NaiveBayesClassifier(normalizedExamples, classifierOptions);
+  };
+
+  const loadPretrainedClassifier = () => {
+    if (classifierType === "svm") {
+      return SupportVectorMachineClassifier.fromFile(
+        classifierOptions.pretrainedModelPath,
+        classifierOptions,
+      );
+    }
+
+    if (classifierType === "logistic-regression") {
+      return LogisticRegressionClassifier.fromFile(
+        classifierOptions.pretrainedModelPath,
+        classifierOptions,
+      );
+    }
+
+    return NaiveBayesClassifier.fromFile(classifierOptions.pretrainedModelPath, classifierOptions);
+  };
+
+  if (classifierOptions.pretrainedModelPath) {
+    try {
+      classifier = loadPretrainedClassifier();
+    } catch (error) {
+      console.warn(
+        `[${definition.botId}] Failed to load pretrained ${classifierType} model from ${classifierOptions.pretrainedModelPath}. Falling back to on-boot training. ${error.message}`,
+      );
+    }
+  }
+
+  if (!classifier) {
+    classifier = buildClassifier();
   }
 
   const indexedEntities = createEntityIndex(definition.entities);
