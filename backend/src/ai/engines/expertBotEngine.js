@@ -1,5 +1,6 @@
 // Ghep classifier, entity matching va forward chaining thanh mot engine he chuyen gia dung chung.
 import { NaiveBayesClassifier } from "./naiveBayes.js";
+import { SupportVectorMachineClassifier } from "./supportVectorMachine.js";
 import { runForwardChaining } from "./forwardChaining.js";
 
 const stripDiacritics = (text = "") =>
@@ -15,6 +16,25 @@ export const normalizeText = (text = "") => {
     .replace(/@[\w-]+/g, " ")
     .replace(/[^a-z0-9\s]/g, " ")
     .replace(/\s+/g, " ")
+    .trim();
+};
+
+const normalizeSynonyms = (text = "", synonymMap = {}) => {
+  if (!text) {
+    return text;
+  }
+
+  const normalizedEntries = Object.entries(synonymMap).map(([source, target]) => [
+    normalizeText(source),
+    normalizeText(target),
+  ]);
+
+  return text
+    .split(/\s+/)
+    .map((token) => {
+      return normalizedEntries.find(([source]) => source === token)?.[1] ?? token;
+    })
+    .join(" ")
     .trim();
 };
 
@@ -221,11 +241,15 @@ const normalizeRules = (rules = []) => {
 };
 
 export const createExpertBotEngine = (definition) => {
+  const synonymMap = definition.classifier?.synonymMap ?? definition.synonymMap ?? {};
   const normalizedExamples = definition.examples.map((example) => ({
     ...example,
-    text: normalizeText(example.text),
+    text: normalizeSynonyms(normalizeText(example.text), synonymMap),
   }));
-  const classifier = new NaiveBayesClassifier(normalizedExamples, definition.classifier ?? {});
+  const classifierOptions = definition.classifier ?? {};
+  const classifier = classifierOptions.type === "svm"
+    ? new SupportVectorMachineClassifier(normalizedExamples, classifierOptions)
+    : new NaiveBayesClassifier(normalizedExamples, classifierOptions);
   const indexedEntities = createEntityIndex(definition.entities);
   const entityLookup = createEntityLookup(definition.entities);
   const normalizedRules = normalizeRules(definition.rules);
@@ -238,7 +262,7 @@ export const createExpertBotEngine = (definition) => {
     description: definition.description,
     systemUser: definition.systemUser,
     run(rawText) {
-      const normalizedText = normalizeText(rawText);
+      const normalizedText = normalizeSynonyms(normalizeText(rawText), synonymMap);
       const prediction = classifier.predict(normalizedText);
       const matchedEntities = findMatchedEntities(normalizedText, indexedEntities);
       const primaryEntity = selectPrimaryEntity(matchedEntities, prediction.intent);

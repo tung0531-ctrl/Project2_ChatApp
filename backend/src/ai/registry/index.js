@@ -1,10 +1,12 @@
-// Dang ky cac bot definitions va khoi tao engine de cac phan khac co the tra cuu theo botId.
+// Dang ky dong thoi botGame cu va botClinic moi de ChatApp co the goi song song 2 bot.
 import { loadBotDefinition } from "../loaders/botLoader.js";
 import { createExpertBotEngine } from "../engines/expertBotEngine.js";
+import { createBotClinicDefinition } from "../bots/botClinic/definition.js";
 
 const botGameDefinition = loadBotDefinition("botGame.json");
+const botClinicDefinition = createBotClinicDefinition();
 
-const botDefinitions = [botGameDefinition];
+const botDefinitions = [botGameDefinition, botClinicDefinition];
 
 const botRegistry = new Map(
   botDefinitions.map((definition) => [definition.botId, createExpertBotEngine(definition)]),
