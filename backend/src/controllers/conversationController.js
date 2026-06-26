@@ -3,7 +3,18 @@ import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
 import { io } from "../socket/index.js";
 import { createNotification } from "../utils/notificationHelper.js";
-import { getAvailableBotDefinitions } from "../ai/registry/index.js";
+import {
+  getAvailableBotDefinitions,
+  getBotEngineById,
+} from "../ai/registry/index.js";
+import {
+  getAvailableLocalClincSplits,
+  readLocalClincExamplesBySplit,
+} from "../ai/bots/botClinic/datasetLoader.js";
+
+const clinicEvaluationJobs = new Map();
+const CLINIC_EVALUATION_JOB_TTL_MS = 15 * 60 * 1000;
+const CLINIC_EVALUATION_YIELD_INTERVAL = 25;
 
 const conversationPopulate = [
   {
@@ -127,6 +138,404 @@ const notifyGroupJoined = async ({ recipient, actor, groupName, conversationId, 
     groupName,
     conversationId,
   });
+
+const clinicEvaluationModels = [
+  {
+    botId: "botClinicV2",
+    label: "Naive Bayes",
+    shortLabel: "NB",
+  },
+  {
+    botId: "botClinic",
+    label: "SVM",
+    shortLabel: "SVM",
+  },
+  {
+    botId: "botClinicV3",
+    label: "Logistic Regression",
+    shortLabel: "LR",
+  },
+];
+
+const buildEvaluationStatusNote = (predictions = {}) => {
+  const modelEntries = Object.values(predictions);
+
+  if (!modelEntries.length) {
+    return "No predictions";
+  }
+
+  if (modelEntries.every((entry) => !entry.correct)) {
+    return "All models failed";
+  }
+
+  if (predictions.botClinic?.correct && !predictions.botClinicV3?.correct) {
+    return "SVM correct, Logistic wrong";
+  }
+
+  if (modelEntries.every((entry) => entry.correct)) {
+    return "All models correct";
+  }
+
+  return "Mixed results";
+};
+
+const createClinicEvaluationJobId = () =>
+  `clinic-eval-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+const scheduleClinicEvaluationJobCleanup = (jobId) => {
+  const timeout = setTimeout(() => {
+    clinicEvaluationJobs.delete(jobId);
+  }, CLINIC_EVALUATION_JOB_TTL_MS);
+
+  timeout.unref?.();
+};
+
+const updateClinicEvaluationJob = (jobId, updates) => {
+  const job = clinicEvaluationJobs.get(jobId);
+
+  if (!job) {
+    return;
+  }
+
+  Object.assign(job, updates, { updatedAt: Date.now() });
+};
+
+const yieldClinicEvaluationLoop = () =>
+  new Promise((resolve) => setImmediate(resolve));
+
+const buildClinicEvaluationRows = (
+  datasetId,
+  samples,
+  predictionMatrix,
+  runMatrix,
+  startIndex = 0,
+) =>
+  samples.map((sample, index) => {
+    const sampleIndex = startIndex + index;
+    const predictions = Object.fromEntries(
+      clinicEvaluationModels.map((model) => {
+        const prediction = predictionMatrix.get(model.botId)?.[sampleIndex] ?? null;
+
+        return [
+          model.botId,
+          prediction
+            ? {
+                predictedIntent: prediction.intent,
+                confidence: prediction.confidence,
+                correct: prediction.intent === sample.intent,
+                keywords: prediction.keywords,
+              }
+            : {
+                predictedIntent: null,
+                confidence: 0,
+                correct: false,
+                keywords: [],
+              },
+        ];
+      }),
+    );
+
+    const runDetails = Object.fromEntries(
+      clinicEvaluationModels.map((model) => {
+        const runResult = runMatrix.get(model.botId)?.[sampleIndex] ?? null;
+
+        return [
+          model.botId,
+          {
+            matchedIntent: runResult?.matchedIntent ?? null,
+            confidence: runResult?.confidence ?? 0,
+            firedRules: runResult?.firedRules ?? [],
+            response: runResult?.content ?? "",
+            usedFallback: runResult?.usedFallback ?? false,
+            needsContext: runResult?.needsContext ?? false,
+          },
+        ];
+      }),
+    );
+
+    return {
+      id: `${datasetId}-${index + 1}`,
+      text: sample.text,
+      intent: sample.intent,
+      predictions,
+      runDetails,
+      allModelsFailed: clinicEvaluationModels.every(
+        (model) => !predictions[model.botId]?.correct,
+      ),
+      modelContradiction:
+        Boolean(predictions.botClinic?.correct) &&
+        !Boolean(predictions.botClinicV3?.correct),
+      statusNote: buildEvaluationStatusNote(predictions),
+    };
+  });
+
+const buildClinicEvaluationResult = async (
+  datasetId,
+  { onProgress } = {},
+) => {
+  const includeOos = datasetId === "oos_test";
+  const samples = readLocalClincExamplesBySplit(datasetId, {
+    excludeOos: !includeOos,
+  });
+
+  if (!samples.length) {
+    const notFoundError = new Error("Không tìm thấy dữ liệu test cho dataset đã chọn");
+    notFoundError.statusCode = 404;
+    throw notFoundError;
+  }
+
+  const predictionMatrix = new Map();
+  const runMatrix = new Map();
+  const summaries = [];
+  const totalSteps = Math.max(1, samples.length * (clinicEvaluationModels.length * 2 + 1));
+  let processedSteps = 0;
+
+  const reportProgress = (message) => {
+    onProgress?.({
+      progressPercent: Math.min(99, Math.round((processedSteps / totalSteps) * 100)),
+      message,
+    });
+  };
+
+  for (const model of clinicEvaluationModels) {
+    const engine = getBotEngineById(model.botId);
+
+    if (!engine) {
+      processedSteps += samples.length * 2;
+      reportProgress(`Skipping ${model.label}`);
+      summaries.push({
+        botId: model.botId,
+        displayName: model.label,
+        shortLabel: model.shortLabel,
+        classifierType: null,
+        accuracy: 0,
+        total: samples.length,
+        correct: 0,
+        speedMs: 0,
+        averageLoss: null,
+        status: "Unavailable",
+      });
+      await yieldClinicEvaluationLoop();
+      continue;
+    }
+
+    const startedAt = Date.now();
+    const predictions = [];
+    const runResults = [];
+
+    for (let index = 0; index < samples.length; index += 1) {
+      predictions.push(engine.predictIntent(samples[index].text));
+      processedSteps += 1;
+
+      if (
+        index === 0 ||
+        (index + 1) % CLINIC_EVALUATION_YIELD_INTERVAL === 0 ||
+        index === samples.length - 1
+      ) {
+        reportProgress(
+          `${model.label}: ${Math.min(index + 1, samples.length)}/${samples.length}`,
+        );
+      }
+
+      if ((index + 1) % CLINIC_EVALUATION_YIELD_INTERVAL === 0) {
+        await yieldClinicEvaluationLoop();
+      }
+
+      runResults.push(engine.run(samples[index].text));
+      processedSteps += 1;
+
+      if ((index + 1) % CLINIC_EVALUATION_YIELD_INTERVAL === 0) {
+        await yieldClinicEvaluationLoop();
+      }
+    }
+
+    const elapsedMs = Date.now() - startedAt;
+    const correct = predictions.reduce((count, prediction, index) => {
+      return count + (prediction.intent === samples[index].intent ? 1 : 0);
+    }, 0);
+
+    predictionMatrix.set(model.botId, predictions);
+    runMatrix.set(model.botId, runResults);
+    summaries.push({
+      botId: model.botId,
+      displayName: model.label,
+      shortLabel: model.shortLabel,
+      classifierType: engine.classifierType,
+      accuracy: Number(((correct / samples.length) * 100).toFixed(2)),
+      total: samples.length,
+      correct,
+      speedMs: elapsedMs,
+      averageLoss: engine.evaluateAverageLoss(samples),
+      status: "Ready",
+    });
+
+    await yieldClinicEvaluationLoop();
+  }
+
+  const rows = [];
+  for (let index = 0; index < samples.length; index += 1) {
+    rows.push(
+      buildClinicEvaluationRows(
+        datasetId,
+        [samples[index]],
+        predictionMatrix,
+        runMatrix,
+        index,
+      )[0],
+    );
+    processedSteps += 1;
+
+    if (
+      index === 0 ||
+      (index + 1) % CLINIC_EVALUATION_YIELD_INTERVAL === 0 ||
+      index === samples.length - 1
+    ) {
+      reportProgress(`Building table: ${Math.min(index + 1, samples.length)}/${samples.length}`);
+    }
+
+    if ((index + 1) % CLINIC_EVALUATION_YIELD_INTERVAL === 0) {
+      await yieldClinicEvaluationLoop();
+    }
+  }
+
+  return {
+    dataset: datasetId,
+    totalSamples: samples.length,
+    availableDatasets: getAvailableLocalClincSplits(),
+    summaries,
+    rows,
+  };
+};
+
+const runClinicEvaluationJob = async (jobId, datasetId) => {
+  try {
+    updateClinicEvaluationJob(jobId, {
+      status: "running",
+      progressPercent: 1,
+      message: "Preparing evaluation...",
+      dataset: datasetId,
+      error: null,
+    });
+
+    const result = await buildClinicEvaluationResult(datasetId, {
+      onProgress: ({ progressPercent, message }) => {
+        updateClinicEvaluationJob(jobId, {
+          status: "running",
+          progressPercent,
+          message,
+        });
+      },
+    });
+
+    updateClinicEvaluationJob(jobId, {
+      status: "completed",
+      progressPercent: 100,
+      message: "Completed",
+      result,
+    });
+  } catch (error) {
+    updateClinicEvaluationJob(jobId, {
+      status: "failed",
+      progressPercent: 100,
+      message: "Failed",
+      error: error.message || "Lỗi hệ thống",
+    });
+  }
+};
+
+const buildClinicPredictionPayload = (text, expectedIntent = null) => {
+  return Object.fromEntries(
+    clinicEvaluationModels.map((model) => {
+      const engine = getBotEngineById(model.botId);
+
+      if (!engine) {
+        return [
+          model.botId,
+          {
+            predictedIntent: null,
+            confidence: 0,
+            correct: expectedIntent ? false : null,
+            keywords: [],
+          },
+        ];
+      }
+
+      const prediction = engine.predictIntent(text);
+
+      return [
+        model.botId,
+        {
+          predictedIntent: prediction.intent,
+          confidence: prediction.confidence,
+          correct: expectedIntent ? prediction.intent === expectedIntent : null,
+          keywords: prediction.keywords,
+        },
+      ];
+    }),
+  );
+};
+
+export const getClinicEvaluationDatasets = async (req, res) => {
+  try {
+    return res.status(200).json({
+      availableDatasets: getAvailableLocalClincSplits(),
+    });
+  } catch (error) {
+    console.error("Lỗi khi lấy metadata dataset clinic evaluation", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
+export const startClinicEvaluationJob = async (req, res) => {
+  try {
+    const datasetId = typeof req.body?.dataset === "string" ? req.body.dataset : "test";
+    const jobId = createClinicEvaluationJobId();
+
+    clinicEvaluationJobs.set(jobId, {
+      jobId,
+      dataset: datasetId,
+      status: "queued",
+      progressPercent: 0,
+      message: "Queued",
+      result: null,
+      error: null,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    scheduleClinicEvaluationJobCleanup(jobId);
+    void runClinicEvaluationJob(jobId, datasetId);
+
+    return res.status(202).json({ jobId });
+  } catch (error) {
+    console.error("Lỗi khi khởi tạo clinic evaluation job", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
+export const getClinicEvaluationJobStatus = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const job = clinicEvaluationJobs.get(jobId);
+
+    if (!job) {
+      return res.status(404).json({ message: "Không tìm thấy evaluation job" });
+    }
+
+    return res.status(200).json({
+      jobId: job.jobId,
+      dataset: job.dataset,
+      status: job.status,
+      progressPercent: job.progressPercent,
+      message: job.message,
+      result: job.status === "completed" ? job.result : null,
+      error: job.error,
+    });
+  } catch (error) {
+    console.error("Lỗi khi lấy clinic evaluation job status", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
 
 export const createConversation = async (req, res) => {
   try {
@@ -339,6 +748,39 @@ export const getAvailableBots = async (_req, res) => {
     return res.status(200).json({ bots: getAvailableBotDefinitions() });
   } catch (error) {
     console.error("Lỗi khi lấy danh sách bot khả dụng", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
+export const evaluateClinicBots = async (req, res) => {
+  try {
+    const datasetId = typeof req.query.dataset === "string" ? req.query.dataset : "test";
+    const result = await buildClinicEvaluationResult(datasetId);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Lỗi khi đánh giá offline clinic bots", error);
+    return res.status(error.statusCode || 500).json({ message: error.message || "Lỗi hệ thống" });
+  }
+};
+
+export const predictClinicBotsForInput = async (req, res) => {
+  try {
+    const text = typeof req.body?.text === "string" ? req.body.text.trim() : "";
+    const expectedIntentRaw =
+      typeof req.body?.expectedIntent === "string" ? req.body.expectedIntent.trim() : "";
+    const expectedIntent = expectedIntentRaw || null;
+
+    if (!text) {
+      return res.status(400).json({ message: "Input text is required" });
+    }
+
+    return res.status(200).json({
+      text,
+      expectedIntent,
+      predictions: buildClinicPredictionPayload(text, expectedIntent),
+    });
+  } catch (error) {
+    console.error("Lỗi khi dự đoán thủ công cho clinic bots", error);
     return res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };

@@ -20,6 +20,7 @@ export const normalizeText = (text = "") => {
     .trim();
 };
 
+
 export const normalizeSynonyms = (text = "", synonymMap = {}) => {
   if (!text) {
     return text;
@@ -306,6 +307,31 @@ export const createExpertBotEngine = (definition) => {
     trigger: definition.trigger,
     description: definition.description,
     systemUser: definition.systemUser,
+    classifierType,
+    predictIntent(rawText) {
+      const normalizedText = normalizeSynonyms(normalizeText(rawText), synonymMap);
+      const prediction = classifier.predict(normalizedText);
+
+      return {
+        normalizedText,
+        intent: prediction.intent,
+        confidence: prediction.confidence,
+        scores: prediction.scores ?? [],
+        keywords: prediction.keywords ?? [],
+      };
+    },
+    evaluateAverageLoss(examples = []) {
+      if (typeof classifier.evaluateAverageLoss !== "function") {
+        return null;
+      }
+
+      const normalizedExamples = examples.map((example) => ({
+        ...example,
+        text: normalizeSynonyms(normalizeText(example.text), synonymMap),
+      }));
+
+      return classifier.evaluateAverageLoss(normalizedExamples);
+    },
     run(rawText) {
       const normalizedText = normalizeSynonyms(normalizeText(rawText), synonymMap);
       const prediction = classifier.predict(normalizedText);

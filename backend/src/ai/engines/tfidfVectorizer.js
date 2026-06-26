@@ -1,57 +1,172 @@
 // Trien khai vectorizer TF-IDF dung cho train/predict va tinh do tuong dong van ban cua bot.
 const DEFAULT_STOPWORDS = new Set([
   "a",
+  "about",
+  "above",
+  "after",
+  "again",
+  "against",
+  "all",
+  "also",
+  "am",
+  "any",
   "an",
   "and",
+  "anyone",
+  "anything",
   "are",
+  "as",
+  "at",
   "ban",
+  "be",
+  "because",
+  "been",
+  "before",
+  "being",
   "biet",
+  "below",
+  "between",
+  "both",
+  "but",
+  "by",
+  "can",
   "cho",
   "co",
+  "could",
   "cua",
   "da",
   "day",
   "de",
   "den",
+  "did",
   "di",
+  "do",
+  "does",
+  "doing",
+  "don",
+  "down",
   "duoc",
+  "during",
+  "each",
+  "few",
+  "for",
+  "from",
+  "further",
   "gi",
   "giu",
   "goi",
+  "had",
   "hay",
+  "has",
+  "have",
+  "having",
+  "he",
+  "her",
+  "here",
+  "hers",
+  "herself",
   "hello",
+  "him",
+  "himself",
+  "his",
   "hoi",
+  "how",
+  "i",
+  "if",
+  "in",
+  "into",
   "is",
+  "it",
+  "its",
+  "itself",
   "la",
   "lam",
   "len",
+  "me",
+  "more",
+  "most",
+  "my",
+  "myself",
   "nao",
   "nay",
   "neu",
   "nhe",
   "nhi",
   "nho",
+  "no",
+  "nor",
+  "not",
   "nhu",
   "nua",
   "o",
+  "of",
+  "off",
+  "on",
+  "once",
+  "only",
   "oi",
+  "or",
+  "other",
+  "our",
+  "ours",
+  "ourselves",
+  "out",
+  "over",
+  "own",
   "ra",
   "roi",
+  "same",
   "se",
+  "she",
+  "should",
+  "so",
+  "some",
+  "such",
   "su",
   "tai",
+  "than",
+  "that",
+  "the",
+  "their",
+  "theirs",
+  "them",
+  "themselves",
+  "then",
+  "there",
+  "these",
   "the",
   "thi",
+  "this",
+  "those",
   "toi",
+  "too",
   "tra",
   "trong",
+  "under",
+  "until",
+  "up",
   "tu",
+  "very",
   "ve",
   "voi",
+  "was",
+  "we",
+  "were",
+  "when",
   "what",
   "where",
+  "which",
+  "while",
   "who",
+  "will",
+  "with",
+  "would",
   "why",
+  "you",
+  "your",
+  "yours",
+  "yourself",
+  "yourselves",
 ]);
 
 const countTerms = (terms = []) => {
@@ -72,7 +187,7 @@ export const tokenizeText = (text = "", stopwords = DEFAULT_STOPWORDS) => {
     .filter((token) => !stopwords.has(token));
 };
 
-const createNgrams = (tokens = [], ngramRange = [1, 3]) => {
+const createNgrams = (tokens = [], ngramRange = [1, 2]) => {
   const [minN, maxN] = ngramRange;
   const terms = [];
 
@@ -94,6 +209,8 @@ export class TfidfVectorizer {
   constructor(documents = [], options = {}) {
     this.ngramRange = options.ngramRange ?? [1, 2];
     this.stopwords = new Set([...(options.stopwords ?? []), ...DEFAULT_STOPWORDS]);
+    this.minDf = options.minDf ?? 1;
+    this.maxFeatures = options.maxFeatures ?? null;
     this.documentCount = 0;
     this.documentFrequency = new Map();
     this.vocabulary = new Set();
@@ -106,13 +223,30 @@ export class TfidfVectorizer {
     this.documentFrequency.clear();
     this.vocabulary.clear();
 
+    const rawDocumentFrequency = new Map();
+
     documents.forEach((document) => {
       const terms = new Set(this.getTerms(document));
 
       terms.forEach((term) => {
-        this.vocabulary.add(term);
-        this.documentFrequency.set(term, (this.documentFrequency.get(term) || 0) + 1);
+        rawDocumentFrequency.set(term, (rawDocumentFrequency.get(term) || 0) + 1);
       });
+    });
+
+    const filteredTerms = Array.from(rawDocumentFrequency.entries())
+      .filter(([, documentFrequency]) => documentFrequency >= this.minDf)
+      .sort((left, right) => {
+        if (right[1] !== left[1]) {
+          return right[1] - left[1];
+        }
+
+        return left[0].localeCompare(right[0]);
+      })
+      .slice(0, this.maxFeatures ?? Number.POSITIVE_INFINITY);
+
+    filteredTerms.forEach(([term, documentFrequency]) => {
+      this.vocabulary.add(term);
+      this.documentFrequency.set(term, documentFrequency);
     });
   }
 
@@ -165,6 +299,8 @@ export class TfidfVectorizer {
     return {
       ngramRange: this.ngramRange,
       stopwords: Array.from(this.stopwords),
+      minDf: this.minDf,
+      maxFeatures: this.maxFeatures,
       documentCount: this.documentCount,
       documentFrequency: Array.from(this.documentFrequency.entries()),
       vocabulary: Array.from(this.vocabulary.values()),
@@ -175,6 +311,8 @@ export class TfidfVectorizer {
     const vectorizer = new TfidfVectorizer([], {
       ngramRange: state.ngramRange,
       stopwords: state.stopwords ?? [],
+      minDf: state.minDf,
+      maxFeatures: state.maxFeatures,
     });
 
     vectorizer.documentCount = state.documentCount ?? 0;

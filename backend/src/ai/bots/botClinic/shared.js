@@ -33,6 +33,8 @@ export const clinicSharedClassifierOptions = {
   },
   vectorizerOptions: {
     ngramRange: [1, 2],
+    minDf: 2,
+    maxFeatures: 8000,
     stopwords: ["botclinic", "clinic", "bot", "hybrid", "chatbot", "please"],
   },
 };
@@ -89,10 +91,12 @@ export const clinicBotVariants = {
     modelCacheFile: "modelCacheV3.json",
     classifier: {
       type: "logistic-regression",
-      learningRate: 0.06,
-      decay: 0.01,
+      learningRate: 0.02,
+      decay: 0.05,
       regularization: 0.0005,
-      epochs: 10,
+      epochs: 50,
+      tolerance: 0.0001,
+      patience: 2,
       modelLabel: "botClinicV3",
     },
     systemUser: {

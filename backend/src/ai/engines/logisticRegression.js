@@ -28,23 +28,6 @@ const addScaledSparseVector = (target = new Map(), source = new Map(), scale = 1
   });
 };
 
-const scaleSparseVector = (source = new Map(), scale = 1) => {
-  if (scale === 1) {
-    return;
-  }
-
-  Array.from(source.entries()).forEach(([term, value]) => {
-    const nextValue = value * scale;
-
-    if (Math.abs(nextValue) < 1e-12) {
-      source.delete(term);
-      return;
-    }
-
-    source.set(term, nextValue);
-  });
-};
-
 const serializeWeightTable = (table = new Map()) => {
   return Array.from(table.entries()).map(([intent, weights]) => [intent, Array.from(weights.entries())]);
 };
@@ -54,6 +37,56 @@ const deserializeWeightTable = (entries = []) => {
 };
 
 const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000;
+
+const shuffleArray = (array = []) => {
+  for (let index = array.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [array[index], array[swapIndex]] = [array[swapIndex], array[index]];
+  }
+};
+
+const applyLazyDecayToTerm = ({
+  weights = new Map(),
+  lastUpdated = new Map(),
+  term,
+  totalSteps = 0,
+  shrinkFactor = 1,
+}) => {
+  const previousStep = lastUpdated.get(term) || 0;
+  const stepsPassed = totalSteps - previousStep;
+
+  if (stepsPassed <= 0) {
+    return;
+  }
+
+  const currentWeight = weights.get(term) || 0;
+  const nextWeight = currentWeight * shrinkFactor ** stepsPassed;
+
+  if (Math.abs(nextWeight) < 1e-12) {
+    weights.delete(term);
+  } else {
+    weights.set(term, nextWeight);
+  }
+
+  lastUpdated.set(term, totalSteps);
+};
+
+const settleLazyDecayForWeights = ({
+  weights = new Map(),
+  lastUpdated = new Map(),
+  totalSteps = 0,
+  shrinkFactor = 1,
+}) => {
+  Array.from(weights.keys()).forEach((term) => {
+    applyLazyDecayToTerm({
+      weights,
+      lastUpdated,
+      term,
+      totalSteps,
+      shrinkFactor,
+    });
+  });
+};
 
 const softmaxLogits = (items = []) => {
   if (!items.length) {
@@ -82,6 +115,8 @@ export class LogisticRegressionClassifier {
     this.learningRate = options.learningRate ?? 0.06;
     this.decay = options.decay ?? 0.01;
     this.regularization = options.regularization ?? 0.0005;
+    this.tolerance = options.tolerance ?? 0.0001;
+    this.patienceLimit = options.patience ?? 2;
     this.modelLabel = options.modelLabel ?? "logistic-regression";
     this.logPrefix = `[${this.modelLabel}]`;
     this.exampleIntents = new Map();
@@ -89,10 +124,17 @@ export class LogisticRegressionClassifier {
     this.intentWeights = new Map();
     this.intentBiases = new Map();
     this.intents = [];
+    this.lazyDecayState = null;
     this.vectorizer = new TfidfVectorizer([], options.vectorizerOptions);
 
     if (options.pretrainedState) {
       this.hydrate(options.pretrainedState);
+      this.applyOptionOverrides(options);
+
+      if (options.resumeTraining) {
+        this.train(examples, { resumeFromCurrentState: true });
+      }
+
       return;
     }
 
@@ -104,12 +146,64 @@ export class LogisticRegressionClassifier {
     this.train(examples);
   }
 
+  applyOptionOverrides(options = {}) {
+    if (Object.prototype.hasOwnProperty.call(options, "epochs")) {
+      this.epochs = options.epochs;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(options, "learningRate")) {
+      this.learningRate = options.learningRate;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(options, "decay")) {
+      this.decay = options.decay;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(options, "regularization")) {
+      this.regularization = options.regularization;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(options, "tolerance")) {
+      this.tolerance = options.tolerance;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(options, "patience")) {
+      this.patienceLimit = options.patience;
+    }
+  }
+
   hydrate(state = {}) {
+    this.epochs = state.meta?.epochs ?? this.epochs;
+    this.learningRate = state.meta?.learningRate ?? this.learningRate;
+    this.decay = state.meta?.decay ?? this.decay;
+    this.regularization = state.meta?.regularization ?? this.regularization;
+    this.tolerance = state.meta?.tolerance ?? this.tolerance;
+    this.patienceLimit = state.meta?.patience ?? this.patienceLimit;
     this.vectorizer = TfidfVectorizer.fromJSON(state.vectorizer ?? {});
     this.intents = state.intents ?? [];
     this.intentWeights = deserializeWeightTable(state.intentWeights ?? []);
     this.intentBiases = new Map(state.intentBiases ?? []);
+    this.lazyDecayState = null;
     this.rebuildExampleIndexes(state.normalizedExamples ?? []);
+  }
+
+  flushPendingLazyDecay() {
+    if (!this.lazyDecayState) {
+      return;
+    }
+
+    const { totalSteps = 0, shrinkFactor = 1, intentLastUpdated = new Map() } = this.lazyDecayState;
+
+    this.intents.forEach((intent) => {
+      settleLazyDecayForWeights({
+        weights: this.intentWeights.get(intent),
+        lastUpdated: intentLastUpdated.get(intent),
+        totalSteps,
+        shrinkFactor,
+      });
+    });
+
+    this.lazyDecayState = null;
   }
 
   rebuildExampleIndexes(examples = []) {
@@ -123,22 +217,74 @@ export class LogisticRegressionClassifier {
     });
   }
 
-  train(examples = []) {
+  evaluateAverageLoss(examples = []) {
+    if (!examples.length || this.intents.length === 0) {
+      return 0;
+    }
+
+    let totalLoss = 0;
+
+    examples.forEach((example) => {
+      const vector = this.vectorizer.transformToSparse(example.text);
+      const logits = this.intents.map((intent) => ({
+        intent,
+        logit:
+          dotSparseVectors(this.intentWeights.get(intent) || new Map(), vector) +
+          (this.intentBiases.get(intent) || 0),
+      }));
+      const probabilities = softmaxLogits(logits);
+      const matchedProbability =
+        probabilities.find((probability) => probability.intent === example.intent)?.confidence ?? 0;
+
+      totalLoss += -Math.log(Math.max(matchedProbability, 1e-12));
+    });
+
+    return totalLoss / examples.length;
+  }
+
+  train(examples = [], options = {}) {
+    const resumeFromCurrentState = options.resumeFromCurrentState ?? false;
+
     console.info(
-      `${this.logPrefix} Training logistic regression model on ${examples.length} examples across ${this.epochs} epochs...`,
+      `${this.logPrefix} ${resumeFromCurrentState ? "Resuming" : "Training"} logistic regression model on ${examples.length} examples across ${this.epochs} epochs...`,
     );
     const startedAt = Date.now();
     let lastHeartbeatAt = startedAt;
-
-    this.intents = Array.from(new Set(examples.map((example) => example.intent))).sort();
-    this.intentWeights.clear();
-    this.intentBiases.clear();
+    let currentEta = this.learningRate;
+    let previousLoss = Number.POSITIVE_INFINITY;
+    let patience = 0;
+    let totalSteps = 0;
     this.exampleIntents.clear();
     this.exampleVectors = [];
+    const intentLastUpdated = new Map();
+
+    const discoveredIntents = Array.from(new Set(examples.map((example) => example.intent))).sort();
+
+    if (!resumeFromCurrentState) {
+      this.intents = discoveredIntents;
+      this.intentWeights.clear();
+      this.intentBiases.clear();
+
+      this.intents.forEach((intent) => {
+        this.intentWeights.set(intent, new Map());
+        this.intentBiases.set(intent, 0);
+      });
+    } else {
+      this.intents = Array.from(new Set([...this.intents, ...discoveredIntents])).sort();
+
+      this.intents.forEach((intent) => {
+        if (!this.intentWeights.has(intent)) {
+          this.intentWeights.set(intent, new Map());
+        }
+
+        if (!this.intentBiases.has(intent)) {
+          this.intentBiases.set(intent, 0);
+        }
+      });
+    }
 
     this.intents.forEach((intent) => {
-      this.intentWeights.set(intent, new Map());
-      this.intentBiases.set(intent, 0);
+      intentLastUpdated.set(intent, new Map());
     });
 
     const trainingRows = examples.map((example) => {
@@ -148,20 +294,51 @@ export class LogisticRegressionClassifier {
       return { ...example, vector };
     });
 
-    let step = 0;
+    if (resumeFromCurrentState) {
+      const baselineLoss = this.evaluateAverageLoss(examples);
+
+      console.info(
+        `${this.logPrefix} Loaded checkpoint baseline loss ${baselineLoss.toFixed(6)} before resuming. LR ${currentEta.toFixed(6)}.`,
+      );
+    }
 
     for (let epoch = 0; epoch < this.epochs; epoch += 1) {
+      shuffleArray(trainingRows);
+
       let totalLoss = 0;
+      const shrinkFactor = 1 - currentEta * this.regularization;
+      this.lazyDecayState = {
+        totalSteps,
+        shrinkFactor,
+        intentLastUpdated,
+      };
 
       for (let rowIndex = 0; rowIndex < trainingRows.length; rowIndex += 1) {
         const row = trainingRows[rowIndex];
-        const eta = this.learningRate / (1 + this.decay * step);
-        const logits = this.intents.map((intent) => ({
-          intent,
-          logit:
-            dotSparseVectors(this.intentWeights.get(intent) || new Map(), row.vector) +
-            (this.intentBiases.get(intent) || 0),
-        }));
+        const activeTerms = Array.from(row.vector.entries());
+
+        totalSteps += 1;
+        this.lazyDecayState.totalSteps = totalSteps;
+
+        const logits = this.intents.map((intent) => {
+          const weights = this.intentWeights.get(intent) || new Map();
+          const lastUpdated = intentLastUpdated.get(intent) || new Map();
+          let logit = this.intentBiases.get(intent) || 0;
+
+          activeTerms.forEach(([term, featureValue]) => {
+            applyLazyDecayToTerm({
+              weights,
+              lastUpdated,
+              term,
+              totalSteps,
+              shrinkFactor,
+            });
+
+            logit += (weights.get(term) || 0) * featureValue;
+          });
+
+          return { intent, logit };
+        });
         const probabilities = softmaxLogits(logits);
         const probabilityByIntent = new Map(
           probabilities.map((probability) => [probability.intent, probability.confidence]),
@@ -174,13 +351,19 @@ export class LogisticRegressionClassifier {
           const probability = probabilityByIntent.get(intent) || 0;
           const error = probability - target;
           const weights = this.intentWeights.get(intent);
+          const lastUpdated = intentLastUpdated.get(intent);
 
-          scaleSparseVector(weights, 1 - eta * this.regularization);
-          addScaledSparseVector(weights, row.vector, -eta * error);
-          this.intentBiases.set(intent, (this.intentBiases.get(intent) || 0) - eta * error);
+          addScaledSparseVector(weights, row.vector, -currentEta * error);
+
+          activeTerms.forEach(([term]) => {
+            lastUpdated.set(term, totalSteps);
+          });
+
+          this.intentBiases.set(
+            intent,
+            (this.intentBiases.get(intent) || 0) - currentEta * error,
+          );
         });
-
-        step += 1;
 
         const now = Date.now();
 
@@ -190,18 +373,44 @@ export class LogisticRegressionClassifier {
           const averageLossSoFar = (totalLoss / Math.max(rowIndex + 1, 1)).toFixed(6);
 
           console.info(
-            `${this.logPrefix} Still training after ${elapsedMinutes} minute(s). Epoch ${epoch + 1}/${this.epochs}, row ${rowIndex + 1}/${trainingRows.length} (${epochProgress}%), average loss ${averageLossSoFar}.`,
+            `${this.logPrefix} Still training after ${elapsedMinutes} minute(s). Epoch ${epoch + 1}/${this.epochs}, row ${rowIndex + 1}/${trainingRows.length} (${epochProgress}%), average loss ${averageLossSoFar}, LR ${currentEta.toFixed(6)}.`,
           );
 
           lastHeartbeatAt = now;
         }
       }
 
-      const averageLoss = (totalLoss / Math.max(trainingRows.length, 1)).toFixed(6);
+      this.intents.forEach((intent) => {
+        settleLazyDecayForWeights({
+          weights: this.intentWeights.get(intent),
+          lastUpdated: intentLastUpdated.get(intent),
+          totalSteps,
+          shrinkFactor,
+        });
+      });
+      this.lazyDecayState = null;
+
+      const averageLoss = totalLoss / Math.max(trainingRows.length, 1);
       const elapsedSeconds = ((Date.now() - startedAt) / 1000).toFixed(1);
       console.info(
-        `${this.logPrefix} Finished epoch ${epoch + 1}/${this.epochs} with loss ${averageLoss} after ${elapsedSeconds}s.`,
+        `${this.logPrefix} Finished epoch ${epoch + 1}/${this.epochs} with loss ${averageLoss.toFixed(6)} after ${elapsedSeconds}s. LR ${currentEta.toFixed(6)}.`,
       );
+
+      if (Math.abs(previousLoss - averageLoss) < this.tolerance) {
+        patience += 1;
+
+        if (patience >= this.patienceLimit) {
+          console.info(
+            `${this.logPrefix} Converged at epoch ${epoch + 1}. Loss delta ${Math.abs(previousLoss - averageLoss).toFixed(6)} is below tolerance ${this.tolerance}.`,
+          );
+          break;
+        }
+      } else {
+        patience = 0;
+      }
+
+      previousLoss = averageLoss;
+      currentEta = this.learningRate / (1 + this.decay * (epoch + 1));
     }
 
     console.info(
@@ -210,6 +419,8 @@ export class LogisticRegressionClassifier {
   }
 
   predict(text = "") {
+    this.flushPendingLazyDecay();
+
     const exactIntent = this.exampleIntents.get(text);
 
     if (exactIntent) {
@@ -268,6 +479,8 @@ export class LogisticRegressionClassifier {
   }
 
   toJSON(metadata = {}) {
+    this.flushPendingLazyDecay();
+
     return {
       meta: {
         trainedAt: new Date().toISOString(),
@@ -278,6 +491,8 @@ export class LogisticRegressionClassifier {
         learningRate: this.learningRate,
         decay: this.decay,
         regularization: this.regularization,
+        tolerance: this.tolerance,
+        patience: this.patienceLimit,
         ...metadata,
       },
       normalizedExamples: this.exampleVectors.map(({ text, intent }) => ({ text, intent })),
@@ -289,6 +504,8 @@ export class LogisticRegressionClassifier {
   }
 
   saveToFile(filePath, metadata = {}) {
+    this.flushPendingLazyDecay();
+
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
     fs.writeFileSync(filePath, JSON.stringify(this.toJSON(metadata), null, 2), "utf8");
     console.info(`${this.logPrefix} Saved pretrained logistic regression model to ${filePath}`);

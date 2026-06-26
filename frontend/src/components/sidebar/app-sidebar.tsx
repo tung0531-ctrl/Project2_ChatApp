@@ -12,8 +12,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Bell } from "lucide-react";
-import { Search } from "lucide-react";
+import { Bell, Search } from "lucide-react";
 import NewGroupChatModal from "../chat/NewGroupChatModal";
 import JoinGroupChatModal from "../chat/JoinGroupChatModal";
 import GroupChatList from "../chat/GroupChatList";

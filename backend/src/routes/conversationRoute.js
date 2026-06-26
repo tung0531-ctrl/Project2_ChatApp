@@ -2,6 +2,9 @@
 import express from "express";
 import {
   createConversation,
+  evaluateClinicBots,
+  getClinicEvaluationDatasets,
+  getClinicEvaluationJobStatus,
   getAvailableBots,
   getConversations,
   getMessages,
@@ -10,7 +13,9 @@ import {
   kickGroupMember,
   leaveGroup,
   markAsSeen,
+  predictClinicBotsForInput,
   searchJoinableGroups,
+  startClinicEvaluationJob,
   updateGroupJoinApproval,
   updateGroupBots,
   updateGroupDescription,
@@ -22,6 +27,11 @@ const router = express.Router();
 router.post("/", checkFriendship, createConversation);
 router.get("/", getConversations);
 router.get("/bots/available", getAvailableBots);
+router.get("/bots/evaluation/datasets", getClinicEvaluationDatasets);
+router.post("/bots/evaluation/jobs", startClinicEvaluationJob);
+router.get("/bots/evaluation/jobs/:jobId", getClinicEvaluationJobStatus);
+router.get("/bots/evaluation", evaluateClinicBots);
+router.post("/bots/evaluation/predict", predictClinicBotsForInput);
 router.get("/groups/search", searchJoinableGroups);
 router.get("/:conversationId/messages", getMessages);
 router.patch("/:conversationId/join", joinGroup);

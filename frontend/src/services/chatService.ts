@@ -2,6 +2,11 @@
 import api from "@/lib/axios";
 import type {
   BotDefinition,
+  ClinicEvaluationDatasetsResponse,
+  ClinicEvaluationJobStartResponse,
+  ClinicEvaluationJobStatusResponse,
+  ClinicManualPredictionResponse,
+  ClinicEvaluationResponse,
   Conversation,
   ConversationResponse,
   GroupSearchResponse,
@@ -173,6 +178,39 @@ export const chatService = {
   async fetchAvailableBots(): Promise<BotDefinition[]> {
     const res = await api.get("/conversations/bots/available");
     return res.data.bots;
+  },
+
+  async fetchClinicEvaluation(dataset: string): Promise<ClinicEvaluationResponse> {
+    const res = await api.get(
+      `/conversations/bots/evaluation?dataset=${encodeURIComponent(dataset)}`
+    );
+    return res.data;
+  },
+
+  async fetchClinicEvaluationDatasets(): Promise<ClinicEvaluationDatasetsResponse> {
+    const res = await api.get("/conversations/bots/evaluation/datasets");
+    return res.data;
+  },
+
+  async startClinicEvaluationJob(dataset: string): Promise<ClinicEvaluationJobStartResponse> {
+    const res = await api.post("/conversations/bots/evaluation/jobs", { dataset });
+    return res.data;
+  },
+
+  async fetchClinicEvaluationJobStatus(jobId: string): Promise<ClinicEvaluationJobStatusResponse> {
+    const res = await api.get(`/conversations/bots/evaluation/jobs/${jobId}`);
+    return res.data;
+  },
+
+  async predictClinicInput(
+    text: string,
+    expectedIntent?: string
+  ): Promise<ClinicManualPredictionResponse> {
+    const res = await api.post("/conversations/bots/evaluation/predict", {
+      text,
+      expectedIntent,
+    });
+    return res.data;
   },
 
   async updateGroupBots(

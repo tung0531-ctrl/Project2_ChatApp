@@ -27,6 +27,91 @@ export interface BotDefinition {
   description: string;
 }
 
+export interface ClinicEvaluationDatasetOption {
+  id: string;
+  label: string;
+  sampleCount: number;
+}
+
+export interface ClinicEvaluationPrediction {
+  predictedIntent: string | null;
+  confidence: number;
+  correct: boolean;
+  keywords: string[];
+}
+
+export interface ClinicEvaluationRunDetail {
+  matchedIntent: string | null;
+  confidence: number;
+  firedRules: string[];
+  response: string;
+  usedFallback: boolean;
+  needsContext: boolean;
+}
+
+export interface ClinicManualPrediction {
+  predictedIntent: string | null;
+  confidence: number;
+  correct: boolean | null;
+  keywords: string[];
+}
+
+export interface ClinicEvaluationSummary {
+  botId: string;
+  displayName: string;
+  shortLabel?: string;
+  classifierType: string | null;
+  accuracy: number;
+  total: number;
+  correct: number;
+  speedMs: number;
+  averageLoss: number | null;
+  status: string;
+}
+
+export interface ClinicEvaluationRow {
+  id: string;
+  text: string;
+  intent: string;
+  predictions: Record<string, ClinicEvaluationPrediction>;
+  runDetails: Record<string, ClinicEvaluationRunDetail>;
+  allModelsFailed: boolean;
+  modelContradiction: boolean;
+  statusNote: string;
+}
+
+export interface ClinicEvaluationResponse {
+  dataset: string;
+  totalSamples: number;
+  availableDatasets: ClinicEvaluationDatasetOption[];
+  summaries: ClinicEvaluationSummary[];
+  rows: ClinicEvaluationRow[];
+}
+
+export interface ClinicEvaluationDatasetsResponse {
+  availableDatasets: ClinicEvaluationDatasetOption[];
+}
+
+export interface ClinicEvaluationJobStartResponse {
+  jobId: string;
+}
+
+export interface ClinicEvaluationJobStatusResponse {
+  jobId: string;
+  dataset: string;
+  status: "queued" | "running" | "completed" | "failed";
+  progressPercent: number;
+  message: string;
+  result: ClinicEvaluationResponse | null;
+  error?: string | null;
+}
+
+export interface ClinicManualPredictionResponse {
+  text: string;
+  expectedIntent: string | null;
+  predictions: Record<string, ClinicManualPrediction>;
+}
+
 export interface BotMeta {
   botId: string;
   displayName: string;

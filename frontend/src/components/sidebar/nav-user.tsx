@@ -1,4 +1,4 @@
-import { ChevronsUpDown, UserIcon } from "lucide-react";
+import { BarChart3, ChevronsUpDown, UserIcon } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -20,10 +20,12 @@ import type { User } from "@/types/user";
 import Logout from "../auth/Logout";
 import { useState } from "react";
 import ProfileDialog from "../profile/ProfileDialog";
+import { useNavigate } from "react-router";
 
 export function NavUser({ user }: { user: User }) {
   const { isMobile } = useSidebar();
   const [profileOpen, setProfileOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <>
@@ -79,6 +81,10 @@ export function NavUser({ user }: { user: User }) {
                 <DropdownMenuItem onClick={() => setProfileOpen(true)}>
                   <UserIcon className="text-muted-foreground dark:group-focus:!text-accent-foreground" />
                   Tài Khoản
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/admin/clinic-evaluation")}>
+                  <BarChart3 className="text-muted-foreground dark:group-focus:!text-accent-foreground" />
+                  Clinic Evaluation
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
