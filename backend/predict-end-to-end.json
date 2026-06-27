@@ -1,0 +1,525 @@
+﻿{
+    "username":  "clinic_eval_1782519343",
+    "accessTokenExists":  true,
+    "predict":  {
+                    "text":  "translate hello to english",
+                    "expectedIntent":  "translate",
+                    "predictions":  {
+                                        "botClinicV2":  {
+                                                            "predictedIntent":  "translate",
+                                                            "confidence":  1,
+                                                            "correct":  true,
+                                                            "keywords":  [
+                                                                             "translate to",
+                                                                             "to english",
+                                                                             "translate",
+                                                                             "english",
+                                                                             "to"
+                                                                         ]
+                                                        },
+                                        "botClinic":  {
+                                                          "predictedIntent":  "translate",
+                                                          "confidence":  1,
+                                                          "correct":  true,
+                                                          "keywords":  [
+                                                                           "translate to",
+                                                                           "to english",
+                                                                           "translate",
+                                                                           "english",
+                                                                           "to"
+                                                                       ]
+                                                      },
+                                        "botClinicV3":  {
+                                                            "predictedIntent":  "translate",
+                                                            "confidence":  1,
+                                                            "correct":  true,
+                                                            "keywords":  [
+                                                                             "translate to",
+                                                                             "to english",
+                                                                             "translate",
+                                                                             "english",
+                                                                             "to"
+                                                                         ]
+                                                        }
+                                    },
+                    "explanations":  {
+                                         "botClinicV2":  {
+                                                             "normalizedText":  "translate hello to english",
+                                                             "intent":  "translate",
+                                                             "confidence":  1,
+                                                             "scores":  [
+                                                                            {
+                                                                                "intent":  "translate",
+                                                                                "confidence":  1
+                                                                            }
+                                                                        ],
+                                                             "keywords":  [
+                                                                              "translate to",
+                                                                              "to english",
+                                                                              "translate",
+                                                                              "english",
+                                                                              "to"
+                                                                          ],
+                                                             "explanation":  {
+                                                                                 "exactMatch":  true,
+                                                                                 "scoreLabel":  "log_probability",
+                                                                                 "vectorization":  {
+                                                                                                       "tokens":  [
+                                                                                                                      "translate",
+                                                                                                                      "to",
+                                                                                                                      "english"
+                                                                                                                  ],
+                                                                                                       "terms":  [
+                                                                                                                     "translate",
+                                                                                                                     "to",
+                                                                                                                     "english",
+                                                                                                                     "translate to",
+                                                                                                                     "to english"
+                                                                                                                 ],
+                                                                                                       "magnitude":  3.261158762020013,
+                                                                                                       "features":  [
+                                                                                                                        {
+                                                                                                                            "term":  "translate to",
+                                                                                                                            "count":  1,
+                                                                                                                            "tf":  0.2,
+                                                                                                                            "idf":  9.0084986286592,
+                                                                                                                            "rawWeight":  1.8016997257318401,
+                                                                                                                            "inVocabulary":  true,
+                                                                                                                            "normalizedWeight":  0.5524722521070514
+                                                                                                                        },
+                                                                                                                        {
+                                                                                                                            "term":  "to english",
+                                                                                                                            "count":  1,
+                                                                                                                            "tf":  0.2,
+                                                                                                                            "idf":  8.420711963757082,
+                                                                                                                            "rawWeight":  1.6841423927514165,
+                                                                                                                            "inVocabulary":  true,
+                                                                                                                            "normalizedWeight":  0.5164245336244324
+                                                                                                                        },
+                                                                                                                        {
+                                                                                                                            "term":  "translate",
+                                                                                                                            "count":  1,
+                                                                                                                            "tf":  0.2,
+                                                                                                                            "idf":  7.482442325164151,
+                                                                                                                            "rawWeight":  1.4964884650328303,
+                                                                                                                            "inVocabulary":  true,
+                                                                                                                            "normalizedWeight":  0.45888243236152104
+                                                                                                                        },
+                                                                                                                        {
+                                                                                                                            "term":  "english",
+                                                                                                                            "count":  1,
+                                                                                                                            "tf":  0.2,
+                                                                                                                            "idf":  7.285732030918098,
+                                                                                                                            "rawWeight":  1.4571464061836197,
+                                                                                                                            "inVocabulary":  true,
+                                                                                                                            "normalizedWeight":  0.4468186042193911
+                                                                                                                        },
+                                                                                                                        {
+                                                                                                                            "term":  "to",
+                                                                                                                            "count":  1,
+                                                                                                                            "tf":  0.2,
+                                                                                                                            "idf":  2.1791374171050757,
+                                                                                                                            "rawWeight":  0.4358274834210152,
+                                                                                                                            "inVocabulary":  true,
+                                                                                                                            "normalizedWeight":  0.13364190927983427
+                                                                                                                        }
+                                                                                                                    ]
+                                                                                                   },
+                                                                                 "topScores":  [
+                                                                                                   {
+                                                                                                       "intent":  "translate",
+                                                                                                       "rawScore":  -20.939978965548747,
+                                                                                                       "finalConfidence":  0.14013867646345293,
+                                                                                                       "similarity":  1.0000000000000002,
+                                                                                                       "prior":  -5.002749497291966
+                                                                                                   },
+                                                                                                   {
+                                                                                                       "intent":  "change_language",
+                                                                                                       "rawScore":  -21.425293094497633,
+                                                                                                       "finalConfidence":  0.07905480438935698,
+                                                                                                       "similarity":  0.5521176779042298,
+                                                                                                       "prior":  -5.012699828145135
+                                                                                                   },
+                                                                                                   {
+                                                                                                       "intent":  "ingredients_list",
+                                                                                                       "rawScore":  -23.568606659516796,
+                                                                                                       "finalConfidence":  0.02465512122922143,
+                                                                                                       "similarity":  0.20016530170375654,
+                                                                                                       "prior":  -5.012699828145135
+                                                                                                   },
+                                                                                                   {
+                                                                                                       "intent":  "change_accent",
+                                                                                                       "rawScore":  -23.5699564116604,
+                                                                                                       "finalConfidence":  0.02193621260584231,
+                                                                                                       "similarity":  0.17625538143131536,
+                                                                                                       "prior":  -5.012699828145135
+                                                                                                   },
+                                                                                                   {
+                                                                                                       "intent":  "greeting",
+                                                                                                       "rawScore":  -23.818121478042833,
+                                                                                                       "finalConfidence":  0.016674746475400116,
+                                                                                                       "similarity":  0.13364190927983427,
+                                                                                                       "prior":  -4.98314102590359
+                                                                                                   }
+                                                                                               ],
+                                                                                 "winningIntent":  {
+                                                                                                       "intent":  "translate",
+                                                                                                       "bias":  -5.002749497291966,
+                                                                                                       "rawScore":  -20.939978965548747,
+                                                                                                       "finalConfidence":  1,
+                                                                                                       "similarity":  1.0000000000000002,
+                                                                                                       "contributions":  [
+                                                                                                                             {
+                                                                                                                                 "term":  "to english",
+                                                                                                                                 "inputWeight":  0.5164245336244324,
+                                                                                                                                 "modelWeight":  -8.520141010260316,
+                                                                                                                                 "contribution":  -4.400009847638084,
+                                                                                                                                 "conditionalProbability":  0.00019941130434155768
+                                                                                                                             },
+                                                                                                                             {
+                                                                                                                                 "term":  "translate to",
+                                                                                                                                 "inputWeight":  0.5524722521070514,
+                                                                                                                                 "modelWeight":  -7.893874781646537,
+                                                                                                                                 "contribution":  -4.3611467784673215,
+                                                                                                                                 "conditionalProbability":  0.00037302139465293
+                                                                                                                             },
+                                                                                                                             {
+                                                                                                                                 "term":  "english",
+                                                                                                                                 "inputWeight":  0.4468186042193911,
+                                                                                                                                 "modelWeight":  -7.242341721573603,
+                                                                                                                                 "contribution":  -3.2360130193133796,
+                                                                                                                                 "conditionalProbability":  0.0007156339808982511
+                                                                                                                             },
+                                                                                                                             {
+                                                                                                                                 "term":  "translate",
+                                                                                                                                 "inputWeight":  0.45888243236152104,
+                                                                                                                                 "modelWeight":  -6.36295388904688,
+                                                                                                                                 "contribution":  -2.919847757610032,
+                                                                                                                                 "conditionalProbability":  0.0017242658918061188
+                                                                                                                             },
+                                                                                                                             {
+                                                                                                                                 "term":  "to",
+                                                                                                                                 "inputWeight":  0.13364190927983427,
+                                                                                                                                 "modelWeight":  -7.6339231512454,
+                                                                                                                                 "contribution":  -1.0202120652279643,
+                                                                                                                                 "conditionalProbability":  0.0004837592698876656
+                                                                                                                             }
+                                                                                                                         ]
+                                                                                                   }
+                                                                             }
+                                                         },
+                                         "botClinic":  {
+                                                           "normalizedText":  "translate hello to english",
+                                                           "intent":  "translate",
+                                                           "confidence":  1,
+                                                           "scores":  [
+                                                                          {
+                                                                              "intent":  "translate",
+                                                                              "confidence":  1,
+                                                                              "margin":  1
+                                                                          }
+                                                                      ],
+                                                           "keywords":  [
+                                                                            "translate to",
+                                                                            "to english",
+                                                                            "translate",
+                                                                            "english",
+                                                                            "to"
+                                                                        ],
+                                                           "explanation":  {
+                                                                               "exactMatch":  true,
+                                                                               "scoreLabel":  "margin",
+                                                                               "vectorization":  {
+                                                                                                     "tokens":  [
+                                                                                                                    "translate",
+                                                                                                                    "to",
+                                                                                                                    "english"
+                                                                                                                ],
+                                                                                                     "terms":  [
+                                                                                                                   "translate",
+                                                                                                                   "to",
+                                                                                                                   "english",
+                                                                                                                   "translate to",
+                                                                                                                   "to english"
+                                                                                                               ],
+                                                                                                     "magnitude":  3.261158762020013,
+                                                                                                     "features":  [
+                                                                                                                      {
+                                                                                                                          "term":  "translate to",
+                                                                                                                          "count":  1,
+                                                                                                                          "tf":  0.2,
+                                                                                                                          "idf":  9.0084986286592,
+                                                                                                                          "rawWeight":  1.8016997257318401,
+                                                                                                                          "inVocabulary":  true,
+                                                                                                                          "normalizedWeight":  0.5524722521070514
+                                                                                                                      },
+                                                                                                                      {
+                                                                                                                          "term":  "to english",
+                                                                                                                          "count":  1,
+                                                                                                                          "tf":  0.2,
+                                                                                                                          "idf":  8.420711963757082,
+                                                                                                                          "rawWeight":  1.6841423927514165,
+                                                                                                                          "inVocabulary":  true,
+                                                                                                                          "normalizedWeight":  0.5164245336244324
+                                                                                                                      },
+                                                                                                                      {
+                                                                                                                          "term":  "translate",
+                                                                                                                          "count":  1,
+                                                                                                                          "tf":  0.2,
+                                                                                                                          "idf":  7.482442325164151,
+                                                                                                                          "rawWeight":  1.4964884650328303,
+                                                                                                                          "inVocabulary":  true,
+                                                                                                                          "normalizedWeight":  0.45888243236152104
+                                                                                                                      },
+                                                                                                                      {
+                                                                                                                          "term":  "english",
+                                                                                                                          "count":  1,
+                                                                                                                          "tf":  0.2,
+                                                                                                                          "idf":  7.285732030918098,
+                                                                                                                          "rawWeight":  1.4571464061836197,
+                                                                                                                          "inVocabulary":  true,
+                                                                                                                          "normalizedWeight":  0.4468186042193911
+                                                                                                                      },
+                                                                                                                      {
+                                                                                                                          "term":  "to",
+                                                                                                                          "count":  1,
+                                                                                                                          "tf":  0.2,
+                                                                                                                          "idf":  2.1791374171050757,
+                                                                                                                          "rawWeight":  0.4358274834210152,
+                                                                                                                          "inVocabulary":  true,
+                                                                                                                          "normalizedWeight":  0.13364190927983427
+                                                                                                                      }
+                                                                                                                  ]
+                                                                                                 },
+                                                                               "topScores":  [
+                                                                                                 {
+                                                                                                     "intent":  "translate",
+                                                                                                     "rawScore":  -1.0445730576535428,
+                                                                                                     "finalConfidence":  0.09800677525924813,
+                                                                                                     "similarity":  1.0000000000000002
+                                                                                                 },
+                                                                                                 {
+                                                                                                     "intent":  "change_language",
+                                                                                                     "rawScore":  -1.0044148924547214,
+                                                                                                     "finalConfidence":  0.05532676413817335,
+                                                                                                     "similarity":  0.5521176779042298
+                                                                                                 },
+                                                                                                 {
+                                                                                                     "intent":  "ingredients_list",
+                                                                                                     "rawScore":  -1.0376363072274846,
+                                                                                                     "finalConfidence":  0.021623564149648344,
+                                                                                                     "similarity":  0.20016530170375654
+                                                                                                 },
+                                                                                                 {
+                                                                                                     "intent":  "change_accent",
+                                                                                                     "rawScore":  -1.0380028569530002,
+                                                                                                     "finalConfidence":  0.019338761791964577,
+                                                                                                     "similarity":  0.17625538143131536
+                                                                                                 },
+                                                                                                 {
+                                                                                                     "intent":  "greeting",
+                                                                                                     "rawScore":  -1.038113184374919,
+                                                                                                     "finalConfidence":  0.015268030404235073,
+                                                                                                     "similarity":  0.13364190927983427
+                                                                                                 }
+                                                                                             ],
+                                                                               "winningIntent":  {
+                                                                                                     "intent":  "translate",
+                                                                                                     "bias":  -1.0659292662449866,
+                                                                                                     "rawScore":  -1.0445730576535428,
+                                                                                                     "finalConfidence":  1,
+                                                                                                     "similarity":  1.0000000000000002,
+                                                                                                     "contributions":  [
+                                                                                                                           {
+                                                                                                                               "term":  "translate",
+                                                                                                                               "inputWeight":  0.45888243236152104,
+                                                                                                                               "modelWeight":  0.04234487626012138,
+                                                                                                                               "contribution":  0.019431319816292127
+                                                                                                                           },
+                                                                                                                           {
+                                                                                                                               "term":  "english",
+                                                                                                                               "inputWeight":  0.4468186042193911,
+                                                                                                                               "modelWeight":  0.03180931832609283,
+                                                                                                                               "contribution":  0.014212995215635097
+                                                                                                                           },
+                                                                                                                           {
+                                                                                                                               "term":  "to",
+                                                                                                                               "inputWeight":  0.13364190927983427,
+                                                                                                                               "modelWeight":  -0.10387762264082903,
+                                                                                                                               "contribution":  -0.013882403821170532
+                                                                                                                           },
+                                                                                                                           {
+                                                                                                                               "term":  "translate to",
+                                                                                                                               "inputWeight":  0.5524722521070514,
+                                                                                                                               "modelWeight":  0.002226351991230894,
+                                                                                                                               "contribution":  0.0012299976985783504
+                                                                                                                           },
+                                                                                                                           {
+                                                                                                                               "term":  "to english",
+                                                                                                                               "inputWeight":  0.5164245336244324,
+                                                                                                                               "modelWeight":  0.0007054267533575232,
+                                                                                                                               "contribution":  0.00036429968210885643
+                                                                                                                           }
+                                                                                                                       ]
+                                                                                                 }
+                                                                           }
+                                                       },
+                                         "botClinicV3":  {
+                                                             "normalizedText":  "translate hello to english",
+                                                             "intent":  "translate",
+                                                             "confidence":  1,
+                                                             "scores":  [
+                                                                            {
+                                                                                "intent":  "translate",
+                                                                                "confidence":  1,
+                                                                                "logit":  1
+                                                                            }
+                                                                        ],
+                                                             "keywords":  [
+                                                                              "translate to",
+                                                                              "to english",
+                                                                              "translate",
+                                                                              "english",
+                                                                              "to"
+                                                                          ],
+                                                             "explanation":  {
+                                                                                 "exactMatch":  true,
+                                                                                 "scoreLabel":  "logit",
+                                                                                 "vectorization":  {
+                                                                                                       "tokens":  [
+                                                                                                                      "translate",
+                                                                                                                      "to",
+                                                                                                                      "english"
+                                                                                                                  ],
+                                                                                                       "terms":  [
+                                                                                                                     "translate",
+                                                                                                                     "to",
+                                                                                                                     "english",
+                                                                                                                     "translate to",
+                                                                                                                     "to english"
+                                                                                                                 ],
+                                                                                                       "magnitude":  3.261158762020013,
+                                                                                                       "features":  [
+                                                                                                                        {
+                                                                                                                            "term":  "translate to",
+                                                                                                                            "count":  1,
+                                                                                                                            "tf":  0.2,
+                                                                                                                            "idf":  9.0084986286592,
+                                                                                                                            "rawWeight":  1.8016997257318401,
+                                                                                                                            "inVocabulary":  true,
+                                                                                                                            "normalizedWeight":  0.5524722521070514
+                                                                                                                        },
+                                                                                                                        {
+                                                                                                                            "term":  "to english",
+                                                                                                                            "count":  1,
+                                                                                                                            "tf":  0.2,
+                                                                                                                            "idf":  8.420711963757082,
+                                                                                                                            "rawWeight":  1.6841423927514165,
+                                                                                                                            "inVocabulary":  true,
+                                                                                                                            "normalizedWeight":  0.5164245336244324
+                                                                                                                        },
+                                                                                                                        {
+                                                                                                                            "term":  "translate",
+                                                                                                                            "count":  1,
+                                                                                                                            "tf":  0.2,
+                                                                                                                            "idf":  7.482442325164151,
+                                                                                                                            "rawWeight":  1.4964884650328303,
+                                                                                                                            "inVocabulary":  true,
+                                                                                                                            "normalizedWeight":  0.45888243236152104
+                                                                                                                        },
+                                                                                                                        {
+                                                                                                                            "term":  "english",
+                                                                                                                            "count":  1,
+                                                                                                                            "tf":  0.2,
+                                                                                                                            "idf":  7.285732030918098,
+                                                                                                                            "rawWeight":  1.4571464061836197,
+                                                                                                                            "inVocabulary":  true,
+                                                                                                                            "normalizedWeight":  0.4468186042193911
+                                                                                                                        },
+                                                                                                                        {
+                                                                                                                            "term":  "to",
+                                                                                                                            "count":  1,
+                                                                                                                            "tf":  0.2,
+                                                                                                                            "idf":  2.1791374171050757,
+                                                                                                                            "rawWeight":  0.4358274834210152,
+                                                                                                                            "inVocabulary":  true,
+                                                                                                                            "normalizedWeight":  0.13364190927983427
+                                                                                                                        }
+                                                                                                                    ]
+                                                                                                   },
+                                                                                 "topScores":  [
+                                                                                                   {
+                                                                                                       "intent":  "translate",
+                                                                                                       "rawScore":  1.157126271343717,
+                                                                                                       "finalConfidence":  0.10280933735156846,
+                                                                                                       "similarity":  1.0000000000000002
+                                                                                                   },
+                                                                                                   {
+                                                                                                       "intent":  "change_language",
+                                                                                                       "rawScore":  0.850882577732984,
+                                                                                                       "finalConfidence":  0.058104672227166726,
+                                                                                                       "similarity":  0.5521176779042298
+                                                                                                   },
+                                                                                                   {
+                                                                                                       "intent":  "ingredients_list",
+                                                                                                       "rawScore":  0.16164174185659164,
+                                                                                                       "finalConfidence":  0.021813457766186282,
+                                                                                                       "similarity":  0.20016530170375654
+                                                                                                   },
+                                                                                                   {
+                                                                                                       "intent":  "change_accent",
+                                                                                                       "rawScore":  0.1325097503317204,
+                                                                                                       "finalConfidence":  0.019452235268971902,
+                                                                                                       "similarity":  0.17625538143131536
+                                                                                                   },
+                                                                                                   {
+                                                                                                       "intent":  "greeting",
+                                                                                                       "rawScore":  0.20644620794213736,
+                                                                                                       "finalConfidence":  0.015582547045880074,
+                                                                                                       "similarity":  0.13364190927983427
+                                                                                                   }
+                                                                                               ],
+                                                                                 "winningIntent":  {
+                                                                                                       "intent":  "translate",
+                                                                                                       "bias":  0.18149734378346263,
+                                                                                                       "rawScore":  1.157126271343717,
+                                                                                                       "finalConfidence":  1,
+                                                                                                       "similarity":  1.0000000000000002,
+                                                                                                       "contributions":  [
+                                                                                                                             {
+                                                                                                                                 "term":  "translate",
+                                                                                                                                 "inputWeight":  0.45888243236152104,
+                                                                                                                                 "modelWeight":  1.3690138526490805,
+                                                                                                                                 "contribution":  0.628216406640227
+                                                                                                                             },
+                                                                                                                             {
+                                                                                                                                 "term":  "english",
+                                                                                                                                 "inputWeight":  0.4468186042193911,
+                                                                                                                                 "modelWeight":  0.4990557208806335,
+                                                                                                                                 "contribution":  0.2229873806315867
+                                                                                                                             },
+                                                                                                                             {
+                                                                                                                                 "term":  "translate to",
+                                                                                                                                 "inputWeight":  0.5524722521070514,
+                                                                                                                                 "modelWeight":  0.21356839444951256,
+                                                                                                                                 "contribution":  0.11799061186040931
+                                                                                                                             },
+                                                                                                                             {
+                                                                                                                                 "term":  "to english",
+                                                                                                                                 "inputWeight":  0.5164245336244324,
+                                                                                                                                 "modelWeight":  0.0643814725802004,
+                                                                                                                                 "contribution":  0.033248171951284176
+                                                                                                                             },
+                                                                                                                             {
+                                                                                                                                 "term":  "to",
+                                                                                                                                 "inputWeight":  0.13364190927983427,
+                                                                                                                                 "modelWeight":  -0.20063798600113894,
+                                                                                                                                 "contribution":  -0.02681364352325287
+                                                                                                                             }
+                                                                                                                         ]
+                                                                                                   }
+                                                                             }
+                                                         }
+                                     }
+                }
+}

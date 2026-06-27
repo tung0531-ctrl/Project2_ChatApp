@@ -40,6 +40,25 @@ export const normalizeSynonyms = (text = "", synonymMap = {}) => {
     .trim();
 };
 
+const extractRuleKeywords = (normalizedText = "", maxNgram = 3) => {
+  const tokens = normalizedText.split(/\s+/).filter(Boolean);
+  const terms = new Set();
+
+  tokens.forEach((token, tokenIndex) => {
+    terms.add(token);
+
+    for (let size = 2; size <= maxNgram; size += 1) {
+      if (tokenIndex + size > tokens.length) {
+        break;
+      }
+
+      terms.add(tokens.slice(tokenIndex, tokenIndex + size).join(" "));
+    }
+  });
+
+  return Array.from(terms);
+};
+
 const pickResponse = (value) => {
   if (Array.isArray(value)) {
     return value[0] ?? "";
@@ -320,6 +339,22 @@ export const createExpertBotEngine = (definition) => {
         keywords: prediction.keywords ?? [],
       };
     },
+    explainIntent(rawText) {
+      const normalizedText = normalizeSynonyms(normalizeText(rawText), synonymMap);
+      const prediction = classifier.predict(normalizedText);
+      const explanation = typeof classifier.explain === "function"
+        ? classifier.explain(normalizedText)
+        : null;
+
+      return {
+        normalizedText,
+        intent: prediction.intent,
+        confidence: prediction.confidence,
+        scores: prediction.scores ?? [],
+        keywords: prediction.keywords ?? [],
+        explanation,
+      };
+    },
     evaluateAverageLoss(examples = []) {
       if (typeof classifier.evaluateAverageLoss !== "function") {
         return null;
@@ -337,6 +372,9 @@ export const createExpertBotEngine = (definition) => {
       const prediction = classifier.predict(normalizedText);
       const matchedEntities = findMatchedEntities(normalizedText, indexedEntities);
       const primaryEntity = selectPrimaryEntity(matchedEntities, prediction.intent);
+      const ruleKeywords = Array.from(
+        new Set([...(prediction.keywords ?? []), ...extractRuleKeywords(normalizedText)]),
+      );
 
       if (!prediction.intent || prediction.confidence < confidenceThreshold) {
         return {
@@ -345,7 +383,7 @@ export const createExpertBotEngine = (definition) => {
           confidence: prediction.confidence,
           usedFallback: true,
           needsContext: true,
-          keywords: prediction.keywords ?? [],
+          keywords: ruleKeywords,
           firedRules: [],
         };
       }
@@ -353,7 +391,7 @@ export const createExpertBotEngine = (definition) => {
       const initialFacts = [
         { fact: "intent", value: prediction.intent },
         { fact: "confidenceBand", value: prediction.confidence >= 0.45 ? "high" : "medium" },
-        ...prediction.keywords.map((keyword) => ({ fact: "keyword", value: keyword })),
+        ...ruleKeywords.map((keyword) => ({ fact: "keyword", value: keyword })),
       ];
 
       if (primaryEntity) {
@@ -413,7 +451,7 @@ export const createExpertBotEngine = (definition) => {
           confidence: prediction.confidence,
           usedFallback: true,
           needsContext: true,
-          keywords: prediction.keywords ?? [],
+          keywords: ruleKeywords,
           firedRules: inference.firedRules,
         };
       }
@@ -425,7 +463,7 @@ export const createExpertBotEngine = (definition) => {
         entityId: inference.response.entityId ?? primaryEntity?.item?.id,
         usedFallback: inference.response.usedFallback ?? false,
         needsContext: inference.response.needsContext ?? false,
-        keywords: prediction.keywords ?? [],
+        keywords: ruleKeywords,
         firedRules: inference.firedRules,
       };
     },

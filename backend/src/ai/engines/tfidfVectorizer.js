@@ -288,6 +288,58 @@ export class TfidfVectorizer {
     );
   }
 
+  explainTransform(text = "") {
+    const tokens = tokenizeText(text, this.stopwords);
+    const terms = createNgrams(tokens, this.ngramRange);
+
+    if (!terms.length) {
+      return {
+        tokens,
+        terms,
+        magnitude: 0,
+        features: [],
+      };
+    }
+
+    const termCounts = countTerms(terms);
+    const featureRows = [];
+    let magnitude = 0;
+
+    termCounts.forEach((count, term) => {
+      const inVocabulary = this.vocabulary.has(term);
+      const tf = count / terms.length;
+      const idf = inVocabulary ? this.getIdf(term) : 0;
+      const rawWeight = inVocabulary ? tf * idf : 0;
+
+      if (inVocabulary) {
+        magnitude += rawWeight ** 2;
+      }
+
+      featureRows.push({
+        term,
+        count,
+        tf,
+        idf,
+        rawWeight,
+        inVocabulary,
+      });
+    });
+
+    const vectorMagnitude = Math.sqrt(magnitude) || 1;
+
+    return {
+      tokens,
+      terms,
+      magnitude: vectorMagnitude,
+      features: featureRows
+        .map((feature) => ({
+          ...feature,
+          normalizedWeight: feature.inVocabulary ? feature.rawWeight / vectorMagnitude : 0,
+        }))
+        .sort((left, right) => right.normalizedWeight - left.normalizedWeight),
+    };
+  }
+
   extractKeywords(text = "", limit = 8) {
     return Array.from(this.transformToSparse(text).entries())
       .sort((left, right) => right[1] - left[1])

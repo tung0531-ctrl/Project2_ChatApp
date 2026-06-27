@@ -56,6 +56,60 @@ export interface ClinicManualPrediction {
   keywords: string[];
 }
 
+export interface ClinicVectorFeatureExplanation {
+  term: string;
+  count: number;
+  tf: number;
+  idf: number;
+  rawWeight: number;
+  normalizedWeight: number;
+  inVocabulary: boolean;
+}
+
+export interface ClinicScoreExplanation {
+  intent: string;
+  rawScore: number;
+  finalConfidence: number;
+  similarity?: number;
+  prior?: number;
+}
+
+export interface ClinicContributionExplanation {
+  term: string;
+  inputWeight: number;
+  modelWeight: number;
+  contribution: number;
+  conditionalProbability?: number;
+}
+
+export interface ClinicWinningIntentExplanation {
+  intent: string;
+  bias: number;
+  rawScore: number;
+  finalConfidence: number;
+  similarity?: number;
+  contributions: ClinicContributionExplanation[];
+}
+
+export interface ClinicPredictionExplanation {
+  normalizedText: string;
+  intent: string | null;
+  confidence: number;
+  keywords: string[];
+  explanation: {
+    exactMatch: boolean;
+    scoreLabel: string;
+    vectorization: {
+      tokens: string[];
+      terms: string[];
+      magnitude: number;
+      features: ClinicVectorFeatureExplanation[];
+    };
+    topScores: ClinicScoreExplanation[];
+    winningIntent: ClinicWinningIntentExplanation | null;
+  } | null;
+}
+
 export interface ClinicEvaluationSummary {
   botId: string;
   displayName: string;
@@ -110,6 +164,7 @@ export interface ClinicManualPredictionResponse {
   text: string;
   expectedIntent: string | null;
   predictions: Record<string, ClinicManualPrediction>;
+  explanations: Record<string, ClinicPredictionExplanation | null>;
 }
 
 export interface BotMeta {

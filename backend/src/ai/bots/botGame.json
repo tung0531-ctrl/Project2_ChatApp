@@ -709,6 +709,119 @@
     },
 
     {
+      "id": "game-overview-history-response",
+      "if": {
+        "all": [{ "fact": "intent", "equals": "game_overview" }],
+        "any": [{ "fact": "keyword", "oneOf": ["lich su", "ra mat", "tu khi nao", "bat dau"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "history" } }
+    },
+    {
+      "id": "trivia-history-response",
+      "if": {
+        "all": [{ "fact": "intent", "equals": "trivia_info" }],
+        "any": [{ "fact": "keyword", "oneOf": ["lich su", "switch", "sea games", "honor of kings"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "history" } }
+    },
+    {
+      "id": "trivia-importance-response",
+      "if": {
+        "all": [{ "fact": "intent", "equals": "trivia_info" }],
+        "any": [{ "fact": "keyword", "oneOf": ["quan trong", "vi sao", "y nghia"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "importance" } }
+    },
+    {
+      "id": "tournament-overview-history-response",
+      "if": {
+        "all": [{ "fact": "intent", "equals": "tournament_overview" }],
+        "any": [{ "fact": "keyword", "oneOf": ["lich su", "tu khi nao", "bat dau"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "history" } }
+    },
+    {
+      "id": "tournament-overview-importance-response",
+      "if": {
+        "all": [{ "fact": "intent", "equals": "tournament_overview" }],
+        "any": [{ "fact": "keyword", "oneOf": ["quan trong", "gia tri", "y nghia"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "importance" } }
+    },
+    {
+      "id": "tournament-month-history-response",
+      "if": {
+        "all": [{ "fact": "intent", "equals": "tournament_month_overview" }],
+        "any": [{ "fact": "keyword", "oneOf": ["lich su", "co dinh", "nam nao"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "history" } }
+    },
+    {
+      "id": "tournament-month-importance-response",
+      "if": {
+        "all": [{ "fact": "intent", "equals": "tournament_month_overview" }],
+        "any": [{ "fact": "keyword", "oneOf": ["chinh xac hon", "quan trong", "mau nhu"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "importance" } }
+    },
+    {
+      "id": "item-overview-history-response",
+      "if": {
+        "all": [{ "fact": "intent", "equals": "item_overview" }],
+        "any": [{ "fact": "keyword", "oneOf": ["lich su", "manh ghep", "nang cap"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "history" } }
+    },
+    {
+      "id": "item-overview-importance-response",
+      "if": {
+        "all": [{ "fact": "intent", "equals": "item_overview" }],
+        "any": [{ "fact": "keyword", "oneOf": ["quan trong", "de dung", "thuc chien"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "importance" } }
+    },
+    {
+      "id": "improve-skill-history-response",
+      "if": {
+        "all": [{ "fact": "intent", "equals": "improve_skill" }],
+        "any": [{ "fact": "keyword", "oneOf": ["macro", "thua combat", "lich su"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "history" } }
+    },
+    {
+      "id": "improve-skill-importance-response",
+      "if": {
+        "all": [{ "fact": "intent", "equals": "improve_skill" }],
+        "any": [{ "fact": "keyword", "oneOf": ["uu tien", "nen hoc gi truoc", "quan trong"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "importance" } }
+    },
+    {
+      "id": "beginner-guide-history-response",
+      "if": {
+        "all": [{ "fact": "intent", "equals": "beginner_guide" }],
+        "any": [{ "fact": "keyword", "oneOf": ["giai doan dau", "lich su", "bat dau"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "history" } }
+    },
+    {
+      "id": "beginner-guide-importance-response",
+      "if": {
+        "all": [{ "fact": "intent", "equals": "beginner_guide" }],
+        "any": [{ "fact": "keyword", "oneOf": ["di dung huong", "quan trong", "nen uu tien"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "importance" } }
+    },
+    {
+      "id": "objective-history-response",
+      "if": {
+        "all": [{ "fact": "intent", "equals": "objective_info" }],
+        "any": [{ "fact": "keyword", "oneOf": ["macro", "tranh chap", "lich su", "vi sao"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "history" } }
+    },
+
+    {
       "id": "hero-role-field",
       "if": { "all": [{ "fact": "intent", "equals": "hero_role" }, { "fact": "entityType", "equals": "hero" }] },
       "then": { "assert": [{ "fact": "knowledgeField", "value": "role" }] }
@@ -744,6 +857,22 @@
       "then": { "assert": [{ "fact": "knowledgeField", "value": "lore" }] }
     },
     {
+      "id": "item-info-usage-response",
+      "if": {
+        "all": [{ "fact": "intent", "equals": "item_info" }, { "fact": "entityType", "equals": "item" }],
+        "any": [{ "fact": "keyword", "oneOf": ["hop voi ai", "hop voi", "danh cho", "phu hop"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "usage" } }
+    },
+    {
+      "id": "item-info-type-response",
+      "if": {
+        "all": [{ "fact": "intent", "equals": "item_info" }, { "fact": "entityType", "equals": "item" }],
+        "any": [{ "fact": "keyword", "oneOf": ["loai gi", "loai", "do gi", "trang bi gi"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "type" } }
+    },
+    {
       "id": "item-info-field",
       "if": { "all": [{ "fact": "intent", "equals": "item_info" }, { "fact": "entityType", "equals": "item" }] },
       "then": { "assert": [{ "fact": "knowledgeField", "value": "info" }] }
@@ -752,6 +881,22 @@
       "id": "item-category-list-field",
       "if": { "all": [{ "fact": "intent", "oneOf": ["item_category_list", "item_overview"] }, { "fact": "entityType", "equals": "itemCategory" }] },
       "then": { "assert": [{ "fact": "knowledgeField", "value": "list" }] }
+    },
+    {
+      "id": "tournament-info-history-response",
+      "if": {
+        "all": [{ "fact": "intent", "oneOf": ["tournament_info", "tournament_history"] }, { "fact": "entityType", "equals": "tournament" }],
+        "any": [{ "fact": "keyword", "oneOf": ["lich su", "tu khi nao", "bat dau"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "history" } }
+    },
+    {
+      "id": "tournament-info-importance-response",
+      "if": {
+        "all": [{ "fact": "intent", "oneOf": ["tournament_info", "tournament_history"] }, { "fact": "entityType", "equals": "tournament" }],
+        "any": [{ "fact": "keyword", "oneOf": ["quan trong", "gia tri", "y nghia"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "importance" } }
     },
     {
       "id": "tournament-info-field",
@@ -764,9 +909,41 @@
       "then": { "assert": [{ "fact": "knowledgeField", "value": "history" }] }
     },
     {
+      "id": "team-info-history-response",
+      "if": {
+        "all": [{ "fact": "intent", "equals": "team_info" }, { "fact": "entityType", "equals": "team" }],
+        "any": [{ "fact": "keyword", "oneOf": ["lich su", "thanh tich", "dinh cao"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "history" } }
+    },
+    {
+      "id": "team-info-importance-response",
+      "if": {
+        "all": [{ "fact": "intent", "equals": "team_info" }, { "fact": "entityType", "equals": "team" }],
+        "any": [{ "fact": "keyword", "oneOf": ["quan trong", "dac biet", "noi bat"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "importance" } }
+    },
+    {
       "id": "team-info-field",
       "if": { "all": [{ "fact": "intent", "equals": "team_info" }, { "fact": "entityType", "equals": "team" }] },
       "then": { "assert": [{ "fact": "knowledgeField", "value": "info" }] }
+    },
+    {
+      "id": "player-info-history-response",
+      "if": {
+        "all": [{ "fact": "intent", "equals": "player_info" }, { "fact": "entityType", "equals": "player" }],
+        "any": [{ "fact": "keyword", "oneOf": ["lich su", "sinh nam", "su nghiep"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "history" } }
+    },
+    {
+      "id": "player-info-importance-response",
+      "if": {
+        "all": [{ "fact": "intent", "equals": "player_info" }, { "fact": "entityType", "equals": "player" }],
+        "any": [{ "fact": "keyword", "oneOf": ["quan trong", "anh huong", "noi bat"] }]
+      },
+      "then": { "respond": { "type": "entityKnowledge", "field": "importance" } }
     },
     {
       "id": "player-info-field",
@@ -817,7 +994,7 @@
     },
     {
       "id": "ask-patch-when-missing",
-      "if": { "all": [{ "fact": "intent", "equals": "patch_info" }, { "fact": "entityId", "exists": false }] },
+      "if": { "all": [{ "fact": "intent", "oneOf": ["patch_info", "patch_version_history"] }, { "fact": "entityId", "exists": false }] },
       "then": { "respond": { "type": "static", "responseKey": "askPatchTimeframe", "needsContext": true } }
     },
     {

@@ -51,6 +51,16 @@ const addFinalResponseRule = (id, conditions, responseKey) => ({
   },
 });
 
+const addIntentFactRule = (id, intents, assertedFacts = []) => ({
+  id,
+  if: {
+    all: [{ fact: "intent", oneOf: Array.isArray(intents) ? intents : [intents] }],
+  },
+  then: {
+    assert: assertedFacts.map(([fact, value]) => ({ fact, value })),
+  },
+});
+
 export const buildBotClinicRules = () => {
   return [
     addStaticResponseRule("clinic-intro-greeting", "greeting", "greeting", [
@@ -108,6 +118,18 @@ export const buildBotClinicRules = () => {
         ["requiresVerification", "yes"],
       ],
     ),
+    addIntentFactRule("clinic-security-freeze-action", ["freeze_account"], [
+      ["protectionAction", "freeze_account"],
+      ["securityPriority", "immediate_lockdown"],
+    ]),
+    addIntentFactRule("clinic-security-report-card-action", ["report_lost_card"], [
+      ["protectionAction", "report_lost_card"],
+      ["securityPriority", "card_containment"],
+    ]),
+    addIntentFactRule("clinic-security-replacement-action", ["replacement_card_duration"], [
+      ["protectionAction", "replacement_timeline"],
+      ["securityPriority", "replacement_followup"],
+    ]),
     addIntentDomainRule(
       "clinic-banking-credit-domain",
       ["improve_credit_score", "interest_rate", "credit_limit", "rewards_balance", "redeem_rewards"],
@@ -118,6 +140,26 @@ export const buildBotClinicRules = () => {
         ["needs", "credit_profile"],
       ],
     ),
+    addIntentFactRule("clinic-credit-improve-score-action", ["improve_credit_score"], [
+      ["creditAction", "improve_score"],
+      ["guidanceDepth", "behavior_change"],
+    ]),
+    addIntentFactRule("clinic-credit-interest-action", ["interest_rate"], [
+      ["creditAction", "rate_review"],
+      ["guidanceDepth", "pricing_review"],
+    ]),
+    addIntentFactRule("clinic-credit-limit-action", ["credit_limit"], [
+      ["creditAction", "limit_review"],
+      ["guidanceDepth", "eligibility_review"],
+    ]),
+    addIntentFactRule("clinic-credit-rewards-balance-action", ["rewards_balance"], [
+      ["creditAction", "rewards_balance"],
+      ["guidanceDepth", "benefit_lookup"],
+    ]),
+    addIntentFactRule("clinic-credit-redeem-action", ["redeem_rewards"], [
+      ["creditAction", "redeem_rewards"],
+      ["guidanceDepth", "benefit_redemption"],
+    ]),
     addIntentDomainRule(
       "clinic-banking-operations-domain",
       ["transactions", "spending_history", "pay_bill", "routing", "order_checks"],
@@ -128,11 +170,32 @@ export const buildBotClinicRules = () => {
         ["needs", "account_selection"],
       ],
     ),
+    addIntentFactRule("clinic-operations-history-action", ["transactions", "spending_history"], [
+      ["operationsAction", "history_review"],
+    ]),
+    addIntentFactRule("clinic-operations-bill-payment-action", ["pay_bill"], [
+      ["operationsAction", "bill_payment"],
+      ["requiresDueDate", "yes"],
+    ]),
+    addIntentFactRule("clinic-operations-routing-action", ["routing"], [
+      ["operationsAction", "routing_lookup"],
+      ["requiresAccountContext", "yes"],
+    ]),
+    addIntentFactRule("clinic-operations-check-order-action", ["order_checks"], [
+      ["operationsAction", "check_order"],
+      ["fulfillmentMode", "mail_delivery"],
+    ]),
     addKeywordRule("clinic-transfer-detect-amount", "fund_transfer", ["dollars", "money", "funds"], [
       ["slotDetected", "amount_reference"],
     ]),
     addKeywordRule("clinic-transfer-detect-account", "fund_transfer", ["account", "checking", "savings"], [
       ["slotDetected", "account_reference"],
+    ]),
+    addKeywordRule("clinic-transfer-detect-recipient", "fund_transfer", ["recipient", "friend", "payee", "wire"], [
+      ["slotDetected", "recipient_reference"],
+    ]),
+    addKeywordRule("clinic-transfer-detect-urgency", "fund_transfer", ["today", "now", "urgent", "immediately"], [
+      ["transferPriority", "expedited"],
     ]),
     addKeywordRule("clinic-balance-detect-account", "balance_lookup", ["account", "balance", "checking", "savings"], [
       ["slotDetected", "balance_target"],
@@ -140,11 +203,32 @@ export const buildBotClinicRules = () => {
     addKeywordRule("clinic-security-detect-card", "account_protection", ["card", "credit card", "debit card"], [
       ["securityScope", "card"],
     ]),
+    addKeywordRule("clinic-security-detect-lost", "account_protection", ["lost", "stolen", "missing"], [
+      ["incidentType", "lost_or_stolen"],
+    ]),
+    addKeywordRule("clinic-security-detect-fraud", "account_protection", ["fraud", "suspicious", "unauthorized"], [
+      ["incidentType", "suspicious_activity"],
+    ]),
     addKeywordRule("clinic-credit-detect-score", "credit_guidance", ["credit", "score", "interest"], [
       ["guidanceScope", "credit_health"],
     ]),
+    addKeywordRule("clinic-credit-detect-limit", "credit_guidance", ["limit", "raise", "increase"], [
+      ["guidanceScope", "limit_strategy"],
+    ]),
+    addKeywordRule("clinic-credit-detect-rewards", "credit_guidance", ["rewards", "points", "redeem"], [
+      ["guidanceScope", "rewards_program"],
+    ]),
     addKeywordRule("clinic-operations-detect-history", "account_operations", ["transactions", "history", "spending"], [
       ["operationsScope", "history_review"],
+    ]),
+    addKeywordRule("clinic-operations-detect-bill", "account_operations", ["bill", "utility", "electricity", "internet", "phone"], [
+      ["operationsScope", "bill_payment"],
+    ]),
+    addKeywordRule("clinic-operations-detect-routing", "account_operations", ["routing", "number", "direct deposit"], [
+      ["operationsScope", "routing_lookup"],
+    ]),
+    addKeywordRule("clinic-operations-detect-checks", "account_operations", ["checks", "cheques", "mail"], [
+      ["operationsScope", "check_order"],
     ]),
 
     addIntentDomainRule(
@@ -157,8 +241,19 @@ export const buildBotClinicRules = () => {
         ["supportsAction", "schedule_or_lookup"],
       ],
     ),
+    addIntentFactRule("clinic-productivity-timer-action", ["timer"], [["planningAction", "timer"]]),
+    addIntentFactRule("clinic-productivity-alarm-action", ["alarm"], [["planningAction", "alarm"]]),
+    addIntentFactRule("clinic-productivity-reminder-action", ["reminder"], [["planningAction", "reminder"]]),
+    addIntentFactRule("clinic-productivity-calendar-action", ["calendar", "date", "time"], [["planningAction", "calendar_lookup"]]),
+    addIntentFactRule("clinic-productivity-todo-action", ["todo_list"], [["planningAction", "todo_list"]]),
     addKeywordRule("clinic-productivity-detect-duration", "planning_support", ["minutes", "hour", "timer", "date", "time"], [
       ["temporalSignal", "explicit_time_expression"],
+    ]),
+    addKeywordRule("clinic-productivity-detect-relative-date", "planning_support", ["today", "tomorrow", "tonight", "morning", "evening"], [
+      ["temporalSignal", "relative_time_expression"],
+    ]),
+    addKeywordRule("clinic-productivity-detect-task", "planning_support", ["meeting", "call", "task", "reminder"], [
+      ["taskSignal", "named_task"],
     ]),
 
     addIntentDomainRule(
@@ -171,8 +266,21 @@ export const buildBotClinicRules = () => {
         ["needs", "destination"],
       ],
     ),
+    addIntentFactRule("clinic-travel-flight-action", ["book_flight"], [["travelAction", "flight_booking"]]),
+    addIntentFactRule("clinic-travel-hotel-action", ["book_hotel"], [["travelAction", "hotel_booking"]]),
+    addIntentFactRule("clinic-travel-alert-action", ["travel_alert"], [["travelAction", "travel_alert_lookup"]]),
+    addIntentFactRule("clinic-travel-baggage-action", ["carry_on"], [["travelAction", "baggage_policy"]]),
     addKeywordRule("clinic-travel-detect-destination", "travel_support", ["flight", "hotel", "travel", "paris", "london"], [
       ["travelSignal", "destination_or_booking"],
+    ]),
+    addKeywordRule("clinic-travel-detect-airline", "travel_support", ["airline", "delta", "united", "american"], [
+      ["travelSignal", "airline_context"],
+    ]),
+    addKeywordRule("clinic-travel-detect-baggage", "travel_support", ["carry on", "baggage", "luggage", "bag"], [
+      ["travelSignal", "baggage_context"],
+    ]),
+    addKeywordRule("clinic-travel-detect-alert", "travel_support", ["delay", "cancelled", "alert", "storm"], [
+      ["travelSignal", "disruption_context"],
     ]),
 
     addIntentDomainRule(
@@ -185,11 +293,15 @@ export const buildBotClinicRules = () => {
         ["supportsAction", "lookup_or_transform"],
       ],
     ),
+    addIntentFactRule("clinic-knowledge-weather-action", ["weather"], [["knowledgeMode", "weather_lookup"]]),
     addKeywordRule("clinic-translate-detect-language", "knowledge_lookup", ["translate", "chinese", "spanish", "english", "russian"], [
       ["knowledgeMode", "translation"],
     ]),
     addKeywordRule("clinic-definition-detect-term", "knowledge_lookup", ["definition", "word", "meaning"], [
       ["knowledgeMode", "definition_lookup"],
+    ]),
+    addKeywordRule("clinic-weather-detect-forecast", "knowledge_lookup", ["weather", "forecast", "rain", "temperature", "sunny"], [
+      ["knowledgeMode", "weather_lookup"],
     ]),
 
     addIntentDomainRule(
@@ -202,6 +314,14 @@ export const buildBotClinicRules = () => {
         ["supportsAction", "track_or_collect_items"],
       ],
     ),
+    addIntentFactRule("clinic-shopping-order-status-action", ["order_status"], [["shoppingAction", "order_status"]]),
+    addIntentFactRule("clinic-shopping-list-action", ["shopping_list"], [["shoppingAction", "shopping_list"]]),
+    addKeywordRule("clinic-shopping-detect-tracking", "shopping_support", ["tracking", "shipping", "delivery", "order"], [
+      ["shoppingSignal", "order_tracking"],
+    ]),
+    addKeywordRule("clinic-shopping-detect-items", "shopping_support", ["list", "buy", "groceries", "items"], [
+      ["shoppingSignal", "item_collection"],
+    ]),
 
     addIntentDomainRule(
       "clinic-food-domain",
@@ -213,6 +333,19 @@ export const buildBotClinicRules = () => {
         ["supportsAction", "recommend_or_lookup"],
       ],
     ),
+    addIntentFactRule("clinic-food-reviews-action", ["restaurant_reviews"], [["foodAction", "restaurant_reviews"]]),
+    addIntentFactRule("clinic-food-reservation-action", ["restaurant_reservation"], [["foodAction", "restaurant_reservation"]]),
+    addIntentFactRule("clinic-food-nutrition-action", ["nutrition_info"], [["foodAction", "nutrition_info"]]),
+    addIntentFactRule("clinic-food-meal-suggestion-action", ["meal_suggestion"], [["foodAction", "meal_suggestion"]]),
+    addKeywordRule("clinic-food-detect-reservation", "food_support", ["table", "reservation", "book", "tonight"], [
+      ["foodSignal", "reservation_context"],
+    ]),
+    addKeywordRule("clinic-food-detect-nutrition", "food_support", ["calories", "protein", "fat", "nutrition"], [
+      ["foodSignal", "nutrition_context"],
+    ]),
+    addKeywordRule("clinic-food-detect-preference", "food_support", ["vegan", "vegetarian", "spicy", "healthy"], [
+      ["foodSignal", "preference_context"],
+    ]),
 
     addIntentDomainRule(
       "clinic-automotive-domain",
@@ -224,22 +357,60 @@ export const buildBotClinicRules = () => {
         ["supportsAction", "maintenance_guidance"],
       ],
     ),
+    addIntentFactRule("clinic-vehicle-maintenance-action", ["schedule_maintenance"], [["vehicleAction", "schedule_maintenance"]]),
+    addIntentFactRule("clinic-vehicle-oil-change-action", ["oil_change_when"], [["vehicleAction", "oil_change_guidance"]]),
+    addIntentFactRule("clinic-vehicle-gas-type-action", ["gas_type"], [["vehicleAction", "fuel_guidance"]]),
+    addKeywordRule("clinic-vehicle-detect-mileage", "vehicle_support", ["miles", "mileage", "odometer", "service"], [
+      ["vehicleSignal", "maintenance_interval"],
+    ]),
+    addKeywordRule("clinic-vehicle-detect-fuel", "vehicle_support", ["gas", "diesel", "premium", "unleaded"], [
+      ["vehicleSignal", "fuel_requirement"],
+    ]),
 
     addFinalResponseRule("clinic-balance-final-detailed", [["workflow", "balance_lookup"], ["slotDetected", "balance_target"]], "balance_response"),
+    addFinalResponseRule("clinic-security-freeze-final", [["workflow", "account_protection"], ["protectionAction", "freeze_account"]], "security_freeze_response"),
+    addFinalResponseRule("clinic-security-replacement-final", [["workflow", "account_protection"], ["protectionAction", "replacement_timeline"]], "security_replacement_response"),
     addFinalResponseRule("clinic-transfer-final-detailed", [["workflow", "fund_transfer"], ["slotDetected", "amount_reference"], ["slotDetected", "account_reference"]], "transfer_response_detailed"),
     addFinalResponseRule("clinic-transfer-final-base", [["workflow", "fund_transfer"]], "transfer_response_base"),
     addFinalResponseRule("clinic-security-card-final", [["workflow", "account_protection"], ["securityScope", "card"]], "security_card_response"),
     addFinalResponseRule("clinic-security-generic-final", [["workflow", "account_protection"]], "security_account_response"),
+    addFinalResponseRule("clinic-credit-score-final", [["workflow", "credit_guidance"], ["creditAction", "improve_score"]], "credit_score_response"),
+    addFinalResponseRule("clinic-credit-interest-final", [["workflow", "credit_guidance"], ["creditAction", "rate_review"]], "credit_interest_response"),
+    addFinalResponseRule("clinic-credit-limit-final", [["workflow", "credit_guidance"], ["creditAction", "limit_review"]], "credit_limit_response"),
+    addFinalResponseRule("clinic-credit-rewards-final", [["workflow", "credit_guidance"], ["creditAction", "rewards_balance"]], "credit_rewards_response"),
+    addFinalResponseRule("clinic-credit-redeem-final", [["workflow", "credit_guidance"], ["creditAction", "redeem_rewards"]], "credit_rewards_response"),
     addFinalResponseRule("clinic-credit-final", [["workflow", "credit_guidance"]], "credit_guidance_response"),
+    addFinalResponseRule("clinic-operations-bill-final", [["workflow", "account_operations"], ["operationsAction", "bill_payment"]], "bill_payment_response"),
+    addFinalResponseRule("clinic-operations-routing-final", [["workflow", "account_operations"], ["operationsAction", "routing_lookup"]], "routing_response"),
+    addFinalResponseRule("clinic-operations-check-order-final", [["workflow", "account_operations"], ["operationsAction", "check_order"]], "check_order_response"),
     addFinalResponseRule("clinic-operations-history-final", [["workflow", "account_operations"], ["operationsScope", "history_review"]], "operations_history_response"),
     addFinalResponseRule("clinic-operations-generic-final", [["workflow", "account_operations"]], "operations_generic_response"),
+    addFinalResponseRule("clinic-productivity-timer-final", [["workflow", "planning_support"], ["planningAction", "timer"]], "timer_response"),
+    addFinalResponseRule("clinic-productivity-alarm-final", [["workflow", "planning_support"], ["planningAction", "alarm"]], "alarm_response"),
+    addFinalResponseRule("clinic-productivity-reminder-final", [["workflow", "planning_support"], ["planningAction", "reminder"]], "reminder_response"),
+    addFinalResponseRule("clinic-productivity-calendar-final", [["workflow", "planning_support"], ["planningAction", "calendar_lookup"]], "calendar_response"),
+    addFinalResponseRule("clinic-productivity-todo-final", [["workflow", "planning_support"], ["planningAction", "todo_list"]], "todo_response"),
     addFinalResponseRule("clinic-productivity-final", [["workflow", "planning_support"]], "productivity_response"),
+    addFinalResponseRule("clinic-travel-flight-final", [["workflow", "travel_support"], ["travelAction", "flight_booking"]], "flight_booking_response"),
+    addFinalResponseRule("clinic-travel-hotel-final", [["workflow", "travel_support"], ["travelAction", "hotel_booking"]], "hotel_booking_response"),
+    addFinalResponseRule("clinic-travel-alert-final", [["workflow", "travel_support"], ["travelAction", "travel_alert_lookup"]], "travel_alert_response"),
+    addFinalResponseRule("clinic-travel-baggage-final", [["workflow", "travel_support"], ["travelAction", "baggage_policy"]], "baggage_response"),
     addFinalResponseRule("clinic-travel-final", [["workflow", "travel_support"]], "travel_response"),
     addFinalResponseRule("clinic-knowledge-translate-final", [["workflow", "knowledge_lookup"], ["knowledgeMode", "translation"]], "translate_response"),
     addFinalResponseRule("clinic-knowledge-definition-final", [["workflow", "knowledge_lookup"], ["knowledgeMode", "definition_lookup"]], "definition_response"),
+    addFinalResponseRule("clinic-knowledge-weather-final", [["workflow", "knowledge_lookup"], ["knowledgeMode", "weather_lookup"]], "weather_response"),
     addFinalResponseRule("clinic-knowledge-generic-final", [["workflow", "knowledge_lookup"]], "knowledge_generic_response"),
+    addFinalResponseRule("clinic-shopping-order-status-final", [["workflow", "shopping_support"], ["shoppingAction", "order_status"]], "order_status_response"),
+    addFinalResponseRule("clinic-shopping-list-final", [["workflow", "shopping_support"], ["shoppingAction", "shopping_list"]], "shopping_list_response"),
     addFinalResponseRule("clinic-shopping-final", [["workflow", "shopping_support"]], "shopping_response"),
+    addFinalResponseRule("clinic-food-reviews-final", [["workflow", "food_support"], ["foodAction", "restaurant_reviews"]], "restaurant_reviews_response"),
+    addFinalResponseRule("clinic-food-reservation-final", [["workflow", "food_support"], ["foodAction", "restaurant_reservation"]], "restaurant_reservation_response"),
+    addFinalResponseRule("clinic-food-nutrition-final", [["workflow", "food_support"], ["foodAction", "nutrition_info"]], "nutrition_response"),
+    addFinalResponseRule("clinic-food-meal-final", [["workflow", "food_support"], ["foodAction", "meal_suggestion"]], "meal_suggestion_response"),
     addFinalResponseRule("clinic-food-final", [["workflow", "food_support"]], "food_response"),
+    addFinalResponseRule("clinic-vehicle-maintenance-final", [["workflow", "vehicle_support"], ["vehicleAction", "schedule_maintenance"]], "maintenance_schedule_response"),
+    addFinalResponseRule("clinic-vehicle-oil-final", [["workflow", "vehicle_support"], ["vehicleAction", "oil_change_guidance"]], "oil_change_response"),
+    addFinalResponseRule("clinic-vehicle-fuel-final", [["workflow", "vehicle_support"], ["vehicleAction", "fuel_guidance"]], "gas_type_response"),
     addFinalResponseRule("clinic-automotive-final", [["workflow", "vehicle_support"]], "automotive_response"),
   ];
 };

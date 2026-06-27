@@ -9,6 +9,7 @@ import type {
   ClinicEvaluationDatasetOption,
   ClinicManualPrediction,
   ClinicManualPredictionResponse,
+  ClinicPredictionExplanation,
   ClinicEvaluationResponse,
   ClinicEvaluationRunDetail,
   ClinicEvaluationSummary,
@@ -83,6 +84,215 @@ const PredictionCell = ({ prediction }: { prediction?: ClinicManualPrediction })
       <p className="text-sm font-medium text-foreground break-all">
         Intent: {prediction.predictedIntent ?? "null"}
       </p>
+    </div>
+  );
+};
+
+const formatExplainNumber = (value: number, digits = 4) => {
+  if (!Number.isFinite(value)) {
+    return "0";
+  }
+
+  return value.toFixed(digits);
+};
+
+const buildContributionFormula = (
+  contributions: Array<{ term: string; contribution: number }>,
+  limit = 6,
+) => {
+  const visibleContributions = contributions.slice(0, limit);
+
+  if (!visibleContributions.length) {
+    return "0";
+  }
+
+  const formula = visibleContributions
+    .map((item, index) => {
+      const value = formatExplainNumber(Math.abs(item.contribution));
+      const prefix = index === 0 ? (item.contribution < 0 ? "- " : "") : item.contribution < 0 ? " - " : " + ";
+
+      return `${prefix}${item.term}(${value})`;
+    })
+    .join("");
+
+  return visibleContributions.length < contributions.length ? `${formula} + ...` : formula;
+};
+
+const ManualExplainCard = ({
+  title,
+  explanation,
+}: {
+  title: string;
+  explanation?: ClinicPredictionExplanation | null;
+}) => {
+  if (!explanation?.explanation) {
+    return (
+      <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground">
+        No explanation available for {title}.
+      </div>
+    );
+  }
+
+  const details = explanation.explanation;
+  const topFeatures = details.vectorization.features
+    .filter((feature) => feature.inVocabulary && feature.normalizedWeight > 0)
+    .slice(0, 20);
+  const contributionSum =
+    details.winningIntent?.contributions.reduce(
+      (sum, contribution) => sum + contribution.contribution,
+      0,
+    ) ?? 0;
+  const hasConditionalProbability = Boolean(
+    details.winningIntent?.contributions.some(
+      (contribution) => contribution.conditionalProbability !== undefined,
+    ),
+  );
+
+  return (
+    <div className="space-y-5 rounded-2xl border border-border/60 bg-card/80 p-4 shadow-sm">
+      <div>
+        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{title}</p>
+        <h3 className="mt-1 text-lg font-semibold text-foreground">
+          Predicted intent: {explanation.intent ?? "null"}
+        </h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Score type: <span className="font-medium text-foreground">{details.scoreLabel}</span>
+        </p>
+      </div>
+
+      <div className="space-y-2 text-sm text-foreground">
+        <p>
+          Step 1. Normalized text: <span className="font-medium">{explanation.normalizedText || "(empty)"}</span>
+        </p>
+        <p>
+          Step 2. Tokens: <span className="font-medium">{details.vectorization.tokens.join(", ") || "(none)"}</span>
+        </p>
+        <p>
+          Generated terms/ngrams: <span className="font-medium">{details.vectorization.terms.join(", ") || "(none)"}</span>
+        </p>
+      </div>
+
+      <div>
+        <h4 className="text-sm font-semibold text-foreground">Step 3. TF-IDF vectorization</h4>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Công thức đang dùng: <span className="font-medium text-foreground">x = (tf * idf) / ||v||</span>, với ||v|| = {formatExplainNumber(details.vectorization.magnitude)}
+        </p>
+        <div className="mt-2 overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead>
+              <tr className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                <th className="px-2 py-2">Term</th>
+                <th className="px-2 py-2">Count</th>
+                <th className="px-2 py-2">TF</th>
+                <th className="px-2 py-2">IDF</th>
+                <th className="px-2 py-2">TF * IDF</th>
+                <th className="px-2 py-2">x</th>
+              </tr>
+            </thead>
+            <tbody>
+              {topFeatures.map((feature) => (
+                <tr key={`${title}-${feature.term}`} className="border-t border-border/40">
+                  <td className="px-2 py-2 text-foreground">{feature.term}</td>
+                  <td className="px-2 py-2 text-muted-foreground">{feature.count}</td>
+                  <td className="px-2 py-2 text-muted-foreground">{formatExplainNumber(feature.tf)}</td>
+                  <td className="px-2 py-2 text-muted-foreground">{formatExplainNumber(feature.idf)}</td>
+                  <td className="px-2 py-2 text-muted-foreground">{formatExplainNumber(feature.rawWeight)}</td>
+                  <td className="px-2 py-2 text-foreground">{formatExplainNumber(feature.normalizedWeight)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <h4 className="text-sm font-semibold text-foreground">Step 4. Intent scores</h4>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Bảng này cho thấy score thô của từng intent trước khi chọn intent thắng, cùng với confidence cuối sau bước chuẩn hóa của mô hình.
+        </p>
+        <div className="mt-2 overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead>
+              <tr className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                <th className="px-2 py-2">Intent</th>
+                <th className="px-2 py-2">Raw score</th>
+                <th className="px-2 py-2">Prior/Similarity</th>
+                <th className="px-2 py-2">Final confidence</th>
+              </tr>
+            </thead>
+            <tbody>
+              {details.topScores.map((score) => (
+                <tr key={`${title}-${score.intent}`} className="border-t border-border/40">
+                  <td className="px-2 py-2 text-foreground">{score.intent}</td>
+                  <td className="px-2 py-2 text-muted-foreground">{formatExplainNumber(score.rawScore)}</td>
+                  <td className="px-2 py-2 text-muted-foreground">
+                    {score.prior !== undefined
+                      ? `prior=${formatExplainNumber(score.prior)}`
+                      : score.similarity !== undefined
+                        ? `sim=${formatExplainNumber(score.similarity)}`
+                        : "-"}
+                  </td>
+                  <td className="px-2 py-2 text-foreground">{formatExplainNumber(score.finalConfidence * 100, 2)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <h4 className="text-sm font-semibold text-foreground">Step 5. Winning intent math</h4>
+        {details.winningIntent ? (
+          <>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Intent <span className="font-medium text-foreground">{details.winningIntent.intent}</span>, bias/intercept = {formatExplainNumber(details.winningIntent.bias)}, raw score = {formatExplainNumber(details.winningIntent.rawScore)}
+            </p>
+            <div className="mt-2 rounded-xl bg-muted/30 p-3 text-sm text-foreground">
+              <p>
+                Score formula: <span className="font-medium">score = bias + Σ(x * w)</span>
+              </p>
+              <p className="mt-1 text-muted-foreground">
+                score = {formatExplainNumber(details.winningIntent.bias)} + {formatExplainNumber(contributionSum)} = {formatExplainNumber(details.winningIntent.rawScore)}
+              </p>
+              <p className="mt-1 break-words text-muted-foreground">
+                Khai triển các thành phần lớn nhất: {buildContributionFormula(details.winningIntent.contributions)}
+              </p>
+            </div>
+            <div className="mt-2 overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead>
+                  <tr className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                    <th className="px-2 py-2">Term</th>
+                    <th className="px-2 py-2">x</th>
+                    <th className="px-2 py-2">w</th>
+                    {hasConditionalProbability ? <th className="px-2 py-2">P(term|intent)</th> : null}
+                    <th className="px-2 py-2">x * w</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {details.winningIntent.contributions.map((contribution) => (
+                    <tr key={`${title}-${details.winningIntent?.intent}-${contribution.term}`} className="border-t border-border/40">
+                      <td className="px-2 py-2 text-foreground">{contribution.term}</td>
+                      <td className="px-2 py-2 text-muted-foreground">{formatExplainNumber(contribution.inputWeight)}</td>
+                      <td className="px-2 py-2 text-muted-foreground">{formatExplainNumber(contribution.modelWeight)}</td>
+                      {hasConditionalProbability ? (
+                        <td className="px-2 py-2 text-muted-foreground">
+                          {contribution.conditionalProbability !== undefined
+                            ? formatExplainNumber(contribution.conditionalProbability)
+                            : "-"}
+                        </td>
+                      ) : null}
+                      <td className="px-2 py-2 text-foreground">{formatExplainNumber(contribution.contribution)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : (
+          <p className="mt-2 text-sm text-muted-foreground">No winning intent explanation available.</p>
+        )}
+      </div>
     </div>
   );
 };
@@ -400,37 +610,64 @@ const ClinicEvaluationAdminPage = () => {
             ) : null}
 
             {manualPrediction ? (
-              <div className="mt-5 overflow-x-auto">
-                <table className="min-w-full border-separate border-spacing-y-3 text-left">
-                  <thead>
-                    <tr className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                      <th className="px-3">Input</th>
-                      <th className="px-3">Right Intent</th>
-                      <th className="px-3">NB</th>
-                      <th className="px-3">SVM</th>
-                      <th className="px-3">LR</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="rounded-2xl bg-muted/40 align-top shadow-sm">
-                      <td className="max-w-sm rounded-l-2xl px-3 py-4 text-sm text-foreground">
-                        {manualPrediction.text}
-                      </td>
-                      <td className="px-3 py-4 text-sm font-medium text-foreground">
-                        {manualPrediction.expectedIntent ?? "Not provided"}
-                      </td>
-                      <td className="px-3 py-4">
-                        <PredictionCell prediction={manualPrediction.predictions.botClinicV2} />
-                      </td>
-                      <td className="px-3 py-4">
-                        <PredictionCell prediction={manualPrediction.predictions.botClinic} />
-                      </td>
-                      <td className="rounded-r-2xl px-3 py-4">
-                        <PredictionCell prediction={manualPrediction.predictions.botClinicV3} />
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div className="mt-5 space-y-5">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full border-separate border-spacing-y-3 text-left">
+                    <thead>
+                      <tr className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                        <th className="px-3">Input</th>
+                        <th className="px-3">Right Intent</th>
+                        <th className="px-3">NB</th>
+                        <th className="px-3">SVM</th>
+                        <th className="px-3">LR</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="rounded-2xl bg-muted/40 align-top shadow-sm">
+                        <td className="max-w-sm rounded-l-2xl px-3 py-4 text-sm text-foreground">
+                          {manualPrediction.text}
+                        </td>
+                        <td className="px-3 py-4 text-sm font-medium text-foreground">
+                          {manualPrediction.expectedIntent ?? "Not provided"}
+                        </td>
+                        <td className="px-3 py-4">
+                          <PredictionCell prediction={manualPrediction.predictions.botClinicV2} />
+                        </td>
+                        <td className="px-3 py-4">
+                          <PredictionCell prediction={manualPrediction.predictions.botClinic} />
+                        </td>
+                        <td className="rounded-r-2xl px-3 py-4">
+                          <PredictionCell prediction={manualPrediction.predictions.botClinicV3} />
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Step-by-step intent normalization and scoring</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Phần dưới đây tái hiện pipeline từ chuẩn hóa văn bản, TF-IDF vectorization, rồi đến cách từng mô hình tính score để quy về intent.
+                  </p>
+                </div>
+
+                <Tabs defaultValue="botClinicV2" className="space-y-4">
+                  <TabsList>
+                    <TabsTrigger value="botClinicV2">NB</TabsTrigger>
+                    <TabsTrigger value="botClinic">SVM</TabsTrigger>
+                    <TabsTrigger value="botClinicV3">LR</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="botClinicV2">
+                    <ManualExplainCard title="Naive Bayes" explanation={manualPrediction.explanations.botClinicV2} />
+                  </TabsContent>
+                  <TabsContent value="botClinic">
+                    <ManualExplainCard title="Support Vector Machine" explanation={manualPrediction.explanations.botClinic} />
+                  </TabsContent>
+                  <TabsContent value="botClinicV3">
+                    <ManualExplainCard title="Logistic Regression" explanation={manualPrediction.explanations.botClinicV3} />
+                  </TabsContent>
+                </Tabs>
               </div>
             ) : null}
           </section>

@@ -475,6 +475,20 @@ const buildClinicPredictionPayload = (text, expectedIntent = null) => {
   );
 };
 
+const buildClinicExplainPayload = (text) => {
+  return Object.fromEntries(
+    clinicEvaluationModels.map((model) => {
+      const engine = getBotEngineById(model.botId);
+
+      if (!engine || typeof engine.explainIntent !== "function") {
+        return [model.botId, null];
+      }
+
+      return [model.botId, engine.explainIntent(text)];
+    }),
+  );
+};
+
 export const getClinicEvaluationDatasets = async (req, res) => {
   try {
     return res.status(200).json({
@@ -778,6 +792,7 @@ export const predictClinicBotsForInput = async (req, res) => {
       text,
       expectedIntent,
       predictions: buildClinicPredictionPayload(text, expectedIntent),
+      explanations: buildClinicExplainPayload(text),
     });
   } catch (error) {
     console.error("Lỗi khi dự đoán thủ công cho clinic bots", error);

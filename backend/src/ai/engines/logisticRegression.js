@@ -109,6 +109,21 @@ const softmaxLogits = (items = []) => {
     .sort((left, right) => right.confidence - left.confidence);
 };
 
+const buildContributionRows = (queryVector = new Map(), weights = new Map()) => {
+  return Array.from(queryVector.entries())
+    .map(([term, inputWeight]) => {
+      const modelWeight = weights.get(term) || 0;
+
+      return {
+        term,
+        inputWeight,
+        modelWeight,
+        contribution: inputWeight * modelWeight,
+      };
+    })
+    .sort((left, right) => Math.abs(right.contribution) - Math.abs(left.contribution));
+};
+
 export class LogisticRegressionClassifier {
   constructor(examples = [], options = {}) {
     this.epochs = options.epochs ?? 10;
@@ -475,6 +490,79 @@ export class LogisticRegressionClassifier {
       confidence: scores[0]?.confidence ?? 0,
       scores,
       keywords: this.vectorizer.extractKeywords(text),
+    };
+  }
+
+  explain(text = "") {
+    this.flushPendingLazyDecay();
+
+    const exactIntent = this.exampleIntents.get(text) || null;
+    const queryVector = this.vectorizer.transformToSparse(text);
+    const vectorization = this.vectorizer.explainTransform(text);
+
+    if (!queryVector.size || this.intents.length === 0) {
+      return {
+        exactMatch: Boolean(exactIntent),
+        scoreLabel: "logit",
+        vectorization,
+        topScores: [],
+        winningIntent: null,
+      };
+    }
+
+    const logits = this.intents.map((intent) => ({
+      intent,
+      logit:
+        dotSparseVectors(this.intentWeights.get(intent) || new Map(), queryVector) +
+        (this.intentBiases.get(intent) || 0),
+    }));
+    const logisticScores = softmaxLogits(logits);
+    const similarityByIntent = new Map();
+
+    this.exampleVectors.forEach((example) => {
+      const similarity = dotSparseVectors(queryVector, example.vector);
+      const previous = similarityByIntent.get(example.intent) || 0;
+
+      if (similarity > previous) {
+        similarityByIntent.set(example.intent, similarity);
+      }
+    });
+
+    const combinedScores = logisticScores.map((item) => ({
+      intent: item.intent,
+      finalConfidence: item.confidence * 0.8 + (similarityByIntent.get(item.intent) || 0) * 0.2,
+      rawScore: item.logit,
+      similarity: similarityByIntent.get(item.intent) || 0,
+    }));
+    const total = combinedScores.reduce((sum, item) => sum + item.finalConfidence, 0) || 1;
+    const topScores = combinedScores
+      .map((item) => ({
+        intent: item.intent,
+        rawScore: item.rawScore,
+        finalConfidence: item.finalConfidence / total,
+        similarity: item.similarity,
+      }))
+      .sort((left, right) => right.finalConfidence - left.finalConfidence);
+
+    const selectedIntent = exactIntent ?? topScores[0]?.intent ?? null;
+    const selectedScore = topScores.find((item) => item.intent === selectedIntent) ?? null;
+    const weights = this.intentWeights.get(selectedIntent) || new Map();
+
+    return {
+      exactMatch: Boolean(exactIntent),
+      scoreLabel: "logit",
+      vectorization,
+      topScores: topScores.slice(0, 5),
+      winningIntent: selectedIntent
+        ? {
+            intent: selectedIntent,
+            bias: this.intentBiases.get(selectedIntent) || 0,
+            rawScore: selectedScore?.rawScore ?? 0,
+            finalConfidence: exactIntent ? 1 : selectedScore?.finalConfidence ?? 0,
+            similarity: selectedScore?.similarity ?? 0,
+            contributions: buildContributionRows(queryVector, weights).slice(0, 20),
+          }
+        : null,
     };
   }
 

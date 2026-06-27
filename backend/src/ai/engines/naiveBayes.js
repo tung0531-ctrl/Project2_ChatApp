@@ -15,6 +15,31 @@ const dotSparseVectors = (left = new Map(), right = new Map()) => {
   return score;
 };
 
+const buildContributionRows = ({
+  queryVector = new Map(),
+  featureMap = new Map(),
+  totalIntentWeight = 0,
+  alpha = 1,
+  vocabularySize = 1,
+}) => {
+  return Array.from(queryVector.entries())
+    .map(([term, inputWeight]) => {
+      const observedWeight = featureMap.get(term) || 0;
+      const conditionalProbability =
+        (observedWeight + alpha) / (totalIntentWeight + alpha * vocabularySize);
+      const modelWeight = Math.log(conditionalProbability);
+
+      return {
+        term,
+        inputWeight,
+        modelWeight,
+        contribution: inputWeight * modelWeight,
+        conditionalProbability,
+      };
+    })
+    .sort((left, right) => Math.abs(right.contribution) - Math.abs(left.contribution));
+};
+
 export class NaiveBayesClassifier {
   constructor(examples = [], options = {}) {
     this.alpha = options.alpha ?? 1;
@@ -178,6 +203,114 @@ export class NaiveBayesClassifier {
       confidence: scores[0]?.confidence ?? 0,
       scores,
       keywords: this.vectorizer.extractKeywords(text),
+    };
+  }
+
+  explain(text = "") {
+    const exactIntent = this.exampleIntents.get(text) || null;
+    const queryVector = this.vectorizer.transformToSparse(text);
+    const vectorization = this.vectorizer.explainTransform(text);
+    const intents = Array.from(this.intentDocCounts.keys());
+
+    if (!queryVector.size || intents.length === 0) {
+      return {
+        exactMatch: Boolean(exactIntent),
+        scoreLabel: "log_probability",
+        vectorization,
+        topScores: [],
+        winningIntent: null,
+      };
+    }
+
+    const vocabularySize = Math.max(this.vectorizer.vocabulary.size, 1);
+    const rawScores = intents.map((intent) => {
+      const intentDocCount = this.intentDocCounts.get(intent) || 1;
+      const featureMap = this.intentFeatureWeights.get(intent) || new Map();
+      const totalIntentWeight = this.intentTotalWeights.get(intent) || 0;
+      const prior = Math.log(intentDocCount / this.totalDocs);
+      let score = prior;
+
+      queryVector.forEach((queryWeight, term) => {
+        const observedWeight = featureMap.get(term) || 0;
+        const conditionalProbability =
+          (observedWeight + this.alpha) / (totalIntentWeight + this.alpha * vocabularySize);
+
+        score += queryWeight * Math.log(conditionalProbability);
+      });
+
+      return { intent, score, prior };
+    });
+
+    const maxScore = Math.max(...rawScores.map((item) => item.score));
+    const stabilizedScores = rawScores.map((item) => ({
+      ...item,
+      expScore: Math.exp(item.score - maxScore),
+    }));
+    const totalScore = stabilizedScores.reduce((sum, item) => sum + item.expScore, 0);
+    const bayesScores = stabilizedScores
+      .map((item) => ({
+        intent: item.intent,
+        rawScore: item.score,
+        bayesConfidence: totalScore === 0 ? 0 : item.expScore / totalScore,
+        prior: item.prior,
+      }))
+      .sort((left, right) => right.bayesConfidence - left.bayesConfidence);
+
+    const similarityByIntent = new Map();
+
+    this.exampleVectors.forEach((example) => {
+      const similarity = dotSparseVectors(queryVector, example.vector);
+      const bestSimilarity = similarityByIntent.get(example.intent) || 0;
+
+      if (similarity > bestSimilarity) {
+        similarityByIntent.set(example.intent, similarity);
+      }
+    });
+
+    const combinedScores = bayesScores.map((item) => ({
+      intent: item.intent,
+      rawScore: item.rawScore,
+      prior: item.prior,
+      similarity: similarityByIntent.get(item.intent) || 0,
+      finalConfidence: item.bayesConfidence * 0.7 + (similarityByIntent.get(item.intent) || 0) * 0.3,
+    }));
+    const combinedTotal = combinedScores.reduce((sum, item) => sum + item.finalConfidence, 0) || 1;
+    const topScores = combinedScores
+      .map((item) => ({
+        intent: item.intent,
+        rawScore: item.rawScore,
+        finalConfidence: item.finalConfidence / combinedTotal,
+        similarity: item.similarity,
+        prior: item.prior,
+      }))
+      .sort((left, right) => right.finalConfidence - left.finalConfidence);
+
+    const selectedIntent = exactIntent ?? topScores[0]?.intent ?? null;
+    const selectedScore = topScores.find((item) => item.intent === selectedIntent) ?? null;
+    const featureMap = this.intentFeatureWeights.get(selectedIntent) || new Map();
+    const totalIntentWeight = this.intentTotalWeights.get(selectedIntent) || 0;
+
+    return {
+      exactMatch: Boolean(exactIntent),
+      scoreLabel: "log_probability",
+      vectorization,
+      topScores: topScores.slice(0, 5),
+      winningIntent: selectedIntent
+        ? {
+            intent: selectedIntent,
+            bias: selectedScore?.prior ?? 0,
+            rawScore: selectedScore?.rawScore ?? 0,
+            finalConfidence: exactIntent ? 1 : selectedScore?.finalConfidence ?? 0,
+            similarity: selectedScore?.similarity ?? 0,
+            contributions: buildContributionRows({
+              queryVector,
+              featureMap,
+              totalIntentWeight,
+              alpha: this.alpha,
+              vocabularySize,
+            }).slice(0, 20),
+          }
+        : null,
     };
   }
 
