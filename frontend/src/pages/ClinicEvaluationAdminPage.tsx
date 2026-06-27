@@ -19,6 +19,12 @@ type RowFilter = "all" | "allFailed" | "contradiction" | "nbWrong" | "svmWrong" 
 const RESULTS_PER_PAGE = 200;
 const EVALUATION_PROGRESS_POLL_INTERVAL_MS = 500;
 
+type ResponseCoverageStats = {
+  meaningfulResponses: number;
+  total: number;
+  percent: number;
+};
+
 const formatDuration = (speedMs: number) => {
   if (speedMs < 1000) {
     return `${speedMs} ms`;
@@ -27,7 +33,13 @@ const formatDuration = (speedMs: number) => {
   return `${(speedMs / 1000).toFixed(2)} s`;
 };
 
-const SummaryCard = ({ summary }: { summary: ClinicEvaluationSummary }) => {
+const SummaryCard = ({
+  summary,
+  responseCoverage,
+}: {
+  summary: ClinicEvaluationSummary;
+  responseCoverage?: ResponseCoverageStats;
+}) => {
   return (
     <div className="rounded-2xl border border-border/60 bg-card/90 p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
@@ -53,9 +65,19 @@ const SummaryCard = ({ summary }: { summary: ClinicEvaluationSummary }) => {
           Correct: <span className="font-semibold text-foreground">{summary.correct}/{summary.total}</span>
         </p>
         <p>
+          Response rate: <span className="font-semibold text-foreground">{responseCoverage?.percent.toFixed(2) ?? "0.00"}%</span>
+        </p>
+        <p>
+          Meaningful responses: <span className="font-semibold text-foreground">{responseCoverage?.meaningfulResponses ?? 0}/{responseCoverage?.total ?? summary.total}</span>
+        </p>
+        <p>
           Loss: <span className="font-semibold text-foreground">{summary.averageLoss?.toFixed(4) ?? "N/A"}</span>
         </p>
       </div>
+
+      <p className="mt-4 text-xs text-muted-foreground">
+        Chỉ tính các câu có response thực sự từ rule/knowledge path. Câu fallback mặc định khi không xác định được intent hoặc rule sẽ không được tính vào numerator.
+      </p>
     </div>
   );
 };
@@ -459,6 +481,39 @@ const ClinicEvaluationAdminPage = () => {
     return evaluation.rows;
   }, [evaluation, rowFilter]);
 
+  const responseCoverageByBotId = useMemo<Record<string, ResponseCoverageStats>>(() => {
+    if (!evaluation) {
+      return {};
+    }
+
+    const botIds = evaluation.summaries.map((summary) => summary.botId);
+
+    return Object.fromEntries(
+      botIds.map((botId) => {
+        const total = evaluation.rows.length;
+        const meaningfulResponses = evaluation.rows.reduce((count, row) => {
+          const runDetail = row.runDetails[botId];
+          const hasMeaningfulResponse = Boolean(
+            runDetail?.response?.trim() && !runDetail.usedFallback,
+          );
+
+          return count + (hasMeaningfulResponse ? 1 : 0);
+        }, 0);
+
+        const percent = total > 0 ? (meaningfulResponses / total) * 100 : 0;
+
+        return [
+          botId,
+          {
+            meaningfulResponses,
+            total,
+            percent,
+          },
+        ];
+      }),
+    );
+  }, [evaluation]);
+
   const totalPages = Math.max(1, Math.ceil(visibleRows.length / RESULTS_PER_PAGE));
   const pageStartIndex = visibleRows.length ? (currentPage - 1) * RESULTS_PER_PAGE : 0;
   const pageRows = visibleRows.slice(pageStartIndex, pageStartIndex + RESULTS_PER_PAGE);
@@ -558,7 +613,11 @@ const ClinicEvaluationAdminPage = () => {
 
           <section className="grid gap-4 lg:grid-cols-3">
             {(evaluation?.summaries ?? []).map((summary) => (
-              <SummaryCard key={summary.botId} summary={summary} />
+              <SummaryCard
+                key={summary.botId}
+                summary={summary}
+                responseCoverage={responseCoverageByBotId[summary.botId]}
+              />
             ))}
           </section>
 

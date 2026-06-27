@@ -1,0 +1,147 @@
+[
+  {
+    "text": "i want to transfer money",
+    "result": {
+      "content": "I detected the @botClinic trigger, but I do not yet have enough confidence to give a detailed answer. Please clarify your goal by adding more information such as the operation name, amount, account, time, or service type.",
+      "matchedIntent": "transfer",
+      "confidence": 0.030646200917022207,
+      "usedFallback": true,
+      "needsContext": true,
+      "keywords": [
+        "transfer money",
+        "to transfer",
+        "transfer",
+        "money",
+        "want to",
+        "want",
+        "to",
+        "i",
+        "i want",
+        "i want to",
+        "want to transfer",
+        "to transfer money"
+      ],
+      "firedRules": []
+    }
+  },
+  {
+    "text": "transfer 50 dollars to an",
+    "result": {
+      "content": "I detected the @botClinic trigger, but I do not yet have enough confidence to give a detailed answer. Please clarify your goal by adding more information such as the operation name, amount, account, time, or service type.",
+      "matchedIntent": "exchange_rate",
+      "confidence": 0.06624082866818393,
+      "usedFallback": true,
+      "needsContext": true,
+      "keywords": [
+        "50 dollars",
+        "dollars to",
+        "50",
+        "transfer",
+        "dollars",
+        "to",
+        "transfer 50",
+        "transfer 50 dollars",
+        "50 dollars to",
+        "dollars to an",
+        "to an",
+        "an"
+      ],
+      "firedRules": []
+    }
+  },
+  {
+    "text": "what is my balance",
+    "result": {
+      "content": "I infer that this is a balance inquiry. A reasonable handling flow is: identify the target account, verify access rights, read both available and current balance values, and return the result together with the latest update time.",
+      "matchedIntent": "balance",
+      "confidence": 1,
+      "usedFallback": false,
+      "needsContext": false,
+      "keywords": [
+        "balance",
+        "what",
+        "what is",
+        "what is my",
+        "is",
+        "is my",
+        "is my balance",
+        "my",
+        "my balance"
+      ],
+      "firedRules": [
+        "clinic-balance-domain",
+        "clinic-balance-detect-account",
+        "clinic-balance-final-detailed"
+      ]
+    }
+  },
+  {
+    "text": "pay my electric bill",
+    "result": {
+      "content": "I infer that this is a bill-payment request. A suitable rule path is: identify the payee, confirm the due date and amount, validate the funding account, check payment cutoff rules, submit the payment instruction, and return the confirmation status plus reference details.",
+      "matchedIntent": "pay_bill",
+      "confidence": 0.1042107563473389,
+      "usedFallback": false,
+      "needsContext": false,
+      "keywords": [
+        "pay electric",
+        "electric bill",
+        "electric",
+        "pay",
+        "bill",
+        "pay my",
+        "pay my electric",
+        "my",
+        "my electric",
+        "my electric bill"
+      ],
+      "firedRules": [
+        "clinic-banking-operations-domain",
+        "clinic-operations-bill-payment-action",
+        "clinic-operations-detect-bill",
+        "clinic-operations-bill-final",
+        "clinic-operations-generic-final"
+      ]
+    }
+  },
+  {
+    "text": "set a reminder",
+    "result": {
+      "content": "I detected the @botClinic trigger, but I do not yet have enough confidence to give a detailed answer. Please clarify your goal by adding more information such as the operation name, amount, account, time, or service type.",
+      "matchedIntent": "reminder_update",
+      "confidence": 1,
+      "usedFallback": true,
+      "needsContext": true,
+      "keywords": [
+        "set reminder",
+        "reminder",
+        "set",
+        "set a",
+        "set a reminder",
+        "a",
+        "a reminder"
+      ],
+      "firedRules": []
+    }
+  },
+  {
+    "text": "book a flight",
+    "result": {
+      "content": "I detected the @botClinic trigger, but I do not yet have enough confidence to give a detailed answer. Please clarify your goal by adding more information such as the operation name, amount, account, time, or service type.",
+      "matchedIntent": "book_flight",
+      "confidence": 0.08278910832110678,
+      "usedFallback": true,
+      "needsContext": true,
+      "keywords": [
+        "book flight",
+        "book",
+        "flight",
+        "book a",
+        "book a flight",
+        "a",
+        "a flight"
+      ],
+      "firedRules": []
+    }
+  }
+]

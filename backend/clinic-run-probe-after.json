@@ -1,0 +1,253 @@
+[
+  {
+    "text": "i want to transfer money",
+    "result": {
+      "content": "I infer that this is a transfer request, but I am still missing the transfer amount. Please tell me how much money should be moved so the transfer flow can continue.",
+      "matchedIntent": "transfer",
+      "confidence": 0.12,
+      "usedFallback": false,
+      "needsContext": true,
+      "keywords": [
+        "transfer money",
+        "to transfer",
+        "transfer",
+        "money",
+        "want to",
+        "want",
+        "to",
+        "i",
+        "i want",
+        "i want to",
+        "want to transfer",
+        "to transfer money"
+      ],
+      "firedRules": [
+        "clinic-transfer-domain",
+        "clinic-transfer-detect-amount",
+        "clinic-transfer-prompt-amount",
+        "clinic-transfer-final-base"
+      ]
+    }
+  },
+  {
+    "text": "transfer 50 dollars to an",
+    "result": {
+      "content": "I infer that this is a transfer request and I can already see the amount, but I still need the recipient or destination account. Please tell me who should receive the money or which account it should go to.",
+      "matchedIntent": "transfer",
+      "confidence": 0.12,
+      "usedFallback": false,
+      "needsContext": true,
+      "keywords": [
+        "50 dollars",
+        "dollars to",
+        "50",
+        "transfer",
+        "dollars",
+        "to",
+        "transfer 50",
+        "transfer 50 dollars",
+        "50 dollars to",
+        "dollars to an",
+        "to an",
+        "an"
+      ],
+      "firedRules": [
+        "clinic-transfer-domain",
+        "clinic-transfer-detect-amount",
+        "clinic-transfer-prompt-target",
+        "clinic-transfer-final-base"
+      ]
+    }
+  },
+  {
+    "text": "what is my balance",
+    "result": {
+      "content": "I infer that this is a balance inquiry. A reasonable handling flow is: identify the target account, verify access rights, read both available and current balance values, and return the result together with the latest update time.",
+      "matchedIntent": "balance",
+      "confidence": 1,
+      "usedFallback": false,
+      "needsContext": false,
+      "keywords": [
+        "balance",
+        "what",
+        "what is",
+        "what is my",
+        "is",
+        "is my",
+        "is my balance",
+        "my",
+        "my balance"
+      ],
+      "firedRules": [
+        "clinic-balance-domain",
+        "clinic-balance-detect-account",
+        "clinic-balance-final-detailed"
+      ]
+    }
+  },
+  {
+    "text": "pay my electric bill",
+    "result": {
+      "content": "I infer that this is a bill-payment request. A suitable rule path is: identify the payee, confirm the due date and amount, validate the funding account, check payment cutoff rules, submit the payment instruction, and return the confirmation status plus reference details.",
+      "matchedIntent": "pay_bill",
+      "confidence": 0.12,
+      "usedFallback": false,
+      "needsContext": false,
+      "keywords": [
+        "pay electric",
+        "electric bill",
+        "electric",
+        "pay",
+        "bill",
+        "pay my",
+        "pay my electric",
+        "my",
+        "my electric",
+        "my electric bill"
+      ],
+      "firedRules": [
+        "clinic-banking-operations-domain",
+        "clinic-operations-bill-payment-action",
+        "clinic-operations-detect-bill",
+        "clinic-operations-bill-final",
+        "clinic-operations-generic-final"
+      ]
+    }
+  },
+  {
+    "text": "set a reminder",
+    "result": {
+      "content": "I infer that you want a reminder, but I still need the task and the time. Please tell me what should be reminded and when it should happen, for example: remind me to call John tomorrow morning.",
+      "matchedIntent": "reminder",
+      "confidence": 1,
+      "usedFallback": false,
+      "needsContext": true,
+      "keywords": [
+        "set reminder",
+        "reminder",
+        "set",
+        "set a",
+        "set a reminder",
+        "a",
+        "a reminder"
+      ],
+      "firedRules": [
+        "clinic-productivity-domain",
+        "clinic-productivity-reminder-action",
+        "clinic-productivity-detect-task",
+        "clinic-reminder-prompt-details",
+        "clinic-productivity-reminder-final",
+        "clinic-productivity-final"
+      ]
+    }
+  },
+  {
+    "text": "book a flight",
+    "result": {
+      "content": "I infer that you want to book a flight, but the destination is still missing. Please tell me where you want to fly so the booking workflow can continue.",
+      "matchedIntent": "book_flight",
+      "confidence": 0.12,
+      "usedFallback": false,
+      "needsContext": true,
+      "keywords": [
+        "book flight",
+        "book",
+        "flight",
+        "book a",
+        "book a flight",
+        "a",
+        "a flight"
+      ],
+      "firedRules": [
+        "clinic-travel-domain",
+        "clinic-travel-flight-action",
+        "clinic-travel-detect-destination",
+        "clinic-flight-prompt-destination",
+        "clinic-travel-flight-final",
+        "clinic-travel-final"
+      ]
+    }
+  },
+  {
+    "text": "remind me to call mom",
+    "result": {
+      "content": "I detected the @botClinic trigger, but I do not yet have enough confidence to give a detailed answer. Please clarify your goal by adding more information such as the operation name, amount, account, time, or service type.",
+      "matchedIntent": "make_call",
+      "confidence": 0.04843172085694807,
+      "usedFallback": true,
+      "needsContext": true,
+      "keywords": [
+        "call mom",
+        "remind to",
+        "mom",
+        "to call",
+        "remind",
+        "call",
+        "to",
+        "remind me",
+        "remind me to",
+        "me",
+        "me to",
+        "me to call",
+        "to call mom"
+      ],
+      "firedRules": []
+    }
+  },
+  {
+    "text": "book a hotel",
+    "result": {
+      "content": "I infer that you want to book a hotel, but I still need the destination or city. Please tell me where the stay should be booked.",
+      "matchedIntent": "book_hotel",
+      "confidence": 0.1275278575742248,
+      "usedFallback": false,
+      "needsContext": true,
+      "keywords": [
+        "book hotel",
+        "hotel",
+        "book",
+        "book a",
+        "book a hotel",
+        "a",
+        "a hotel"
+      ],
+      "firedRules": [
+        "clinic-travel-domain",
+        "clinic-travel-hotel-action",
+        "clinic-travel-detect-destination",
+        "clinic-hotel-prompt-destination",
+        "clinic-travel-hotel-final",
+        "clinic-travel-final"
+      ]
+    }
+  },
+  {
+    "text": "where is my order",
+    "result": {
+      "content": "I infer that you want to check an order status, but I still need an order number or tracking reference. Please provide that identifier so the lookup path can continue.",
+      "matchedIntent": "order_status",
+      "confidence": 1,
+      "usedFallback": false,
+      "needsContext": true,
+      "keywords": [
+        "order",
+        "where",
+        "where is",
+        "where is my",
+        "is",
+        "is my",
+        "is my order",
+        "my",
+        "my order"
+      ],
+      "firedRules": [
+        "clinic-shopping-domain",
+        "clinic-shopping-order-status-action",
+        "clinic-shopping-detect-tracking",
+        "clinic-order-status-prompt-reference",
+        "clinic-shopping-order-status-final",
+        "clinic-shopping-final"
+      ]
+    }
+  }
+]

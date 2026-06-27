@@ -51,6 +51,20 @@ const addFinalResponseRule = (id, conditions, responseKey) => ({
   },
 });
 
+const addCustomResponseRule = (id, conditions, responseKey, options = {}) => ({
+  id,
+  if: {
+    all: conditions,
+  },
+  then: {
+    respond: {
+      type: "static",
+      responseKey,
+      ...(options.needsContext !== undefined ? { needsContext: options.needsContext } : {}),
+    },
+  },
+});
+
 const addIntentFactRule = (id, intents, assertedFacts = []) => ({
   id,
   if: {
@@ -367,9 +381,115 @@ export const buildBotClinicRules = () => {
       ["vehicleSignal", "fuel_requirement"],
     ]),
 
+    addCustomResponseRule(
+      "clinic-transfer-prompt-core-details",
+      [
+        { fact: "workflow", equals: "fund_transfer" },
+        { fact: "slot_amount", exists: false },
+        { fact: "slot_transfer_target", exists: false },
+      ],
+      "ask_transfer_amount_and_target",
+      { needsContext: true },
+    ),
+    addCustomResponseRule(
+      "clinic-transfer-prompt-amount",
+      [
+        { fact: "workflow", equals: "fund_transfer" },
+        { fact: "slot_amount", exists: false },
+        { fact: "slot_transfer_target", exists: true },
+      ],
+      "ask_transfer_amount",
+      { needsContext: true },
+    ),
+    addCustomResponseRule(
+      "clinic-transfer-prompt-target",
+      [
+        { fact: "workflow", equals: "fund_transfer" },
+        { fact: "slot_amount", exists: true },
+        { fact: "slot_transfer_target", exists: false },
+      ],
+      "ask_transfer_target",
+      { needsContext: true },
+    ),
+    addCustomResponseRule(
+      "clinic-reminder-prompt-details",
+      [
+        { fact: "planningAction", equals: "reminder" },
+        { fact: "slot_schedule_time", exists: false },
+        { fact: "slot_task_subject", exists: false },
+      ],
+      "ask_reminder_details",
+      { needsContext: true },
+    ),
+    addCustomResponseRule(
+      "clinic-reminder-prompt-time",
+      [
+        { fact: "planningAction", equals: "reminder" },
+        { fact: "slot_schedule_time", exists: false },
+        { fact: "slot_task_subject", exists: true },
+      ],
+      "ask_reminder_time",
+      { needsContext: true },
+    ),
+    addCustomResponseRule(
+      "clinic-timer-prompt-duration",
+      [
+        { fact: "planningAction", equals: "timer" },
+        { fact: "slot_schedule_time", exists: false },
+      ],
+      "ask_timer_duration",
+      { needsContext: true },
+    ),
+    addCustomResponseRule(
+      "clinic-flight-prompt-destination",
+      [
+        { fact: "travelAction", equals: "flight_booking" },
+        { fact: "slot_destination", exists: false },
+      ],
+      "ask_flight_destination",
+      { needsContext: true },
+    ),
+    addCustomResponseRule(
+      "clinic-hotel-prompt-destination",
+      [
+        { fact: "travelAction", equals: "hotel_booking" },
+        { fact: "slot_destination", exists: false },
+      ],
+      "ask_hotel_destination",
+      { needsContext: true },
+    ),
+    addCustomResponseRule(
+      "clinic-order-status-prompt-reference",
+      [
+        { fact: "shoppingAction", equals: "order_status" },
+        { fact: "slot_order_reference", exists: false },
+      ],
+      "ask_order_reference",
+      { needsContext: true },
+    ),
+    addCustomResponseRule(
+      "clinic-restaurant-reservation-prompt-details",
+      [
+        { fact: "foodAction", equals: "restaurant_reservation" },
+        { fact: "slot_schedule_time", exists: false },
+        { fact: "slot_party_size", exists: false },
+      ],
+      "ask_restaurant_reservation_details",
+      { needsContext: true },
+    ),
+
     addFinalResponseRule("clinic-balance-final-detailed", [["workflow", "balance_lookup"], ["slotDetected", "balance_target"]], "balance_response"),
     addFinalResponseRule("clinic-security-freeze-final", [["workflow", "account_protection"], ["protectionAction", "freeze_account"]], "security_freeze_response"),
     addFinalResponseRule("clinic-security-replacement-final", [["workflow", "account_protection"], ["protectionAction", "replacement_timeline"]], "security_replacement_response"),
+    addCustomResponseRule(
+      "clinic-transfer-final-slotted",
+      [
+        { fact: "workflow", equals: "fund_transfer" },
+        { fact: "slot_amount", exists: true },
+        { fact: "slot_transfer_target", exists: true },
+      ],
+      "transfer_response_detailed",
+    ),
     addFinalResponseRule("clinic-transfer-final-detailed", [["workflow", "fund_transfer"], ["slotDetected", "amount_reference"], ["slotDetected", "account_reference"]], "transfer_response_detailed"),
     addFinalResponseRule("clinic-transfer-final-base", [["workflow", "fund_transfer"]], "transfer_response_base"),
     addFinalResponseRule("clinic-security-card-final", [["workflow", "account_protection"], ["securityScope", "card"]], "security_card_response"),

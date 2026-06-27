@@ -12,6 +12,12 @@ export const botClinicResponses = {
   goodbye: "Goodbye. If you want to test again, just mention @botClinic in the group.",
   balance_response:
     "I infer that this is a balance inquiry. A reasonable handling flow is: identify the target account, verify access rights, read both available and current balance values, and return the result together with the latest update time.",
+  ask_transfer_amount_and_target:
+    "I infer that you want to transfer money, but I still need two critical slots before the rule flow can continue: the amount and the recipient or destination account. For example: transfer 50 dollars to Alex, or move 200 dollars to savings.",
+  ask_transfer_amount:
+    "I infer that this is a transfer request, but I am still missing the transfer amount. Please tell me how much money should be moved so the transfer flow can continue.",
+  ask_transfer_target:
+    "I infer that this is a transfer request and I can already see the amount, but I still need the recipient or destination account. Please tell me who should receive the money or which account it should go to.",
   transfer_response_base:
     "I infer that this is a money transfer request. The system should collect the source account, destination account, and transfer amount; then verify identity, validate transfer limits, check available balance, and only then create the transfer transaction.",
   transfer_response_detailed:
@@ -46,10 +52,16 @@ export const botClinicResponses = {
     "I infer that this is an account operations request such as checking a routing number, paying a bill, ordering checks, or querying transactions. The standard flow is to verify the account, choose the correct action type, call the right business service, and return the result together with completion status.",
   timer_response:
     "I infer that this is a timer request. The proper handling flow is to normalize the requested duration, confirm the unit such as minutes or hours, create the timer, and then return the countdown setup with the exact duration that was captured.",
+  ask_timer_duration:
+    "I infer that you want to set a timer, but the duration is still missing. Please tell me the time span explicitly, for example 10 minutes or 2 hours.",
   alarm_response:
     "I infer that this is an alarm-setting request. The system should extract the target time and timezone, validate whether the time refers to today or a future date, create the alarm entry, and then confirm the final trigger time back to the user.",
   reminder_response:
     "I infer that this is a reminder request. The rule base should extract both the task description and the reminder time, normalize relative dates such as tomorrow morning, create the reminder, and confirm both what will happen and when it will trigger.",
+  ask_reminder_details:
+    "I infer that you want a reminder, but I still need the task and the time. Please tell me what should be reminded and when it should happen, for example: remind me to call John tomorrow morning.",
+  ask_reminder_time:
+    "I infer that this is a reminder request and I already have the task, but I still need the reminder time. Please tell me when the reminder should trigger.",
   calendar_response:
     "I infer that this belongs to calendar or date lookup. The system should normalize the requested date or time expression, determine whether the user wants scheduling or lookup behavior, and then return either the created calendar context or the interpreted date-time result.",
   todo_response:
@@ -58,8 +70,12 @@ export const botClinicResponses = {
     "I infer that this belongs to the time and planning category, such as timers, alarms, calendars, or reminders. The system should extract the duration or timestamp, normalize date and timezone information, create the appropriate scheduled item, and confirm what has been set.",
   flight_booking_response:
     "I infer that this is a flight-booking request. The rule path should identify origin, destination, dates, passenger count, and cabin or baggage constraints, then check availability, compare options, and return what information is still missing before a booking can be finalized.",
+  ask_flight_destination:
+    "I infer that you want to book a flight, but the destination is still missing. Please tell me where you want to fly so the booking workflow can continue.",
   hotel_booking_response:
     "I infer that this is a hotel-booking request. A suitable handling flow is to determine destination, check-in and check-out dates, guest count, room preferences, and budget range, then return the checklist needed to complete the booking search.",
+  ask_hotel_destination:
+    "I infer that you want to book a hotel, but I still need the destination or city. Please tell me where the stay should be booked.",
   travel_alert_response:
     "I infer that the user is asking about travel alerts or disruptions. The rule base should identify the route or airline, inspect delay, cancellation, or weather context, and then summarize the relevant alert plus the next action the traveler should confirm.",
   baggage_response:
@@ -76,6 +92,8 @@ export const botClinicResponses = {
     "I infer that this is a knowledge lookup or information transformation request. The system should first determine whether the goal is translation, definition lookup, or broader knowledge access, and only then choose the right data source and response format.",
   order_status_response:
     "I infer that this is an order-status request. The handling flow should identify the order or tracking reference, look up the most recent fulfillment checkpoint, detect whether the package is pending, shipped, delayed, or delivered, and then return the latest status with the next expected step.",
+  ask_order_reference:
+    "I infer that you want to check an order status, but I still need an order number or tracking reference. Please provide that identifier so the lookup path can continue.",
   shopping_list_response:
     "I infer that this is about building or reviewing a shopping list. The system should capture the requested items, organize them into a concise list, note any missing quantities or categories, and then return the normalized checklist back to the user.",
   shopping_response:
@@ -84,6 +102,8 @@ export const botClinicResponses = {
     "I infer that the user wants restaurant-review style guidance. The rule base should identify cuisine or location preferences, collect any budget or quality hints, and then return a concise review-oriented recommendation path or summary.",
   restaurant_reservation_response:
     "I infer that this is a restaurant-reservation request. The correct handling flow is to identify location, time, party size, and cuisine preferences, then confirm availability requirements and return the reservation details that still need to be specified.",
+  ask_restaurant_reservation_details:
+    "I infer that you want a restaurant reservation, but I still need at least the time and party size before the reservation path becomes actionable. Please tell me when and for how many people.",
   nutrition_response:
     "I infer that this is a nutrition-information request. The system should identify the food item or meal, determine whether calories, protein, fat, or broader nutrition facts are needed, and then return the nutrition summary in the requested level of detail.",
   meal_suggestion_response:

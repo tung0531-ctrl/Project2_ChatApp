@@ -59,6 +59,32 @@ const extractRuleKeywords = (normalizedText = "", maxNgram = 3) => {
   return Array.from(terms);
 };
 
+const transformRunPrediction = ({ definition, rawText, normalizedText, prediction }) => {
+  if (typeof definition.transformRunPrediction !== "function") {
+    return prediction;
+  }
+
+  const overrides = definition.transformRunPrediction({
+    rawText,
+    normalizedText,
+    prediction,
+  });
+
+  return overrides ? { ...prediction, ...overrides } : prediction;
+};
+
+const extractDefinitionFacts = ({ definition, rawText, normalizedText, prediction }) => {
+  if (typeof definition.extractFacts !== "function") {
+    return [];
+  }
+
+  return definition.extractFacts({
+    rawText,
+    normalizedText,
+    prediction,
+  }) ?? [];
+};
+
 const pickResponse = (value) => {
   if (Array.isArray(value)) {
     return value[0] ?? "";
@@ -369,12 +395,24 @@ export const createExpertBotEngine = (definition) => {
     },
     run(rawText) {
       const normalizedText = normalizeSynonyms(normalizeText(rawText), synonymMap);
-      const prediction = classifier.predict(normalizedText);
+      const classifierPrediction = classifier.predict(normalizedText);
+      const prediction = transformRunPrediction({
+        definition,
+        rawText,
+        normalizedText,
+        prediction: classifierPrediction,
+      });
       const matchedEntities = findMatchedEntities(normalizedText, indexedEntities);
       const primaryEntity = selectPrimaryEntity(matchedEntities, prediction.intent);
       const ruleKeywords = Array.from(
         new Set([...(prediction.keywords ?? []), ...extractRuleKeywords(normalizedText)]),
       );
+      const extractedFacts = extractDefinitionFacts({
+        definition,
+        rawText,
+        normalizedText,
+        prediction,
+      });
 
       if (!prediction.intent || prediction.confidence < confidenceThreshold) {
         return {
@@ -392,6 +430,7 @@ export const createExpertBotEngine = (definition) => {
         { fact: "intent", value: prediction.intent },
         { fact: "confidenceBand", value: prediction.confidence >= 0.45 ? "high" : "medium" },
         ...ruleKeywords.map((keyword) => ({ fact: "keyword", value: keyword })),
+        ...extractedFacts,
       ];
 
       if (primaryEntity) {
