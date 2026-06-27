@@ -1,9 +1,12 @@
-// Trien khai linear SVM da lop toi gian bang SGD tren vector TF-IDF de suy ra intent cho botClinic.
+// Trien khai linear one-vs-rest SVM tren vector TF-IDF.
+// File nay phu trach train/predict/explain va tra ve confidence sau khi softmax margin
+// va tron them similarity heuristic; hien duoc dung cho botClinic ban goc.
 import fs from "fs";
 import path from "path";
 
 import { TfidfVectorizer } from "./tfidfVectorizer.js";
 
+// Dot-product sparse la phep tinh cot loi de tinh margin tren tung intent.
 const dotSparseVectors = (left = new Map(), right = new Map()) => {
   const [smaller, larger] = left.size <= right.size ? [left, right] : [right, left];
   let score = 0;
@@ -15,6 +18,7 @@ const dotSparseVectors = (left = new Map(), right = new Map()) => {
   return score;
 };
 
+// Cap nhat trong so sparse theo buoc hoc SGD.
 const addScaledSparseVector = (target = new Map(), source = new Map(), scale = 1) => {
   source.forEach((value, term) => {
     const nextValue = (target.get(term) || 0) + value * scale;
@@ -28,6 +32,7 @@ const addScaledSparseVector = (target = new Map(), source = new Map(), scale = 1
   });
 };
 
+// Thu nho trong so de regularization co hieu luc sau moi buoc hoc.
 const scaleSparseVector = (source = new Map(), scale = 1) => {
   if (scale === 1) {
     return;
@@ -45,6 +50,7 @@ const scaleSparseVector = (source = new Map(), scale = 1) => {
   });
 };
 
+// Bien margin thanh pseudo-probability de co the dung nhu confidence.
 const softmaxMargins = (items = []) => {
   if (!items.length) {
     return [];
@@ -66,6 +72,7 @@ const softmaxMargins = (items = []) => {
     .sort((left, right) => right.confidence - left.confidence);
 };
 
+// Giai thich contribution cua tung feature vao intent dang thang.
 const buildContributionRows = (queryVector = new Map(), weights = new Map()) => {
   return Array.from(queryVector.entries())
     .map(([term, inputWeight]) => {
@@ -90,6 +97,7 @@ const deserializeWeightTable = (entries = []) => {
 };
 
 export class SupportVectorMachineClassifier {
+  // Khoi tao classifier moi hoac phuc hoi tu pretrained state.
   constructor(examples = [], options = {}) {
     this.epochs = options.epochs ?? 8;
     this.learningRate = options.learningRate ?? 0.08;
@@ -117,6 +125,7 @@ export class SupportVectorMachineClassifier {
     this.train(examples);
   }
 
+  // Khoi phuc weights, biases, vocabulary va example index tu model cache.
   hydrate(state = {}) {
     this.vectorizer = TfidfVectorizer.fromJSON(state.vectorizer ?? {});
     this.intents = state.intents ?? [];
@@ -125,6 +134,7 @@ export class SupportVectorMachineClassifier {
     this.rebuildExampleIndexes(state.normalizedExamples ?? []);
   }
 
+  // Tao lai exact-match map va example vectors de similarity heuristic hoat dong.
   rebuildExampleIndexes(examples = []) {
     this.exampleIntents.clear();
     this.exampleVectors = examples.map((example) => {
@@ -136,6 +146,7 @@ export class SupportVectorMachineClassifier {
     });
   }
 
+  // Train one-vs-rest SVM bang SGD tren vector TF-IDF.
   train(examples = []) {
     console.info(
       `${this.logPrefix} Training SVM model on ${examples.length} examples across ${this.epochs} epochs...`,
@@ -191,6 +202,7 @@ export class SupportVectorMachineClassifier {
     );
   }
 
+  // Predict bang margin -> softmax -> blend voi similarity heuristic.
   predict(text = "") {
     const exactIntent = this.exampleIntents.get(text);
 
@@ -250,6 +262,7 @@ export class SupportVectorMachineClassifier {
     };
   }
 
+  // Explain tra ve margin, bias, similarity va contribution cua feature.
   explain(text = "") {
     const exactIntent = this.exampleIntents.get(text) || null;
     const queryVector = this.vectorizer.transformToSparse(text);

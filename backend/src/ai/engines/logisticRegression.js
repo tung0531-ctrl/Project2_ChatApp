@@ -1,9 +1,12 @@
-// Trien khai logistic regression da lop tren vector TF-IDF, toi uu bang cross-entropy loss va learning-rate decay.
+// Trien khai multiclass logistic regression tren vector TF-IDF.
+// File nay phu trach train/predict/explain, toi uu bang cross-entropy loss,
+// va tra ve confidence sau khi softmax logit va tron them similarity heuristic.
 import fs from "fs";
 import path from "path";
 
 import { TfidfVectorizer } from "./tfidfVectorizer.js";
 
+// Dot-product sparse duoc dung de tinh logit cho moi intent.
 const dotSparseVectors = (left = new Map(), right = new Map()) => {
   const [smaller, larger] = left.size <= right.size ? [left, right] : [right, left];
   let score = 0;
@@ -15,6 +18,7 @@ const dotSparseVectors = (left = new Map(), right = new Map()) => {
   return score;
 };
 
+// Cap nhat sparse weights theo gradient tren cac feature dang xuat hien.
 const addScaledSparseVector = (target = new Map(), source = new Map(), scale = 1) => {
   source.forEach((value, term) => {
     const nextValue = (target.get(term) || 0) + value * scale;
@@ -38,6 +42,7 @@ const deserializeWeightTable = (entries = []) => {
 
 const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000;
 
+// Tron ngau nhien tap train moi epoch de SGD it bi lech thu tu du lieu.
 const shuffleArray = (array = []) => {
   for (let index = array.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(Math.random() * (index + 1));
@@ -45,6 +50,7 @@ const shuffleArray = (array = []) => {
   }
 };
 
+// Lazy decay tri hoan regularization toi luc feature duoc dung lai de giam chi phi tinh toan.
 const applyLazyDecayToTerm = ({
   weights = new Map(),
   lastUpdated = new Map(),
@@ -71,6 +77,7 @@ const applyLazyDecayToTerm = ({
   lastUpdated.set(term, totalSteps);
 };
 
+// Chot toan bo lazy decay truoc khi predict hoac luu model.
 const settleLazyDecayForWeights = ({
   weights = new Map(),
   lastUpdated = new Map(),
@@ -88,6 +95,7 @@ const settleLazyDecayForWeights = ({
   });
 };
 
+// Softmax logits thanh phan phoi xac suat da lop.
 const softmaxLogits = (items = []) => {
   if (!items.length) {
     return [];
@@ -109,6 +117,7 @@ const softmaxLogits = (items = []) => {
     .sort((left, right) => right.confidence - left.confidence);
 };
 
+// Tao bang contribution cho explainability.
 const buildContributionRows = (queryVector = new Map(), weights = new Map()) => {
   return Array.from(queryVector.entries())
     .map(([term, inputWeight]) => {
@@ -125,6 +134,7 @@ const buildContributionRows = (queryVector = new Map(), weights = new Map()) => 
 };
 
 export class LogisticRegressionClassifier {
+  // Khoi tao classifier moi, hydrate state, hoac resume training tu checkpoint.
   constructor(examples = [], options = {}) {
     this.epochs = options.epochs ?? 10;
     this.learningRate = options.learningRate ?? 0.06;
@@ -161,6 +171,7 @@ export class LogisticRegressionClassifier {
     this.train(examples);
   }
 
+  // Cho phep script train override mot so hyperparameter luc resume.
   applyOptionOverrides(options = {}) {
     if (Object.prototype.hasOwnProperty.call(options, "epochs")) {
       this.epochs = options.epochs;
@@ -187,6 +198,7 @@ export class LogisticRegressionClassifier {
     }
   }
 
+  // Khoi phuc model state, vectorizer va example indexes tu model cache.
   hydrate(state = {}) {
     this.epochs = state.meta?.epochs ?? this.epochs;
     this.learningRate = state.meta?.learningRate ?? this.learningRate;
@@ -202,6 +214,7 @@ export class LogisticRegressionClassifier {
     this.rebuildExampleIndexes(state.normalizedExamples ?? []);
   }
 
+  // Dong bo lazy decay dang tre de state va du doan khong bi lech.
   flushPendingLazyDecay() {
     if (!this.lazyDecayState) {
       return;
@@ -221,6 +234,7 @@ export class LogisticRegressionClassifier {
     this.lazyDecayState = null;
   }
 
+  // Tao lai exact-match map va example vectors dung cho similarity heuristic.
   rebuildExampleIndexes(examples = []) {
     this.exampleIntents.clear();
     this.exampleVectors = examples.map((example) => {
@@ -232,6 +246,7 @@ export class LogisticRegressionClassifier {
     });
   }
 
+  // Tinh average cross-entropy loss de danh gia offline hoac kiem tra checkpoint.
   evaluateAverageLoss(examples = []) {
     if (!examples.length || this.intents.length === 0) {
       return 0;
@@ -257,6 +272,7 @@ export class LogisticRegressionClassifier {
     return totalLoss / examples.length;
   }
 
+  // Train logistic regression bang softmax + gradient descent co regularization va decay.
   train(examples = [], options = {}) {
     const resumeFromCurrentState = options.resumeFromCurrentState ?? false;
 
@@ -433,6 +449,7 @@ export class LogisticRegressionClassifier {
     );
   }
 
+  // Predict bang logit -> softmax probability -> blend voi similarity heuristic.
   predict(text = "") {
     this.flushPendingLazyDecay();
 
@@ -493,6 +510,7 @@ export class LogisticRegressionClassifier {
     };
   }
 
+  // Explain tra ve score, similarity va contribution cua feature cho intent thang.
   explain(text = "") {
     this.flushPendingLazyDecay();
 

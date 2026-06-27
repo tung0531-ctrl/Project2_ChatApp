@@ -1,4 +1,7 @@
-// Cung cap bo may suy dien IF-THEN de danh gia rule va chon response cho bot.
+// Cung cap bo may suy dien IF-THEN dung chung.
+// File nay khong biet gi ve bot cu the; no chi quan ly fact store, kiem tra dieu kien,
+// fire tung rule toi da mot lan, va tra ve response/facts sau khi suy dien xong.
+// Nhom helper co ban de dong nhat du lieu truoc khi dua vao fact store.
 const toArray = (value) => {
   if (Array.isArray(value)) {
     return value;
@@ -18,6 +21,7 @@ const normalizeValue = (value) => {
 export const createFactStore = (initialFacts = []) => {
   const facts = new Map();
 
+  // Moi fact co the luu nhieu gia tri, vi vay fact store dung Set theo tung ten fact.
   const add = (fact, value) => {
     const normalizedValue = normalizeValue(value);
 
@@ -61,6 +65,7 @@ export const createFactStore = (initialFacts = []) => {
   };
 };
 
+// Danh gia tung condition tren fact store hien tai.
 const isConditionSatisfied = (factStore, condition = {}) => {
   if (!condition.fact) {
     return false;
@@ -89,6 +94,7 @@ const isConditionSatisfied = (factStore, condition = {}) => {
   return factStore.hasFact(condition.fact);
 };
 
+// Rule hop le khi tat ca `all` dung va nhom `any` co it nhat mot dieu kien dung.
 const areRuleConditionsSatisfied = (factStore, rule = {}) => {
   const allConditions = rule.if?.all ?? [];
   const anyConditions = rule.if?.any ?? [];
@@ -107,6 +113,7 @@ export const runForwardChaining = ({
   resolveResponse,
   maxIterations = 12,
 }) => {
+  // Khoi tao bo nho lam viec va trang thai theo doi mot lan suy dien.
   const factStore = createFactStore(initialFacts);
   const firedRules = [];
   const firedRuleIds = new Set();
@@ -115,6 +122,7 @@ export const runForwardChaining = ({
   for (let iteration = 0; iteration < maxIterations; iteration += 1) {
     let changed = false;
 
+    // Moi rule chi fire mot lan de tranh lap vo han va giu thu tu suy dien on dinh.
     rules.forEach((rule) => {
       if (!rule?.id || firedRuleIds.has(rule.id)) {
         return;
@@ -127,6 +135,7 @@ export const runForwardChaining = ({
       firedRuleIds.add(rule.id);
       firedRules.push(rule.id);
 
+      // Facts moi duoc assert tro lai fact store de cac rule sau tiep tuc suy dien duoc.
       (rule.then?.assert ?? []).forEach((assertion) => {
         const values = assertion.fromFact
           ? factStore.getAll(assertion.fromFact)
@@ -142,6 +151,7 @@ export const runForwardChaining = ({
       }
     });
 
+    // Neu khong co fact nao thay doi nua thi qua trinh da hoi tu va co the dung.
     if (!changed) {
       break;
     }

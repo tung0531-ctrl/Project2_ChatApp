@@ -1,5 +1,6 @@
 // Final English response templates for botClinic after forward chaining resolves workflow and facts.
 export const botClinicResponses = {
+  // Intro/self-description responses.
   greeting:
     "Hello, I am @botClinic. I am running as a hybrid bot: I classify intent with the local CLINC150 dataset and use IF-THEN reasoning to produce the final answer.",
   bot_identity:
@@ -10,6 +11,7 @@ export const botClinicResponses = {
     "My pipeline is: normalize the question, build TF-IDF n-grams, classify the intent, place the intent and extracted keywords into working memory, run IF-THEN forward chaining, and then produce the final response. That means I do not only predict an intent; I also infer domain, workflow, slots, and handling priority.",
   thanks: "You are welcome. Mention @botClinic again and add more details if you want a more precise inference.",
   goodbye: "Goodbye. If you want to test again, just mention @botClinic in the group.",
+  // Banking responses and transfer prompts.
   balance_response:
     "I infer that this is a balance inquiry. A reasonable handling flow is: identify the target account, verify access rights, read both available and current balance values, and return the result together with the latest update time.",
   ask_transfer_amount_and_target:
@@ -50,6 +52,7 @@ export const botClinicResponses = {
     "I infer that this is a request to inspect transactions or spending history. A suitable handling flow is: choose the account, identify the time range, filter transaction type if needed, compute summary totals or the matching transaction list, and return the result in chronological order.",
   operations_generic_response:
     "I infer that this is an account operations request such as checking a routing number, paying a bill, ordering checks, or querying transactions. The standard flow is to verify the account, choose the correct action type, call the right business service, and return the result together with completion status.",
+  // Productivity responses and slot prompts.
   timer_response:
     "I infer that this is a timer request. The proper handling flow is to normalize the requested duration, confirm the unit such as minutes or hours, create the timer, and then return the countdown setup with the exact duration that was captured.",
   ask_timer_duration:
@@ -68,6 +71,7 @@ export const botClinicResponses = {
     "I infer that this is a to-do list request. A suitable handling path is to identify whether the user wants to add, review, or organize tasks, capture the task labels and optional deadlines, and then return the updated task plan in a concise actionable format.",
   productivity_response:
     "I infer that this belongs to the time and planning category, such as timers, alarms, calendars, or reminders. The system should extract the duration or timestamp, normalize date and timezone information, create the appropriate scheduled item, and confirm what has been set.",
+  // Travel responses and missing-destination prompts.
   flight_booking_response:
     "I infer that this is a flight-booking request. The rule path should identify origin, destination, dates, passenger count, and cabin or baggage constraints, then check availability, compare options, and return what information is still missing before a booking can be finalized.",
   ask_flight_destination:
@@ -82,6 +86,7 @@ export const botClinicResponses = {
     "I infer that this is specifically about carry-on or baggage policy. The correct handling sequence is to identify the airline or route, determine cabin-bag versus checked-bag context, review size and weight rules, and then return the policy summary plus any likely exceptions.",
   travel_response:
     "I infer that this is a travel-related request. The rule base groups the necessary steps as identifying destination and travel time, determining whether the need is flights, hotels, travel alerts, or baggage rules, and then producing the checklist of information still needed.",
+  // Knowledge utility responses.
   translate_response:
     "I infer that this is a translation request. The correct flow is to determine the target language, inspect the text to be translated, preserve important entities such as names or numbers, and then return the translation together with any ambiguity note if the source phrase is unclear.",
   definition_response:
@@ -90,6 +95,7 @@ export const botClinicResponses = {
     "I infer that this is a weather lookup request. The rule base should identify the target location and timeframe, decide whether the user wants current conditions or forecast detail, and then return temperature, precipitation or condition summary, and any uncertainty if the place or day is underspecified.",
   knowledge_generic_response:
     "I infer that this is a knowledge lookup or information transformation request. The system should first determine whether the goal is translation, definition lookup, or broader knowledge access, and only then choose the right data source and response format.",
+  // Shopping responses.
   order_status_response:
     "I infer that this is an order-status request. The handling flow should identify the order or tracking reference, look up the most recent fulfillment checkpoint, detect whether the package is pending, shipped, delayed, or delivered, and then return the latest status with the next expected step.",
   ask_order_reference:
@@ -98,6 +104,7 @@ export const botClinicResponses = {
     "I infer that this is about building or reviewing a shopping list. The system should capture the requested items, organize them into a concise list, note any missing quantities or categories, and then return the normalized checklist back to the user.",
   shopping_response:
     "I infer that this is a shopping or order-tracking request. The handling flow should include identifying the order reference or item list, checking the current order state, retrieving the latest shipping checkpoint or remaining item list, and returning the result in a concise action-oriented format.",
+  // Food and restaurant responses.
   restaurant_reviews_response:
     "I infer that the user wants restaurant-review style guidance. The rule base should identify cuisine or location preferences, collect any budget or quality hints, and then return a concise review-oriented recommendation path or summary.",
   restaurant_reservation_response:
@@ -110,6 +117,7 @@ export const botClinicResponses = {
     "I infer that this is a meal-suggestion request. The rule path should extract dietary preferences, cuisine goals, and health or convenience constraints, then return a shortlist of suitable meal directions or recommendation criteria.",
   food_response:
     "I infer that this is a restaurant, nutrition, or meal recommendation question. The system should extract preferences, location, dietary constraints, or the target dish, and then provide recommendations, review-style guidance, or nutrition-related information.",
+  // Automotive responses.
   maintenance_schedule_response:
     "I infer that this is a maintenance-scheduling request. The system should identify the vehicle, the service type, and the relevant mileage or date checkpoint, then determine whether the next action is due now or later and return the recommended scheduling step.",
   oil_change_response:
@@ -118,6 +126,7 @@ export const botClinicResponses = {
     "I infer that this is a fuel-type question. The rule base should identify the vehicle or engine requirement, determine whether the concern is regular, premium, diesel, or octane guidance, and then return the safest fuel recommendation with any caveat about manufacturer specifications.",
   automotive_response:
     "I infer that this is a vehicle maintenance query. A suitable handling flow is to identify the vehicle or maintenance topic, inspect the latest time or mileage checkpoint, and then return guidance such as oil-change timing, fuel type, or the next maintenance scheduling step.",
+  // Fallback chung khi classifier va rule engine van chua du co so de tra loi cu the.
   fallback:
     "I detected the @botClinic trigger, but I do not yet have enough confidence to give a detailed answer. Please clarify your goal by adding more information such as the operation name, amount, account, time, or service type.",
 };

@@ -1,4 +1,5 @@
 // Build a multi-stage IF-THEN rule base for botClinic so forward chaining can infer workflow and response.
+// Nhom helper builder giup viet rule ngan hon va giu mot format thong nhat.
 const addStaticResponseRule = (id, intent, responseKey, assertedFacts = []) => ({
   id,
   if: {
@@ -77,6 +78,7 @@ const addIntentFactRule = (id, intents, assertedFacts = []) => ({
 
 export const buildBotClinicRules = () => {
   return [
+    // Intro rules: tra loi truc tiep cho greeting, identity va giai thich bot.
     addStaticResponseRule("clinic-intro-greeting", "greeting", "greeting", [
       ["conversationMode", "friendly"],
       ["botRole", "assistant"],
@@ -99,6 +101,7 @@ export const buildBotClinicRules = () => {
     addStaticResponseRule("clinic-intro-thanks", "thanks", "thanks", [["conversationMode", "polite"]]),
     addStaticResponseRule("clinic-intro-goodbye", "goodbye", "goodbye", [["conversationMode", "closing"]]),
 
+    // Banking rules: balance, transfer, security, credit va account operations.
     addIntentDomainRule(
       "clinic-balance-domain",
       ["balance"],
@@ -245,6 +248,7 @@ export const buildBotClinicRules = () => {
       ["operationsScope", "check_order"],
     ]),
 
+    // Productivity rules: timer, alarm, reminder, calendar, date/time va todo list.
     addIntentDomainRule(
       "clinic-productivity-domain",
       ["timer", "alarm", "reminder", "calendar", "date", "time", "todo_list"],
@@ -270,6 +274,7 @@ export const buildBotClinicRules = () => {
       ["taskSignal", "named_task"],
     ]),
 
+    // Travel rules: booking, alerts va baggage.
     addIntentDomainRule(
       "clinic-travel-domain",
       ["book_flight", "book_hotel", "travel_alert", "carry_on"],
@@ -297,6 +302,7 @@ export const buildBotClinicRules = () => {
       ["travelSignal", "disruption_context"],
     ]),
 
+    // Knowledge rules: translation, definition lookup va weather.
     addIntentDomainRule(
       "clinic-knowledge-domain",
       ["translate", "definition", "weather"],
@@ -318,6 +324,7 @@ export const buildBotClinicRules = () => {
       ["knowledgeMode", "weather_lookup"],
     ]),
 
+    // Shopping rules: order tracking va shopping list.
     addIntentDomainRule(
       "clinic-shopping-domain",
       ["order_status", "shopping_list"],
@@ -337,6 +344,7 @@ export const buildBotClinicRules = () => {
       ["shoppingSignal", "item_collection"],
     ]),
 
+    // Food/lifestyle rules: restaurant reviews, reservation, nutrition va meal suggestion.
     addIntentDomainRule(
       "clinic-food-domain",
       ["restaurant_reviews", "restaurant_reservation", "nutrition_info", "meal_suggestion"],
@@ -361,6 +369,7 @@ export const buildBotClinicRules = () => {
       ["foodSignal", "preference_context"],
     ]),
 
+    // Automotive rules: maintenance, oil change va fuel guidance.
     addIntentDomainRule(
       "clinic-automotive-domain",
       ["schedule_maintenance", "oil_change_when", "gas_type"],
@@ -381,6 +390,7 @@ export const buildBotClinicRules = () => {
       ["vehicleSignal", "fuel_requirement"],
     ]),
 
+    // Prompt rules: hoi them slot con thieu thay vi roi vao fallback ngay.
     addCustomResponseRule(
       "clinic-transfer-prompt-core-details",
       [
@@ -478,6 +488,7 @@ export const buildBotClinicRules = () => {
       { needsContext: true },
     ),
 
+    // Final rules: chot response khi da du facts de biet workflow va muc tieu can tra loi.
     addFinalResponseRule("clinic-balance-final-detailed", [["workflow", "balance_lookup"], ["slotDetected", "balance_target"]], "balance_response"),
     addFinalResponseRule("clinic-security-freeze-final", [["workflow", "account_protection"], ["protectionAction", "freeze_account"]], "security_freeze_response"),
     addFinalResponseRule("clinic-security-replacement-final", [["workflow", "account_protection"], ["protectionAction", "replacement_timeline"]], "security_replacement_response"),

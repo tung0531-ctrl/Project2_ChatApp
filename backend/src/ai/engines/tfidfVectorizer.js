@@ -1,4 +1,7 @@
-// Trien khai vectorizer TF-IDF dung cho train/predict va tinh do tuong dong van ban cua bot.
+// Trien khai vectorizer TF-IDF dung chung cho train/predict/explain.
+// Day la tang bien doi van ban -> vector dac trung, de cac classifier va similarity heuristic
+// co the cung dung mot cach bieu dien input thong nhat.
+// Day cung la noi trich keyword ma rule engine tai su dung trong working memory.
 const DEFAULT_STOPWORDS = new Set([
   "a",
   "about",
@@ -169,6 +172,7 @@ const DEFAULT_STOPWORDS = new Set([
   "yourselves",
 ]);
 
+// Dem so lan xuat hien cua moi term trong mot van ban da duoc tach term.
 const countTerms = (terms = []) => {
   return terms.reduce((accumulator, term) => {
     accumulator.set(term, (accumulator.get(term) || 0) + 1);
@@ -176,6 +180,7 @@ const countTerms = (terms = []) => {
   }, new Map());
 };
 
+// Tach token va loai stopword truoc khi sinh feature.
 export const tokenizeText = (text = "", stopwords = DEFAULT_STOPWORDS) => {
   return text
     .toLowerCase()
@@ -187,6 +192,7 @@ export const tokenizeText = (text = "", stopwords = DEFAULT_STOPWORDS) => {
     .filter((token) => !stopwords.has(token));
 };
 
+// Sinh unigram/bigram/... tu sequence token da duoc lam sach.
 const createNgrams = (tokens = [], ngramRange = [1, 2]) => {
   const [minN, maxN] = ngramRange;
   const terms = [];
@@ -206,6 +212,7 @@ const createNgrams = (tokens = [], ngramRange = [1, 2]) => {
 };
 
 export class TfidfVectorizer {
+  // Constructor luu hyperparameter va fit vocabulary ngay tu tap documents train.
   constructor(documents = [], options = {}) {
     this.ngramRange = options.ngramRange ?? [1, 2];
     this.stopwords = new Set([...(options.stopwords ?? []), ...DEFAULT_STOPWORDS]);
@@ -218,6 +225,7 @@ export class TfidfVectorizer {
     this.fit(documents);
   }
 
+  // Xay vocabulary va document frequency de cac lan transform sau do dung chung.
   fit(documents = []) {
     this.documentCount = documents.length;
     this.documentFrequency.clear();
@@ -250,6 +258,7 @@ export class TfidfVectorizer {
     });
   }
 
+  // Pipeline helper text -> token -> ngram.
   getTerms(text = "") {
     const tokens = tokenizeText(text, this.stopwords);
     return createNgrams(tokens, this.ngramRange);
@@ -260,6 +269,7 @@ export class TfidfVectorizer {
     return Math.log((this.documentCount + 1) / (documentFrequency + 1)) + 1;
   }
 
+  // Bien mot input thanh sparse TF-IDF vector da duoc chuan hoa do dai.
   transformToSparse(text = "") {
     const terms = this.getTerms(text);
 
@@ -288,6 +298,7 @@ export class TfidfVectorizer {
     );
   }
 
+  // Giai thich chi tiet cach mot input duoc vector hoa, phuc vu debug va admin UI.
   explainTransform(text = "") {
     const tokens = tokenizeText(text, this.stopwords);
     const terms = createNgrams(tokens, this.ngramRange);
@@ -340,6 +351,7 @@ export class TfidfVectorizer {
     };
   }
 
+  // Tra ve nhung term co trong so cao nhat de classifier va rule engine tai su dung.
   extractKeywords(text = "", limit = 8) {
     return Array.from(this.transformToSparse(text).entries())
       .sort((left, right) => right[1] - left[1])
@@ -347,6 +359,7 @@ export class TfidfVectorizer {
       .map(([term]) => term);
   }
 
+  // Serialize state de runtime co the preload vectorizer tu cache.
   toJSON() {
     return {
       ngramRange: this.ngramRange,
@@ -360,6 +373,7 @@ export class TfidfVectorizer {
   }
 
   static fromJSON(state = {}) {
+    // Khoi phuc vectorizer ma khong can fit lai toan bo tap train.
     const vectorizer = new TfidfVectorizer([], {
       ngramRange: state.ngramRange,
       stopwords: state.stopwords ?? [],

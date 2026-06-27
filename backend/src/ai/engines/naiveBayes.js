@@ -1,9 +1,12 @@
-// Trien khai bo phan loai Naive Bayes nhe de du doan intent cho tung bot domain.
+// Trien khai classifier Naive Bayes tren vector TF-IDF.
+// File nay phu trach train/predict/explain va tra ve confidence da duoc pha them similarity,
+// hien duoc dung cho bien the botClinicV2.
 import fs from "fs";
 import path from "path";
 
 import { TfidfVectorizer } from "./tfidfVectorizer.js";
 
+// Do tuong dong sparse duoc dung nhu mot heuristic bo sung ngoai xac suat Bayes.
 const dotSparseVectors = (left = new Map(), right = new Map()) => {
   const [smaller, larger] = left.size <= right.size ? [left, right] : [right, left];
   let score = 0;
@@ -15,6 +18,7 @@ const dotSparseVectors = (left = new Map(), right = new Map()) => {
   return score;
 };
 
+// Tao bang contribution de giai thich term nao dong gop nhieu nhat vao ket qua cuoi.
 const buildContributionRows = ({
   queryVector = new Map(),
   featureMap = new Map(),
@@ -41,6 +45,7 @@ const buildContributionRows = ({
 };
 
 export class NaiveBayesClassifier {
+  // Khoi tao classifier moi hoac hydrate tu pretrained state.
   constructor(examples = [], options = {}) {
     this.alpha = options.alpha ?? 1;
     this.modelLabel = options.modelLabel ?? "naive-bayes";
@@ -66,6 +71,7 @@ export class NaiveBayesClassifier {
     this.train(examples);
   }
 
+  // Khoi phuc vectorizer va thong ke Bayes tu snapshot da luu.
   hydrate(state = {}) {
     this.alpha = state.meta?.alpha ?? this.alpha;
     this.vectorizer = TfidfVectorizer.fromJSON(state.vectorizer ?? {});
@@ -78,6 +84,7 @@ export class NaiveBayesClassifier {
     this.rebuildExampleIndexes(state.normalizedExamples ?? []);
   }
 
+  // Tao lai exact-match map va example vectors de similarity heuristic co du du lieu.
   rebuildExampleIndexes(examples = []) {
     this.exampleIntents.clear();
     this.exampleVectors = examples.map((example) => {
@@ -89,6 +96,7 @@ export class NaiveBayesClassifier {
     });
   }
 
+  // Train bang cach tich luy prior theo intent va feature weights theo TF-IDF.
   train(examples = []) {
     console.info(`${this.logPrefix} Training Naive Bayes model on ${examples.length} examples...`);
 
@@ -124,6 +132,7 @@ export class NaiveBayesClassifier {
     );
   }
 
+  // Predict bang log-probability, sau do pha them similarity heuristic de on dinh hon.
   predict(text = "") {
     const exactIntent = this.exampleIntents.get(text);
 
@@ -206,6 +215,7 @@ export class NaiveBayesClassifier {
     };
   }
 
+  // Explain tra ve prior, raw score, similarity va contribution cua cac feature chinh.
   explain(text = "") {
     const exactIntent = this.exampleIntents.get(text) || null;
     const queryVector = this.vectorizer.transformToSparse(text);

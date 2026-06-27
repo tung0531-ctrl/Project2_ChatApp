@@ -2,15 +2,16 @@ import fs from "fs";
 
 import {
   getClinicClassifierConfig,
+  getClinicModelCachePath,
   getClinicTrainingExamples,
   getClinicVariant,
-} from "../bots/botClinic/shared.js";
-import { getClinicModelCachePath } from "../bots/botClinic/modelCache.js";
+} from "../bots/botClinic/index.js";
 import { normalizeSynonyms, normalizeText } from "../engines/expertBotEngine.js";
 import { LogisticRegressionClassifier } from "../engines/logisticRegression.js";
 import { NaiveBayesClassifier } from "../engines/naiveBayes.js";
 import { SupportVectorMachineClassifier } from "../engines/supportVectorMachine.js";
 
+// Doc tham so CLI va chuan hoa bo examples truoc khi train/precompute model cache.
 const variantId = process.argv[2] ?? "botClinic";
 const cliFlags = process.argv.slice(3);
 const variant = getClinicVariant(variantId);
@@ -21,6 +22,7 @@ const normalizedExamples = getClinicTrainingExamples().map((example) => ({
   text: normalizeSynonyms(normalizeText(example.text), synonymMap),
 }));
 
+// Cho phep override hyperparameter bang CLI flag khi can thuc nghiem nhanh.
 const shouldResume = cliFlags.includes("--resume");
 const numericOverrideEntries = cliFlags
   .filter((flag) => flag.startsWith("--") && flag.includes("="))
@@ -41,6 +43,7 @@ const classifierByType = {
   "logistic-regression": LogisticRegressionClassifier,
 };
 
+// Mapping classifier type -> implementation cu the de script nay dung duoc cho ca 3 variant.
 const ClassifierImplementation = classifierByType[classifierOptions.type];
 
 if (!ClassifierImplementation) {
@@ -52,6 +55,7 @@ console.info(`[${variant.botId}] Preparing ${normalizedExamples.length} normaliz
 const modelCachePath = getClinicModelCachePath(variant.modelCacheFile);
 let classifier;
 
+// Logistic regression co the resume tu checkpoint; cac model khac hien chi ho tro train moi.
 if (shouldResume) {
   if (mergedClassifierOptions.type !== "logistic-regression") {
     throw new Error(`RESUME_NOT_SUPPORTED_FOR:${mergedClassifierOptions.type}`);
@@ -76,6 +80,7 @@ if (shouldResume) {
   classifier = new ClassifierImplementation(normalizedExamples, mergedClassifierOptions);
 }
 
+// Luu pretrained snapshot de runtime khoi dong nhanh va khong can train lai luc boot.
 classifier.saveToFile(modelCachePath, {
   botId: variant.botId,
   classifierType: mergedClassifierOptions.type,

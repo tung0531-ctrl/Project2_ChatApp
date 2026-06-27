@@ -1,11 +1,13 @@
 import { getBotEngines } from '../registry/index.js';
 
+// Script smoke test nhanh de kiem tra registry va luong run() cua cac bot chinh.
 const bots = getBotEngines();
 
 if (bots.length < 2) {
   throw new Error('EXPECTED_BOTH_BOTS_REGISTERED');
 }
 
+// Moi scenario gom bot muc tieu va mot tap query dai dien de test runtime thuc te.
 const scenarios = [
   {
     botId: 'botGame',
@@ -43,6 +45,7 @@ const scenarios = [
   },
 ];
 
+// Chay tung query qua engine that va in ket qua JSON de debug bang terminal.
 for (const scenario of scenarios) {
   const bot = bots.find((entry) => entry.botId === scenario.botId);
 

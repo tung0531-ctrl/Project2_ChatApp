@@ -1,9 +1,7 @@
-import { readLocalClincExamples } from "./datasetLoader.js";
-import { getClinicModelCachePath, hasClinicModelCache } from "./modelCache.js";
-import { buildBotClinicRules } from "./rules.js";
-import { botClinicResponses } from "./responses.js";
-import { botClinicSeedExamples } from "./seedExamples.js";
-
+// Runtime helper cho botClinic sau khi classifier du doan xong.
+// File nay lam 2 viec: map near-intent ve intent duoc ho tro va rut trich slot/fact phuc vu rule engine.
+// No la cau noi giua output thong ke cua classifier va workflow IF-THEN trong rules.js.
+// Bang alias dua cac intent CLINC gan nghia ve intent canonical ma rule base co ho tro.
 const clinicIntentAliases = {
   thank_you: "thanks",
   are_you_a_bot: "bot_identity",
@@ -41,13 +39,16 @@ const clinicIntentAliases = {
   oil_change_how: "oil_change_when",
 };
 
+// Helper nho de viet rescue rule gon hon.
 const hasPhrase = (text, phrase) => text.includes(phrase);
 
+// Helper regex dung chung cho cac ham rut trich slot ben duoi.
 const extractFirstMatch = (text, regex) => {
   const match = text.match(regex);
   return match?.[1] ?? match?.[0] ?? null;
 };
 
+// Stopword cho target account/destination de tranh lay nham nhung tu qua chung.
 const transferTargetStopwords = new Set([
   "a",
   "an",
@@ -61,6 +62,7 @@ const transferTargetStopwords = new Set([
   "other",
 ]);
 
+// Rut trich doi tuong nhan tien trong workflow transfer.
 const extractTransferTarget = (normalizedText) => {
   const match = normalizedText.match(/\bto\s+([a-z]+(?:\s+[a-z]+){0,2})\b/);
 
@@ -73,6 +75,7 @@ const extractTransferTarget = (normalizedText) => {
   return transferTargetStopwords.has(candidate) ? null : candidate;
 };
 
+// Rut trich destination cho travel va mot so workflow can dia diem.
 const extractDestination = (normalizedText) => {
   const match = normalizedText.match(/\b(?:to|in)\s+([a-z]+(?:\s+[a-z]+){0,2})\b/);
 
@@ -85,6 +88,7 @@ const extractDestination = (normalizedText) => {
   return transferTargetStopwords.has(candidate) ? null : candidate;
 };
 
+// Rut trich thong tin thoi gian tu cac mau pho bien nhu 10 minutes, at 8am, tomorrow.
 const extractScheduleTime = (normalizedText) => {
   return (
     extractFirstMatch(normalizedText, /\b(\d+(?:\.\d+)?\s*(?:minutes?|hours?|days?))\b/) ||
@@ -93,6 +97,7 @@ const extractScheduleTime = (normalizedText) => {
   );
 };
 
+// Rut trich noi dung task cua reminder neu nguoi dung da noi ro can nhac viec gi.
 const extractReminderTask = (normalizedText) => {
   const explicitReminderTask = extractFirstMatch(
     normalizedText,
@@ -111,14 +116,17 @@ const extractReminderTask = (normalizedText) => {
   return genericTask?.trim() ?? null;
 };
 
+// Rut trich ma don hang/tracking tu cau hoi shopping.
 const extractOrderReference = (normalizedText) => {
   return extractFirstMatch(normalizedText, /\b(?:order|tracking)\s+(?:number\s+)?#?([a-z0-9-]{4,})\b/);
 };
 
+// Rut trich so luong nguoi cho reservation.
 const extractPartySize = (normalizedText) => {
   return extractFirstMatch(normalizedText, /\bfor\s+(\d+)\s+(?:people|persons|guests)\b/);
 };
 
+// Rut trich amount phuc vu transfer/bill/order_checks.
 const extractAmount = (normalizedText) => {
   return extractFirstMatch(
     normalizedText,
@@ -126,6 +134,7 @@ const extractAmount = (normalizedText) => {
   );
 };
 
+// Rut trich ngon ngu dich muc tieu trong workflow translate.
 const extractTargetLanguage = (normalizedText) => {
   return extractFirstMatch(
     normalizedText,
@@ -133,6 +142,7 @@ const extractTargetLanguage = (normalizedText) => {
   );
 };
 
+// Chinh intent/confidence de cuu cac case classifier gan dung domain nhung score chua dat.
 export const transformClinicRunPrediction = ({ normalizedText, prediction }) => {
   let resolvedIntent = clinicIntentAliases[prediction.intent] ?? prediction.intent;
   let resolvedConfidence = prediction.confidence;
@@ -164,6 +174,7 @@ export const transformClinicRunPrediction = ({ normalizedText, prediction }) => 
   };
 };
 
+// Bien output classifier + text normalized thanh slot facts co cau truc cho rule engine.
 export const extractClinicFacts = ({ normalizedText, prediction }) => {
   const facts = [];
   const addFact = (fact, value) => {
@@ -213,165 +224,4 @@ export const extractClinicFacts = ({ normalizedText, prediction }) => {
   }
 
   return facts;
-};
-
-export const clinicSharedClassifierOptions = {
-  synonymMap: {
-    checking: "account",
-    savings: "account",
-    funds: "money",
-    bucks: "dollars",
-    cash: "money",
-    cc: "card",
-    debit: "card",
-    creditcard: "card",
-    airfare: "flight",
-    airline: "flight",
-    motel: "hotel",
-    reservation: "booking",
-    reserve: "booking",
-    schedule: "plan",
-    reminder: "reminder",
-    alarm: "alarm",
-    clock: "time",
-    translate: "translate",
-    meaning: "definition",
-    package: "order",
-    parcel: "order",
-    automobile: "car",
-    vehicle: "car",
-    petrol: "gas",
-  },
-  vectorizerOptions: {
-    ngramRange: [1, 2],
-    minDf: 2,
-    maxFeatures: 8000,
-    stopwords: ["botclinic", "clinic", "bot", "hybrid", "chatbot", "please"],
-  },
-};
-
-export const clinicBotVariants = {
-  botClinic: {
-    botId: "botClinic",
-    displayName: "Bot Clinic",
-    trigger: "@botClinic",
-    description:
-      "A hybrid bot that uses TF-IDF for vectorization, Support Vector Machine for intent classification on the local CLINC150 dataset, and IF-THEN forward chaining for detailed response inference.",
-    modelCacheFile: "modelCache.json",
-    classifier: {
-      type: "svm",
-      alpha: 0.8,
-      learningRate: 0.08,
-      decay: 0.01,
-      regularization: 0.0005,
-      epochs: 8,
-      modelLabel: "botClinic",
-    },
-    systemUser: {
-      username: "botclinic_system",
-      email: "botclinic.system@chatapp.local",
-      displayName: "Bot Clinic",
-      avatarUrl: null,
-    },
-  },
-  botClinicV2: {
-    botId: "botClinicV2",
-    displayName: "Bot Clinic V2",
-    trigger: "@botClinicV2",
-    description:
-      "A hybrid bot that uses TF-IDF for vectorization, Naive Bayes for intent classification on the local CLINC150 dataset, and IF-THEN forward chaining for detailed response inference.",
-    modelCacheFile: "modelCacheV2.json",
-    classifier: {
-      type: "naive-bayes",
-      alpha: 0.8,
-      modelLabel: "botClinicV2",
-    },
-    systemUser: {
-      username: "botclinicv2_system",
-      email: "botclinicv2.system@chatapp.local",
-      displayName: "Bot Clinic V2",
-      avatarUrl: null,
-    },
-  },
-  botClinicV3: {
-    botId: "botClinicV3",
-    displayName: "Bot Clinic V3",
-    trigger: "@botClinicV3",
-    description:
-      "A hybrid bot that uses TF-IDF for vectorization, logistic regression with loss-aware gradient updates and learning-rate decay for intent classification on the local CLINC150 dataset, and IF-THEN forward chaining for detailed response inference.",
-    modelCacheFile: "modelCacheV3.json",
-    classifier: {
-      type: "logistic-regression",
-      learningRate: 0.02,
-      decay: 0.05,
-      regularization: 0.0005,
-      epochs: 50,
-      tolerance: 0.0001,
-      patience: 2,
-      modelLabel: "botClinicV3",
-    },
-    systemUser: {
-      username: "botclinicv3_system",
-      email: "botclinicv3.system@chatapp.local",
-      displayName: "Bot Clinic V3",
-      avatarUrl: null,
-    },
-  },
-};
-
-export const getClinicTrainingExamples = () => {
-  return [...readLocalClincExamples(), ...botClinicSeedExamples];
-};
-
-export const getClinicVariant = (variantId = "botClinic") => {
-  const variant = clinicBotVariants[variantId];
-
-  if (!variant) {
-    throw new Error(`UNKNOWN_CLINIC_BOT_VARIANT:${variantId}`);
-  }
-
-  return variant;
-};
-
-export const getClinicClassifierConfig = (variantId = "botClinic") => {
-  const variant = getClinicVariant(variantId);
-
-  return {
-    ...clinicSharedClassifierOptions,
-    ...variant.classifier,
-    synonymMap: {
-      ...clinicSharedClassifierOptions.synonymMap,
-      ...(variant.classifier.synonymMap ?? {}),
-    },
-    vectorizerOptions: {
-      ...clinicSharedClassifierOptions.vectorizerOptions,
-      ...(variant.classifier.vectorizerOptions ?? {}),
-    },
-  };
-};
-
-export const createClinicBotDefinition = (variantId = "botClinic") => {
-  const variant = getClinicVariant(variantId);
-  const hasPretrainedModel = hasClinicModelCache(variant.modelCacheFile);
-
-  return {
-    botId: variant.botId,
-    displayName: variant.displayName,
-    trigger: variant.trigger,
-    description: variant.description,
-    confidenceThreshold: 0.1,
-    classifier: {
-      ...getClinicClassifierConfig(variantId),
-      pretrainedModelPath: hasPretrainedModel
-        ? getClinicModelCachePath(variant.modelCacheFile)
-        : null,
-    },
-    systemUser: variant.systemUser,
-    examples: hasPretrainedModel ? [] : getClinicTrainingExamples(),
-    entities: {},
-    transformRunPrediction: transformClinicRunPrediction,
-    extractFacts: extractClinicFacts,
-    rules: buildBotClinicRules(),
-    responses: botClinicResponses,
-  };
 };

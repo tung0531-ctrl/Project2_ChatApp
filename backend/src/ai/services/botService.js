@@ -1,11 +1,15 @@
-// Dieu phoi trigger bot trong group chat, lay ngu canh va tao payload bot reply cho message flow.
+// Day la lop ket noi giua message flow cua ChatApp va AI engine.
+// File nay phat hien bot duoc mention, kiem tra bot co bat trong group hay khong,
+// lay them ngu canh gan day neu can, va tao payload message de bot tra loi trong conversation.
 import bcrypt from "bcrypt";
 import User from "../../models/User.js";
 import Message from "../../models/Message.js";
 import { getBotEngineById, getBotEngines } from "../registry/index.js";
 
+// Cache user he thong cua tung bot de tranh hash/query lai nhieu lan.
 const botUserCache = new Map();
 
+// Tim tat ca mention trigger hop le trong noi dung message.
 const detectTriggeredBots = (content = "") => {
   const lowered = content.toLowerCase();
 
@@ -16,12 +20,14 @@ const detectTriggeredBots = (content = "") => {
   });
 };
 
+// Chi nhung bot duoc bat trong group moi duoc phep phan hoi.
 const isBotEnabledForConversation = (conversation, botId) => {
   return Boolean(
     conversation.group?.bots?.some((botConfig) => botConfig.botId === botId && botConfig.enabled),
   );
 };
 
+// Tao hoac tai lai system user cua bot de message bot duoc luu nhu message thong thuong.
 const resolveBotUser = async (bot) => {
   if (botUserCache.has(bot.botId)) {
     return botUserCache.get(bot.botId);
@@ -54,6 +60,7 @@ const resolveBotUser = async (bot) => {
   return user;
 };
 
+// Lay toi da 4 message user gan nhat lam context phu neu inference goc chua du ro.
 const buildContextualPrompt = async ({ conversationId, currentMessageId, currentContent }) => {
   const recentMessages = await Message.find(
     {
@@ -80,6 +87,7 @@ const buildContextualPrompt = async ({ conversationId, currentMessageId, current
   return [...orderedContext, currentContent].join("\n");
 };
 
+// Thu suy dien voi message goc truoc, sau do moi fallback sang prompt co context neu can.
 const inferBotReplyContent = async ({ bot, conversation, content, currentMessageId }) => {
   const primaryInference = bot.run(content);
 
@@ -111,6 +119,7 @@ export const buildBotReplyForGroupMessage = async ({
   content,
   currentMessageId,
 }) => {
+  // Bot chi tra loi trong group va chi khi co duy nhat mot mention trigger hop le.
   if (conversation.type !== "group") {
     return null;
   }
@@ -140,6 +149,7 @@ export const buildBotReplyForGroupMessage = async ({
 
   const botUser = await resolveBotUser(bot);
 
+  // Payload nay se duoc tang message layer luu thanh messageType `bot` trong conversation.
   return {
     senderId: botUser._id,
     content: inference.content,

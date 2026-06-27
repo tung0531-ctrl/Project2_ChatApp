@@ -1,9 +1,13 @@
-// Ghep classifier, entity matching va forward chaining thanh mot engine he chuyen gia dung chung.
+// ExpertBotEngine la lop dieu phoi trung tam cho tat ca AI bot.
+// No khong chua tri thuc domain cu the; no chi ghep cac manh runtime chung lai:
+// normalize text -> classifier predict -> bot hook chinh intent/fact -> entity matching
+// -> seed working-memory facts -> forward chaining -> final response hoac fallback.
 import { NaiveBayesClassifier } from "./naiveBayes.js";
 import { LogisticRegressionClassifier } from "./logisticRegression.js";
 import { SupportVectorMachineClassifier } from "./supportVectorMachine.js";
 import { runForwardChaining } from "./forwardChaining.js";
 
+// Nhom helper tien xu ly van ban de moi classifier nhan cung mot kieu input da duoc lam sach.
 const stripDiacritics = (text = "") =>
   text
     .normalize("NFD")
@@ -20,7 +24,7 @@ export const normalizeText = (text = "") => {
     .trim();
 };
 
-
+// Chuyen dong nghia ve token dai dien de train va predict nhat quan hon.
 export const normalizeSynonyms = (text = "", synonymMap = {}) => {
   if (!text) {
     return text;
@@ -40,6 +44,7 @@ export const normalizeSynonyms = (text = "", synonymMap = {}) => {
     .trim();
 };
 
+// Tao danh sach unigram/bigram/trigram de rule engine co them facts ngoai classifier keywords.
 const extractRuleKeywords = (normalizedText = "", maxNgram = 3) => {
   const tokens = normalizedText.split(/\s+/).filter(Boolean);
   const terms = new Set();
@@ -59,6 +64,7 @@ const extractRuleKeywords = (normalizedText = "", maxNgram = 3) => {
   return Array.from(terms);
 };
 
+// Cho phep bot-specific runtime chen logic sua intent/confidence sau khi classifier predict xong.
 const transformRunPrediction = ({ definition, rawText, normalizedText, prediction }) => {
   if (typeof definition.transformRunPrediction !== "function") {
     return prediction;
@@ -73,6 +79,7 @@ const transformRunPrediction = ({ definition, rawText, normalizedText, predictio
   return overrides ? { ...prediction, ...overrides } : prediction;
 };
 
+// Goi hook rut trich slot/fact rieng cua bot truoc khi dua vao forward chaining.
 const extractDefinitionFacts = ({ definition, rawText, normalizedText, prediction }) => {
   if (typeof definition.extractFacts !== "function") {
     return [];
@@ -85,6 +92,7 @@ const extractDefinitionFacts = ({ definition, rawText, normalizedText, predictio
   }) ?? [];
 };
 
+// Chuan hoa response template ve mot string duy nhat de run() de xu ly.
 const pickResponse = (value) => {
   if (Array.isArray(value)) {
     return value[0] ?? "";
@@ -95,6 +103,7 @@ const pickResponse = (value) => {
 
 const createRuleId = (prefix, index) => `${prefix}-${index + 1}`;
 
+// Doi ten collection entities thanh entityType ngan gon dung chung cho rules va knowledge lookup.
 const getEntityTypeFromCollectionName = (collectionName = "") => {
   if (collectionName === "heroes") {
     return "hero";
@@ -115,6 +124,7 @@ const getEntityTypeFromCollectionName = (collectionName = "") => {
   return collectionName;
 };
 
+// Tao chi muc alias -> entity de tim entity theo chuoi da normalize.
 const createEntityIndex = (entities = {}) => {
   const indexedEntities = [];
 
@@ -136,6 +146,7 @@ const createEntityIndex = (entities = {}) => {
   );
 };
 
+// Tao lookup entityType:id de response co the mo lai entity da chon sau khi suy dien.
 const createEntityLookup = (entities = {}) => {
   const lookup = new Map();
 
@@ -157,6 +168,7 @@ const getEntityDisplayName = (entity) => {
   return entity?.item?.name ?? entity?.item?.displayName ?? entity?.item?.id ?? "";
 };
 
+// Tim cac entity co alias xuat hien trong input va giu match dai nhat cho moi entity.
 const findMatchedEntities = (normalizedText, indexedEntities = []) => {
   const matched = new Map();
 
@@ -178,6 +190,7 @@ const findMatchedEntities = (normalizedText, indexedEntities = []) => {
   );
 };
 
+// Bang uu tien entity type cho tung intent, chu yeu dung khi mot cau noi trung nhieu entity cung luc.
 const preferredEntityTypesByIntent = {
   hero_role: ["hero"],
   hero_skill: ["hero"],
@@ -196,6 +209,7 @@ const preferredEntityTypesByIntent = {
   patch_version_history: ["patch"],
 };
 
+// Mot so intent uu tien entity co id co dinh thay vi chi dua vao type match.
 const preferredEntityIdsByIntent = {
   bot_identity: ["bot_identity_topic"],
   bot_capabilities: ["bot_identity_topic"],
@@ -213,6 +227,7 @@ const preferredEntityIdsByIntent = {
   trivia_info: ["trivia_topic"],
 };
 
+// Chon entity chinh se duoc dem vao working memory de response knowledge-based dung dung doi tuong.
 const selectPrimaryEntity = (matchedEntities = [], intent = null) => {
   const preferredEntityIds = preferredEntityIdsByIntent[intent] ?? [];
   const preferredEntityTypes = preferredEntityTypesByIntent[intent] ?? [];
@@ -240,6 +255,7 @@ const selectPrimaryEntity = (matchedEntities = [], intent = null) => {
   return matchedEntities[0] ?? null;
 };
 
+// Ho tro ca rule format moi (`if/then`) va rule format cu de registry khong phai quan tam chi tiet.
 const normalizeRules = (rules = []) => {
   return rules.flatMap((rule, index) => {
     if (rule.if && rule.then) {
@@ -287,8 +303,15 @@ const normalizeRules = (rules = []) => {
   });
 };
 
+// Bien mot bot definition tinh thanh runtime engine thong nhat cho ChatApp.
+// Dau vao `definition` thuong gom: classifier config, examples, entities, rules va responses.
+// Dau ra la object co 3 API chinh:
+// - `predictIntent()`: chi phan loai intent
+// - `explainIntent()`: tra them score va giai thich classifier
+// - `run()`: chay toan bo pipeline hybrid de lay response cuoi cung
 export const createExpertBotEngine = (definition) => {
   const synonymMap = definition.classifier?.synonymMap ?? definition.synonymMap ?? {};
+  // Normalize examples mot lan truoc khi classifier train/load de tranh lech giua train va infer.
   const normalizedExamples = definition.examples.map((example) => ({
     ...example,
     text: normalizeSynonyms(normalizeText(example.text), synonymMap),
@@ -297,6 +320,7 @@ export const createExpertBotEngine = (definition) => {
   const classifierType = classifierOptions.type ?? "naive-bayes";
   let classifier;
 
+  // Chon implementation classifier dua tren classifier type cua bot definition.
   const buildClassifier = () => {
     if (classifierType === "svm") {
       return new SupportVectorMachineClassifier(normalizedExamples, classifierOptions);
@@ -309,6 +333,7 @@ export const createExpertBotEngine = (definition) => {
     return new NaiveBayesClassifier(normalizedExamples, classifierOptions);
   };
 
+  // Tai pretrained snapshot neu bot da duoc train san va co model cache tren dia.
   const loadPretrainedClassifier = () => {
     if (classifierType === "svm") {
       return SupportVectorMachineClassifier.fromFile(
@@ -327,6 +352,7 @@ export const createExpertBotEngine = (definition) => {
     return NaiveBayesClassifier.fromFile(classifierOptions.pretrainedModelPath, classifierOptions);
   };
 
+  // Uu tien pretrained model de khoi dong nhanh; neu load loi thi fallback ve train tai boot time.
   if (classifierOptions.pretrainedModelPath) {
     try {
       classifier = loadPretrainedClassifier();
@@ -353,6 +379,7 @@ export const createExpertBotEngine = (definition) => {
     description: definition.description,
     systemUser: definition.systemUser,
     classifierType,
+    // API nhe nhat: chi phan loai intent va tra ve score/keywords.
     predictIntent(rawText) {
       const normalizedText = normalizeSynonyms(normalizeText(rawText), synonymMap);
       const prediction = classifier.predict(normalizedText);
@@ -365,6 +392,7 @@ export const createExpertBotEngine = (definition) => {
         keywords: prediction.keywords ?? [],
       };
     },
+    // API phuc vu explainability: giu ket qua predict va bo sung thong tin giai thich cua classifier.
     explainIntent(rawText) {
       const normalizedText = normalizeSynonyms(normalizeText(rawText), synonymMap);
       const prediction = classifier.predict(normalizedText);
@@ -381,6 +409,7 @@ export const createExpertBotEngine = (definition) => {
         explanation,
       };
     },
+    // Hook danh gia offline, hien huu ich cho logistic regression khi can do average loss.
     evaluateAverageLoss(examples = []) {
       if (typeof classifier.evaluateAverageLoss !== "function") {
         return null;
@@ -393,9 +422,11 @@ export const createExpertBotEngine = (definition) => {
 
       return classifier.evaluateAverageLoss(normalizedExamples);
     },
+    // API runtime chinh: chay toan bo hybrid pipeline va tra response cuoi cung cho message bot.
     run(rawText) {
       const normalizedText = normalizeSynonyms(normalizeText(rawText), synonymMap);
       const classifierPrediction = classifier.predict(normalizedText);
+      // Bot-specific rescue co the doi intent/confidence de phu hop domain hon.
       const prediction = transformRunPrediction({
         definition,
         rawText,
@@ -407,6 +438,7 @@ export const createExpertBotEngine = (definition) => {
       const ruleKeywords = Array.from(
         new Set([...(prediction.keywords ?? []), ...extractRuleKeywords(normalizedText)]),
       );
+      // Bot-specific extractor rut ra slot facts co cau truc de rule engine hieu duoc workflow.
       const extractedFacts = extractDefinitionFacts({
         definition,
         rawText,
@@ -426,6 +458,7 @@ export const createExpertBotEngine = (definition) => {
         };
       }
 
+      // Seed working memory bang intent, confidence band, keyword, slot va entity match truoc khi suy dien.
       const initialFacts = [
         { fact: "intent", value: prediction.intent },
         { fact: "confidenceBand", value: prediction.confidence >= 0.45 ? "high" : "medium" },
@@ -441,6 +474,7 @@ export const createExpertBotEngine = (definition) => {
         );
       }
 
+      // Forward chaining se assert facts moi, chon response dau tien phu hop, va ghi lai fired rules.
       const inference = runForwardChaining({
         rules: normalizedRules,
         initialFacts,

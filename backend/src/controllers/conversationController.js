@@ -10,7 +10,7 @@ import {
 import {
   getAvailableLocalClincSplits,
   readLocalClincExamplesBySplit,
-} from "../ai/bots/botClinic/datasetLoader.js";
+} from "../ai/bots/botClinic/index.js";
 
 const clinicEvaluationJobs = new Map();
 const CLINIC_EVALUATION_JOB_TTL_MS = 15 * 60 * 1000;

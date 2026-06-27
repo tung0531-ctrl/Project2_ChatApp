@@ -1,4 +1,5 @@
-// Supplemental English seed examples for @botClinic inside the current ChatApp flow.
+// Bo seed examples bo sung cho CLINC150 local.
+// Muc tieu la day them nhung cau thu nghiem sat voi ten bot va workflow cua ChatApp.
 export const botClinicSeedExamples = [
   { text: "hello bot clinic", intent: "greeting" },
   { text: "hi bot clinic", intent: "greeting" },
